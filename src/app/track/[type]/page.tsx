@@ -4,7 +4,7 @@
 import React, { use } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { StageNode } from '@/components/track/stage-node';
-import { TrackType } from '@/lib/mock-data';
+import { TrackKey } from '@/lib/challenges';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Map as MapIcon, Info } from 'lucide-react';
 import Link from 'next/link';
@@ -18,7 +18,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   const { user } = useUser();
   const { database } = useFirebase();
 
-  const typeKey = resolvedParams.type.charAt(0).toUpperCase() + resolvedParams.type.slice(1) as TrackType;
+  const typeKey = resolvedParams.type.charAt(0).toUpperCase() + resolvedParams.type.slice(1) as TrackKey;
   
   const userTrackRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${typeKey}`) : null, [user, database, typeKey]);
   const { data: progressData, isLoading } = useDatabase(userTrackRef);
@@ -53,14 +53,14 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden pb-32">
+    <div className="min-h-screen bg-background relative overflow-hidden pb-32" dir="rtl">
       <NavSidebar />
       
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl -z-10 -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl -z-10 translate-y-1/2 -translate-x-1/2" />
 
       <div className="max-w-3xl mx-auto p-6 md:p-12 relative">
-        <div className="flex items-center justify-between mb-12" dir="rtl">
+        <div className="flex items-center justify-between mb-12">
           <Link href="/">
             <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
               <ArrowLeft size={18} className="rotate-180" />

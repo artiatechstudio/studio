@@ -31,9 +31,9 @@ export function NavSidebar() {
   return (
     <>
       {/* القائمة الجانبية للحاسوب */}
-      <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-white border-l border-border z-40 p-6 shadow-2xl">
+      <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-card border-l border-border z-40 p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-12" dir="rtl">
-          <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">C</div>
+          <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">🐱</div>
           <span className="text-3xl font-black text-primary tracking-tighter">Careingo</span>
         </div>
 
@@ -83,7 +83,7 @@ export function NavSidebar() {
       </aside>
 
       {/* شريط التنقل السفلي للجوال (PWA Style) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] rounded-t-[2.5rem]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] rounded-t-[2.5rem]">
         {navItems.map((item) => (
           <Link
             key={item.href}

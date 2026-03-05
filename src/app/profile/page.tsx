@@ -46,7 +46,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-10 pb-32">
         {/* رأس الصفحة */}
@@ -72,7 +72,7 @@ export default function ProfilePage() {
             
             <div className="flex flex-wrap justify-center md:justify-start gap-4">
               <div className="flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 text-orange-600 px-5 py-2.5 rounded-2xl font-black shadow-sm">
-                <Flame size={20} fill="currentColor" /> {userData.streak || 0} يوم متواصل
+                <Flame size={20} fill="currentColor" /> {userData.streak || 0} يوم حماسة
               </div>
               <div className="flex items-center gap-2 bg-primary/10 text-primary px-5 py-2.5 rounded-2xl font-black shadow-sm">
                 <Hash size={20} /> العضو رقم {userData.registrationRank || '...'}

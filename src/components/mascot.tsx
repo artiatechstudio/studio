@@ -7,10 +7,10 @@ import { Card } from './ui/card';
 const MESSAGES = [
   "أهلاً! أنا كاري 🐱. دعنا ننمو معاً اليوم!",
   "كل خطوة صغيرة تقربك من هدفك الكبير، استمر!",
-  "هل أنجزت مهمتك اليوم؟ السلسلة في انتظارك! 🔥",
+  "هل أنجزت مهمتك اليوم؟ الحماسة في انتظارك! 🔥",
   "تذكر، الاستمرارية أهم من السرعة. كاري فخور بك!",
   "يوم جديد، فرصة جديدة لتكون أفضل من الأمس!",
-  "لا تدع السلسلة تنكسر، أنت تبلي بلاءً حسناً!"
+  "لا تدع حماستك تنطفئ، أنت تبلي بلاءً حسناً!"
 ];
 
 interface MascotProps {
@@ -45,8 +45,8 @@ export function Mascot({ messageOnly = false }: MascotProps) {
           كاري
         </div>
       </div>
-      <Card className="p-4 bg-white text-primary border-none shadow-xl rounded-[2rem] relative overflow-visible flex-1">
-        <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
+      <Card className="p-4 bg-white dark:bg-card text-primary border-none shadow-xl rounded-[2rem] relative overflow-visible flex-1">
+        <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white dark:bg-card rotate-45" />
         <p className="text-sm font-bold leading-relaxed text-right">{message}</p>
       </Card>
     </div>

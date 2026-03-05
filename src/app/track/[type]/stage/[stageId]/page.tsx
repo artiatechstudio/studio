@@ -43,17 +43,18 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
     try {
       const currentProgress = progressData || { currentStage: 1, completedStages: [] };
-      const completedStages = currentProgress.completedStages || [];
+      const completedStages = [...(currentProgress.completedStages || [])];
       
       if (completedStages.includes(stageId)) {
         toast({ title: "منجز بالفعل!", description: "لقد أتممت هذه المهمة سابقاً." });
         return;
       }
 
-      const today = new Date().toISOString().split('T')[0];
-      const hour = new Date().getHours();
+      const now = new Date();
+      const today = now.toISOString().split('T')[0];
+      const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
+      const hour = now.getHours();
       
-      // منطق النقاط الذكي: بونص التبكير
       const basePoints = 100;
       const earlyBonus = Math.max(0, (20 - hour) * 5); 
       const pointsEarned = basePoints + earlyBonus;
@@ -61,25 +62,36 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       completedStages.push(stageId);
       const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
 
-      // تحديث التقدم في المسار
-      await update(ref(database, `users/${user.uid}/trackProgress/${trackKey}`), {
-        completedStages,
-        currentStage: nextStage,
-        lastCompletedDate: today
-      });
-
-      // تحديث النقاط الكلية والنقاط اليومية (للمتوسط)
       const userRef = ref(database, `users/${user.uid}`);
       const userSnap = await get(userRef);
       const userData = userSnap.val();
-      
+
+      // منطق الحماسة (السلسلة) - يعتمد على الأيام
+      let newStreak = userData.streak || 0;
+      const lastActiveDate = userData.lastActiveDate;
+
+      if (lastActiveDate !== today) {
+        if (lastActiveDate === yesterday) {
+          newStreak += 1;
+        } else if (!lastActiveDate || lastActiveDate < yesterday) {
+          newStreak = 1;
+        }
+      }
+
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[today] || 0) + pointsEarned;
 
+      // تحديث كل البيانات في قاعدة البيانات
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
-        streak: (userData.streak || 0) + 1,
-        [`dailyPoints/${today}`]: todayPoints
+        streak: newStreak,
+        lastActiveDate: today,
+        [`dailyPoints/${today}`]: todayPoints,
+        [`trackProgress/${trackKey}`]: {
+          completedStages,
+          currentStage: nextStage,
+          lastCompletedDate: today
+        }
       });
 
       setCompleted(true);
@@ -114,7 +126,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
               <header>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-black uppercase">اليوم {stageId}</div>
-                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black uppercase">{trackKey}</div>
+                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black uppercase">{trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</div>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
@@ -148,7 +160,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                       </div>
                       <div>
                         <h3 className="text-3xl font-black text-green-700 dark:text-green-400 italic">مذهل!</h3>
-                        <p className="text-green-600 dark:text-green-300 font-medium mt-2">لقد أكملت مهمتك وحصلت على النقاط.</p>
+                        <p className="text-green-600 dark:text-green-300 font-medium mt-2">لقد أكملت مهمتك وحافظت على حماسك.</p>
                       </div>
                     </div>
                   )}

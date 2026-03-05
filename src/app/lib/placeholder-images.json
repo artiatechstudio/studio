@@ -1,0 +1,34 @@
+{
+  "placeholderImages": [
+    {
+      "id": "mascot-friendly",
+      "description": "Friendly cartoon bird mascot",
+      "imageUrl": "https://picsum.photos/seed/careingo-mascot/400/400",
+      "imageHint": "cartoon bird"
+    },
+    {
+      "id": "fitness-track",
+      "description": "Fitness motivation image",
+      "imageUrl": "https://picsum.photos/seed/careingo-fitness/800/400",
+      "imageHint": "fitness gym"
+    },
+    {
+      "id": "nutrition-track",
+      "description": "Healthy food platter",
+      "imageUrl": "https://picsum.photos/seed/careingo-nutrition/800/400",
+      "imageHint": "healthy food"
+    },
+    {
+      "id": "behavior-track",
+      "description": "Mindfulness and meditation",
+      "imageUrl": "https://picsum.photos/seed/careingo-behavior/800/400",
+      "imageHint": "mindfulness meditation"
+    },
+    {
+      "id": "study-track",
+      "description": "Organized study space",
+      "imageUrl": "https://picsum.photos/seed/careingo-study/800/400",
+      "imageHint": "study library"
+    }
+  ]
+}

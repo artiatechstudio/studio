@@ -38,6 +38,11 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     }
   }, [progressData, stageId]);
 
+  const playSuccessSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   const handleComplete = async () => {
     if (!user || !database) return;
 
@@ -68,7 +73,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const userSnap = await get(userRef);
       const userData = userSnap.val();
 
-      // منطق الحماسة (السلسلة) - إصلاح جذري
       let newStreak = userData.streak || 0;
       const lastActiveDate = userData.lastActiveDate;
 
@@ -81,7 +85,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
           newStreak = 1;
         }
       }
-      // إذا كان lastActiveDate === today، يبقى الـ streak كما هو دون تغيير
 
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[today] || 0) + pointsEarned;
@@ -99,6 +102,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       });
 
       setCompleted(true);
+      playSuccessSound();
       toast({
         title: "تم الإنجاز! 🎉",
         description: `أحسنت! حصلت على ${pointsEarned} نقطة لإنجازك مهمة اليوم.`,
@@ -109,7 +113,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <Link href={`/track/${resolvedParams.type}`}>
@@ -135,7 +139,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                 <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
 
-              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card">
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border">
                 <CardHeader className="bg-primary text-white p-8">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl font-bold">مهمة اليوم</CardTitle>
@@ -175,7 +179,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             <div className="space-y-6">
               <div className="sticky top-12">
                 <Mascot messageOnly />
-                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-card">
+                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-card border border-border">
                   <div className="p-6 space-y-4">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2">
                       <Trophy size={20} className="text-yellow-500" />

@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -9,12 +10,19 @@ interface StageNodeProps {
   id: number;
   status: 'locked' | 'open' | 'completed';
   trackType: string;
-  offset: number; // For the snake path effect
+  offset: number;
 }
 
 export function StageNode({ id, status, trackType, offset }: StageNodeProps) {
   const Icon = status === 'completed' ? CheckCircle2 : status === 'open' ? Lightbulb : Lock;
   
+  const playClickSound = () => {
+    if (status !== 'locked') {
+      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+      audio.play().catch(() => {});
+    }
+  };
+
   return (
     <div 
       className="flex flex-col items-center gap-2 relative z-10"
@@ -22,10 +30,11 @@ export function StageNode({ id, status, trackType, offset }: StageNodeProps) {
     >
       <Link 
         href={status === 'locked' ? '#' : `/track/${trackType}/stage/${id}`}
+        onClick={playClickSound}
         className={cn(
           "w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all duration-300 shadow-xl relative",
-          status === 'completed' && "bg-accent text-white hover:scale-110",
-          status === 'open' && "bg-primary text-white hover:scale-110 animate-pulse ring-8 ring-primary/20",
+          status === 'completed' && "bg-accent text-white hover:scale-110 shadow-accent/20",
+          status === 'open' && "bg-primary text-white hover:scale-110 animate-pulse ring-8 ring-primary/20 shadow-primary/20",
           status === 'locked' && "bg-secondary text-muted-foreground cursor-not-allowed grayscale"
         )}
       >
@@ -40,7 +49,7 @@ export function StageNode({ id, status, trackType, offset }: StageNodeProps) {
         "font-black text-lg",
         status === 'locked' ? "text-muted-foreground" : "text-primary"
       )}>
-        Day {id}
+        اليوم {id}
       </div>
     </div>
   );

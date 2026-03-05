@@ -26,11 +26,17 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
+  const playLoginSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      playLoginSound();
       toast({ title: "أهلاً بعودتك!", description: "جاري تحميل بياناتك..." });
       router.push('/');
     } catch (error: any) {
@@ -49,21 +55,21 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-6">
-      <Card className="w-full max-w-md border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card">
+    <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-6" dir="rtl">
+      <Card className="w-full max-w-md border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border">
         <CardHeader className="bg-primary text-white p-10 text-center">
           <div className="w-20 h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 text-5xl">🐱</div>
           <CardTitle className="text-4xl font-black">كارينجو</CardTitle>
           <p className="opacity-80 font-bold mt-2 text-lg">رفيقك اليومي للنمو</p>
         </CardHeader>
         <CardContent className="p-10 space-y-8">
-          <form onSubmit={handleLogin} className="space-y-6 text-right" dir="rtl">
+          <form onSubmit={handleLogin} className="space-y-6 text-right">
             <div className="space-y-2">
               <Label>البريد الإلكتروني</Label>
               <Input 
                 type="email" 
                 placeholder="example@mail.com" 
-                className="h-14 rounded-2xl bg-secondary/50 border-none"
+                className="h-14 rounded-2xl bg-secondary/50 border-none font-bold"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
@@ -73,7 +79,7 @@ export default function LoginPage() {
               <Label>كلمة المرور</Label>
               <Input 
                 type="password" 
-                className="h-14 rounded-2xl bg-secondary/50 border-none"
+                className="h-14 rounded-2xl bg-secondary/50 border-none font-bold"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 

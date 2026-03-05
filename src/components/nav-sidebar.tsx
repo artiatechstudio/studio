@@ -14,7 +14,7 @@ const navItems = [
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
-  { label: 'الملف الشخصي', icon: User, href: '/profile' },
+  { label: 'أنت', icon: User, href: '/profile' },
 ];
 
 export function NavSidebar() {
@@ -29,9 +29,13 @@ export function NavSidebar() {
     router.replace('/login');
   };
 
+  const playClickSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   return (
     <>
-      {/* القائمة الجانبية للحاسوب */}
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-card border-l border-border z-40 p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-12" dir="rtl">
           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">🐱</div>
@@ -43,6 +47,7 @@ export function NavSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              onClick={playClickSound}
               className={cn(
                 "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group",
                 pathname === item.href 
@@ -59,7 +64,7 @@ export function NavSidebar() {
         <div className="pt-8 border-t border-secondary mt-auto space-y-3" dir="rtl">
           {user ? (
             <>
-              <Link href="/settings" className={cn(
+              <Link href="/settings" onClick={playClickSound} className={cn(
                 "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all",
                 pathname === '/settings' ? "bg-accent text-white shadow-xl" : "text-muted-foreground hover:bg-secondary"
               )}>
@@ -67,7 +72,7 @@ export function NavSidebar() {
                 <span className="font-black text-lg">الإعدادات</span>
               </Link>
               <button 
-                onClick={handleLogout}
+                onClick={() => { playClickSound(); handleLogout(); }}
                 className="flex items-center gap-4 px-5 py-4 rounded-2xl text-destructive hover:bg-destructive/10 transition-all w-full text-right"
               >
                 <LogOut className="w-6 h-6" />
@@ -75,7 +80,7 @@ export function NavSidebar() {
               </button>
             </>
           ) : (
-            <Link href="/login" className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-primary text-white shadow-xl">
+            <Link href="/login" onClick={playClickSound} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-primary text-white shadow-xl">
               <LogIn className="w-6 h-6" />
               <span className="font-black text-lg">دخول</span>
             </Link>
@@ -83,12 +88,12 @@ export function NavSidebar() {
         </div>
       </aside>
 
-      {/* شريط التنقل السفلي للجوال (PWA Style) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] rounded-t-[2.5rem]">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
+            onClick={playClickSound}
             className={cn(
               "flex flex-col items-center justify-center gap-1 transition-all flex-1 py-2 h-full",
               pathname === item.href ? "text-primary scale-110" : "text-muted-foreground opacity-60"
@@ -105,6 +110,7 @@ export function NavSidebar() {
         ))}
         <Link
           href="/settings"
+          onClick={playClickSound}
           className={cn(
             "flex flex-col items-center justify-center gap-1 transition-all flex-1 py-2 h-full",
             pathname === '/settings' ? "text-primary scale-110" : "text-muted-foreground opacity-60"

@@ -3,21 +3,21 @@
 
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { BookOpen, Shield, ScrollText, Mail, Heart, HelpCircle, ExternalLink, MessageSquare } from 'lucide-react';
+import { BookOpen, Shield, ScrollText, Heart, HelpCircle, ExternalLink, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 
 export default function ResourcesPage() {
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-12 pb-32">
         <header className="space-y-4">
           <div className="flex items-center gap-6">
             <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl">
-              <BookOpen size={40} />
+              < BookOpen size={40} />
             </div>
             <div>
               <h1 className="text-4xl font-black text-primary">مركز الموارد</h1>

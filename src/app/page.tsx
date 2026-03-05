@@ -1,13 +1,13 @@
 
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Trophy, CalendarDays } from 'lucide-react';
+import { Flame, Star, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -61,7 +61,7 @@ export default function Home() {
   const progressPercent = Math.round((completedCount / totalStages) * 100);
 
   return (
-    <div className="min-h-screen bg-background pb-32" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">

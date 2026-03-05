@@ -11,14 +11,12 @@ import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 export default function LeaderboardPage() {
   const { database } = useFirebase();
   
-  // Optimize: Fetch only top 100 users by points to ensure performance
   const leadersQuery = useMemoFirebase(() => {
     return query(ref(database, 'users'), orderByChild('points'), limitToLast(100));
   }, [database]);
 
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
-  // Logic: Calculate average score based on the last 3 days of active engagement
   const leaders = useMemo(() => {
     if (!rawData) return [];
     
@@ -38,12 +36,12 @@ export default function LeaderboardPage() {
         const avgScore = Math.round(sum / 3);
         return { ...user, avgScore };
       })
-      .filter((user: any) => user.points > 0)
+      .filter((user: any) => (user.points || 0) > 0)
       .sort((a: any, b: any) => b.avgScore - a.avgScore);
   }, [rawData]);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <header className="space-y-4">

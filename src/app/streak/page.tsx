@@ -23,7 +23,7 @@ export default function StreakPage() {
     return Object.keys(userData.dailyPoints).map(dateStr => new Date(dateStr));
   }, [userData]);
   
-  const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA'), []); // Local date string YYYY-MM-DD
+  const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA'), []);
   const isDoneToday = useMemo(() => !!userData?.dailyPoints?.[todayStr], [userData, todayStr]);
 
   if (isUserLoading || isLoading) {
@@ -35,7 +35,7 @@ export default function StreakPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex items-center gap-6">

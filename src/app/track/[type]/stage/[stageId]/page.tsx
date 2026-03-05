@@ -54,9 +54,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         return;
       }
 
-      // Use local date string to avoid UTC conflicts
       const now = new Date();
-      const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const todayStr = now.toLocaleDateString('en-CA');
       const yesterday = new Date(now);
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
@@ -89,10 +88,17 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[todayStr] || 0) + pointsEarned;
 
+      // Logic: Award a new badge if it's the first time completing any stage
+      const currentBadges = userData.badges || [];
+      if (!currentBadges.includes('الخطوة الأولى 🐱')) {
+        currentBadges.push('الخطوة الأولى 🐱');
+      }
+
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
         streak: newStreak,
         lastActiveDate: todayStr,
+        badges: currentBadges,
         [`dailyPoints/${todayStr}`]: todayPoints,
         [`trackProgress/${trackKey}`]: {
           completedStages,
@@ -115,7 +121,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   }, [user, database, isUpdating, completed, progressData, trackKey, stageId]);
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <div className="flex justify-end">

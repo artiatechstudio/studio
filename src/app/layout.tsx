@@ -40,7 +40,7 @@ export default function RootLayout({
       <body className="font-body antialiased min-h-screen bg-background text-right transition-colors duration-300" suppressHydrationWarning>
         <FirebaseClientProvider>
           <div className="flex flex-col min-h-screen">
-            <main className="flex-1 pb-24 md:pb-0 md:pr-64">
+            <main className="flex-1">
               {children}
             </main>
           </div>

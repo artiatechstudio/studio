@@ -22,18 +22,22 @@ export default function RegisterPage() {
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name.trim()) return;
+    
     try {
+      // تخزين الاسم مؤقتاً ليتم استخدامه في الصفحة الرئيسية عند إنشاء البروفايل
+      localStorage.setItem('registered_name', name);
       initiateEmailSignUp(auth, email, password);
-      toast({ title: "Account created!", description: "Taking you to the dashboard..." });
+      toast({ title: "تم إنشاء الحساب!", description: "جاري توجيهك للوحة التحكم..." });
       router.push('/');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "Registration Failed", description: error.message });
+      toast({ variant: "destructive", title: "فشل التسجيل", description: error.message });
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-6">
-      <Card className="w-full max-w-md border-none shadow-2xl rounded-[3rem] overflow-hidden">
+      <Card className="w-full max-w-md border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card">
         <CardHeader className="bg-accent text-white p-10 text-center relative">
           <Link href="/login" className="absolute left-6 top-10 text-white/80 hover:text-white">
             <ArrowLeft size={24} />
@@ -41,52 +45,52 @@ export default function RegisterPage() {
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <UserPlus size={32} />
           </div>
-          <CardTitle className="text-3xl font-black">Join Careingo</CardTitle>
-          <p className="opacity-80 font-medium mt-2">Start your 30-day challenge today</p>
+          <CardTitle className="text-3xl font-black">انضم إلى كارينجو</CardTitle>
+          <p className="opacity-80 font-medium mt-2">ابدأ تحدي الـ 30 يوماً اليوم</p>
         </CardHeader>
         <CardContent className="p-10 space-y-6">
-          <form onSubmit={handleRegister} className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4 text-right">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="name">الاسم الكامل</Label>
               <Input 
                 id="name" 
-                placeholder="Alex Rivera" 
-                className="h-12 rounded-xl bg-secondary border-none"
+                placeholder="أحمد علي" 
+                className="h-12 rounded-xl bg-secondary border-none text-right"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">البريد الإلكتروني</Label>
               <Input 
                 id="email" 
                 type="email" 
                 placeholder="alex@example.com" 
-                className="h-12 rounded-xl bg-secondary border-none"
+                className="h-12 rounded-xl bg-secondary border-none text-right"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">كلمة المرور</Label>
               <Input 
                 id="password" 
                 type="password" 
-                className="h-12 rounded-xl bg-secondary border-none"
+                className="h-12 rounded-xl bg-secondary border-none text-right"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
               />
             </div>
             <Button type="submit" className="w-full h-14 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-bold shadow-lg shadow-accent/20">
-              Create Account
+              إنشاء حساب جديد
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground font-medium">
-            Already have an account? <Link href="/login" className="text-primary font-black hover:underline">Log In</Link>
+            لديك حساب بالفعل؟ <Link href="/login" className="text-primary font-black hover:underline">سجل دخولك</Link>
           </p>
         </CardContent>
       </Card>

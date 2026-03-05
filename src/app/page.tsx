@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, set, get, child } from 'firebase/database';
+import { ref, set, get, child, update } from 'firebase/database';
 import { Flame, Trophy, Calendar, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -28,17 +28,20 @@ export default function Home() {
   useEffect(() => {
     const initializeUser = async () => {
       if (user && !isDataLoading && !userData) {
-        // محاولة جلب عدد المستخدمين لتعيين رتبة التسجيل
+        // التحقق مما إذا كان هناك اسم مخزن في الـ localStorage من صفحة التسجيل
+        const registeredName = localStorage.getItem('registered_name') || user.displayName || 'صديق كاري';
+
         const usersSnap = await get(child(ref(database), 'users'));
         const userCount = usersSnap.exists() ? Object.keys(usersSnap.val()).length : 0;
 
-        set(userRef!, {
-          name: user.displayName || 'صديق كاري',
+        await set(userRef!, {
+          name: registeredName,
           id: user.uid,
           points: 0,
           streak: 0,
-          registrationRank: userCount + 1, // رتبة التسجيل بناءً على العدد الحالي
+          registrationRank: userCount + 1,
           badges: ['بداية الرحلة'],
+          dailyPoints: {},
           trackProgress: {
             Fitness: { currentStage: 1, completedStages: [] },
             Nutrition: { currentStage: 1, completedStages: [] },
@@ -46,6 +49,7 @@ export default function Home() {
             Study: { currentStage: 1, completedStages: [] },
           }
         });
+        localStorage.removeItem('registered_name');
       }
     };
 
@@ -54,7 +58,7 @@ export default function Home() {
 
   if (isUserLoading || isDataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FE]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6">
           <div className="w-20 h-20 border-8 border-primary border-t-transparent rounded-[2rem] animate-spin" />
           <div className="text-primary font-black text-2xl animate-pulse">جاري التحميل...</div>
@@ -66,11 +70,9 @@ export default function Home() {
   if (!user) return null;
 
   const profile = userData || {
-    name: user?.displayName || 'صديق',
+    name: 'صديق',
     points: 0,
     streak: 0,
-    registrationRank: '...',
-    badges: [],
     trackProgress: {
       Fitness: { currentStage: 1, completedStages: [] },
       Nutrition: { currentStage: 1, completedStages: [] },
@@ -84,7 +86,7 @@ export default function Home() {
   const progressPercent = Math.round((completedCount / totalStages) * 100);
 
   return (
-    <div className="min-h-screen bg-[#F8F9FE]">
+    <div className="min-h-screen bg-background">
       <NavSidebar />
       
       <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10 pb-32">
@@ -95,7 +97,7 @@ export default function Home() {
           </div>
           
           <div className="flex flex-wrap gap-4">
-            <Card className="flex items-center gap-4 px-6 py-4 rounded-[2rem] border-none shadow-2xl shadow-orange-500/10 bg-white group hover:scale-105 transition-all">
+            <Card className="flex items-center gap-4 px-6 py-4 rounded-[2rem] border-none shadow-2xl shadow-orange-500/10 bg-card group hover:scale-105 transition-all">
               <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600">
                 <Flame size={28} fill="currentColor" />
               </div>
@@ -105,7 +107,7 @@ export default function Home() {
               </div>
             </Card>
             
-            <Card className="flex items-center gap-4 px-6 py-4 rounded-[2rem] border-none shadow-2xl shadow-yellow-500/10 bg-white group hover:scale-105 transition-all">
+            <Card className="flex items-center gap-4 px-6 py-4 rounded-[2rem] border-none shadow-2xl shadow-yellow-500/10 bg-card group hover:scale-105 transition-all">
               <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600">
                 <Star size={28} fill="currentColor" />
               </div>
@@ -117,20 +119,12 @@ export default function Home() {
           </div>
         </header>
 
-        <section className="bg-primary/5 rounded-[3rem] p-8 md:p-12 border border-primary/10 relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
+        <section className="bg-primary/5 rounded-[3rem] p-8 md:p-12 border border-primary/10">
           <Mascot />
         </section>
 
         <section className="space-y-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-primary">مسارات النمو</h2>
-            <div className="hidden md:flex items-center gap-3 text-primary font-black bg-white px-6 py-3 rounded-full shadow-lg border border-border">
-              <Calendar size={20} />
-              <span>{new Date().toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
-            </div>
-          </div>
-          
+          <h2 className="text-3xl font-black text-primary">مسارات النمو</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <TrackCard type="Fitness" currentStage={profile.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
             <TrackCard type="Nutrition" currentStage={profile.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
@@ -139,7 +133,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="bg-white rounded-[3rem] p-10 shadow-2xl shadow-primary/5 space-y-8 border border-white">
+        <section className="bg-card rounded-[3rem] p-10 shadow-2xl shadow-primary/5 space-y-8 border border-white/5">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-black text-primary flex items-center gap-4">
               <Trophy className="text-accent w-10 h-10" />
@@ -149,11 +143,10 @@ export default function Home() {
           </div>
           <div className="w-full bg-secondary h-6 rounded-full overflow-hidden border-4 border-secondary shadow-inner">
             <div 
-              className="bg-accent h-full transition-all duration-1000 ease-out rounded-full shadow-lg shadow-accent/20" 
+              className="bg-accent h-full transition-all duration-1000 ease-out rounded-full" 
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <p className="text-muted-foreground font-bold text-center text-lg">أتممت {completedCount} من أصل {totalStages} مهمة في جميع المسارات. استمر في التألق!</p>
         </section>
       </div>
     </div>

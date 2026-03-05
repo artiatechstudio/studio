@@ -1,10 +1,11 @@
+
 "use client"
 
 import React, { use, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, BarChart3, Star, Zap, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -49,30 +50,36 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         return;
       }
 
-      completedStages.push(stageId);
-      const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
-
-      // منطق النقاط: كلما بكرت حصلت على نقاط أكثر
-      const now = new Date();
-      const hour = now.getHours();
+      const today = new Date().toISOString().split('T')[0];
+      const hour = new Date().getHours();
+      
+      // منطق النقاط الذكي: بونص التبكير
       const basePoints = 100;
-      // بونص إنجاز مبكر (قبل الساعة 12 ظهراً)
       const earlyBonus = Math.max(0, (20 - hour) * 5); 
       const pointsEarned = basePoints + earlyBonus;
 
+      completedStages.push(stageId);
+      const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
+
+      // تحديث التقدم في المسار
       await update(ref(database, `users/${user.uid}/trackProgress/${trackKey}`), {
         completedStages,
         currentStage: nextStage,
-        lastCompletedDate: now.toISOString().split('T')[0]
+        lastCompletedDate: today
       });
 
+      // تحديث النقاط الكلية والنقاط اليومية (للمتوسط)
       const userRef = ref(database, `users/${user.uid}`);
       const userSnap = await get(userRef);
       const userData = userSnap.val();
       
+      const currentDailyPoints = userData.dailyPoints || {};
+      const todayPoints = (currentDailyPoints[today] || 0) + pointsEarned;
+
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
-        streak: (userData.streak || 0) + 1
+        streak: (userData.streak || 0) + 1,
+        [`dailyPoints/${today}`]: todayPoints
       });
 
       setCompleted(true);
@@ -86,7 +93,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   };
 
   return (
-    <div className="min-h-screen bg-[#F8F9FE]">
+    <div className="min-h-screen bg-background">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <Link href={`/track/${resolvedParams.type}`}>
@@ -112,7 +119,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                 <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
 
-              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden">
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card">
                 <CardHeader className="bg-primary text-white p-8">
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl font-bold">مهمة اليوم</CardTitle>
@@ -135,17 +142,14 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                       أنجزت المهمة الآن!
                     </Button>
                   ) : (
-                    <div className="bg-green-50 border-4 border-green-100 p-10 rounded-[2.5rem] flex flex-col items-center gap-4 text-center">
+                    <div className="bg-green-500/10 border-4 border-green-500/20 p-10 rounded-[2.5rem] flex flex-col items-center gap-4 text-center">
                       <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg">
                         <CheckCircle size={48} />
                       </div>
                       <div>
-                        <h3 className="text-3xl font-black text-green-700 italic">مذهل!</h3>
-                        <p className="text-green-600 font-medium mt-2">لقد أكملت مهمتك وحصلت على النقاط.</p>
+                        <h3 className="text-3xl font-black text-green-700 dark:text-green-400 italic">مذهل!</h3>
+                        <p className="text-green-600 dark:text-green-300 font-medium mt-2">لقد أكملت مهمتك وحصلت على النقاط.</p>
                       </div>
-                      <Link href="/" className="w-full mt-4">
-                        <Button className="w-full h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black">العودة للرئيسية</Button>
-                      </Link>
                     </div>
                   )}
                 </CardContent>
@@ -155,8 +159,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             <div className="space-y-6">
               <div className="sticky top-12">
                 <Mascot messageOnly />
-                
-                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
+                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-card">
                   <div className="p-6 space-y-4">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2">
                       <Trophy size={20} className="text-yellow-500" />
@@ -172,7 +175,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                         <span>+{(20 - new Date().getHours()) * 5}</span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground text-center">أنجز مهامك في الصباح لتحصل على نقاط أكثر وتتصدر القائمة!</p>
                   </div>
                 </Card>
               </div>

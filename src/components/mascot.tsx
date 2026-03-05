@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -7,7 +6,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { aiHelperContextualResponse } from '@/ai/flows/ai-helper-contextual-response';
 import { TrackType } from '@/lib/mock-data';
 import { Card } from './ui/card';
-import { useUser, useFirebase, useDatabase } from '@/firebase';
+import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 
 interface MascotProps {
@@ -18,11 +17,12 @@ interface MascotProps {
 export function Mascot({ currentTrack = 'Fitness', messageOnly = false }: MascotProps) {
   const { user } = useUser();
   const { database } = useFirebase();
-  const [message, setMessage] = useState<string>("Hi! I'm Careingo. Let's grow together!");
+  const [message, setMessage] = useState<string>("مرحباً! أنا Careingo. دعنا ننمو معاً!");
   const [loading, setLoading] = useState(false);
 
-  const progressRef = user ? ref(database, `users/${user.uid}`) : null;
-  const { data: userData } = useDatabase(progressRef);
+  // تثبيت المرجع لتجنب الـ Infinite Loop
+  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
+  const { data: userData } = useDatabase(userRef);
 
   useEffect(() => {
     async function fetchResponse() {
@@ -41,7 +41,7 @@ export function Mascot({ currentTrack = 'Fitness', messageOnly = false }: Mascot
         setMessage(res.message);
       } catch (e) {
         console.error(e);
-        setMessage("Keep going! You are doing great today!");
+        setMessage("استمر في التقدم! أنت تبلي بلاءً حسناً اليوم!");
       } finally {
         setLoading(false);
       }
@@ -56,14 +56,14 @@ export function Mascot({ currentTrack = 'Fitness', messageOnly = false }: Mascot
   if (messageOnly) {
     return (
       <Card className="p-4 bg-primary text-primary-foreground border-none shadow-lg rounded-2xl relative">
-        <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rotate-45" />
-        {loading ? <span className="animate-pulse">Thinking...</span> : <p className="text-sm font-medium">{message}</p>}
+        <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-primary rotate-45" />
+        {loading ? <span className="animate-pulse">يفكر...</span> : <p className="text-sm font-medium text-right">{message}</p>}
       </Card>
     );
   }
 
   return (
-    <div className="flex items-center gap-4 max-w-lg">
+    <div className="flex items-center gap-4 max-w-lg" dir="rtl">
       <div className="relative shrink-0 animate-float">
         <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full scale-110" />
         <Image
@@ -75,9 +75,9 @@ export function Mascot({ currentTrack = 'Fitness', messageOnly = false }: Mascot
           data-ai-hint="cartoon bird"
         />
       </div>
-      <Card className="p-4 bg-white text-primary border-none shadow-xl rounded-3xl relative overflow-visible">
-        <div className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
-        {loading ? <span className="animate-pulse text-muted-foreground italic">Careingo is typing...</span> : <p className="text-sm font-bold leading-relaxed">{message}</p>}
+      <Card className="p-4 bg-white text-primary border-none shadow-xl rounded-3xl relative overflow-visible flex-1">
+        <div className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-4 bg-white rotate-45" />
+        {loading ? <span className="animate-pulse text-muted-foreground italic">Careingo يكتب...</span> : <p className="text-sm font-bold leading-relaxed text-right">{message}</p>}
       </Card>
     </div>
   );

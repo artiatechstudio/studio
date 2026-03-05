@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
-import { useUser, useFirebase, useDatabase } from '@/firebase';
+import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, set } from 'firebase/database';
 import { Flame, Trophy, Calendar } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -15,7 +15,8 @@ export default function Home() {
   const { database } = useFirebase();
   const router = useRouter();
   
-  const userRef = user ? ref(database, `users/${user.uid}`) : null;
+  // تثبيت المرجع لتجنب الـ Infinite Loop
+  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
 
   useEffect(() => {
@@ -47,7 +48,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <div className="text-primary font-black text-2xl animate-pulse italic">Careingo يستعد...</div>
+          <div className="text-primary font-black text-2xl animate-pulse italic">جاري التحميل...</div>
         </div>
       </div>
     );
@@ -106,7 +107,7 @@ export default function Home() {
           <Mascot currentTrack="Fitness" />
         </section>
 
-        <section className="space-y-8">
+        <section className="space-y-8 pb-20 md:pb-0">
           <div className="flex items-center justify-between">
             <h2 className="text-3xl font-black text-primary">مساراتك</h2>
             <div className="flex items-center gap-2 text-primary font-bold bg-white px-5 py-2 rounded-full shadow-md border border-border">
@@ -137,9 +138,6 @@ export default function Home() {
                 <span className="font-bold">{badge}</span>
               </div>
             ))}
-            <div className="bg-secondary/50 border-2 border-dashed border-border px-6 py-4 rounded-2xl flex items-center gap-3 text-muted-foreground italic font-medium">
-              <span>الإنجاز القادم بانتظارك!</span>
-            </div>
           </div>
         </section>
       </div>

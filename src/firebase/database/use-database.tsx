@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ref, onValue, off, DatabaseReference, DataSnapshot } from 'firebase/database';
+import { onValue, off, DatabaseReference, DataSnapshot } from 'firebase/database';
 
 export interface UseDatabaseResult<T> {
   data: T | null;
@@ -12,12 +11,10 @@ export interface UseDatabaseResult<T> {
 
 /**
  * Custom hook to listen to a Firebase Realtime Database path.
- * @template T Type of the data.
- * @param {DatabaseReference | null | undefined} dbRef The RTDB reference.
- * @returns {UseDatabaseResult<T>} The data, loading state, and error.
+ * Requires a memoized reference to avoid infinite loops.
  */
 export function useDatabase<T = any>(
-  dbRef: DatabaseReference | null | undefined
+  dbRef: (DatabaseReference & { __memo?: boolean }) | null | undefined
 ): UseDatabaseResult<T> {
   const [data, setData] = useState<T | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(!!dbRef);
@@ -31,8 +28,9 @@ export function useDatabase<T = any>(
       return;
     }
 
+    // Do not set loading to true if we already have data to avoid flickers, 
+    // but the error stack indicates it's being called repeatedly.
     setIsLoading(true);
-    setError(null);
 
     const onDataChange = (snapshot: DataSnapshot) => {
       setData(snapshot.val() as T);
@@ -52,6 +50,10 @@ export function useDatabase<T = any>(
       off(dbRef, 'value', onDataChange);
     };
   }, [dbRef]);
+
+  if (dbRef && !dbRef.__memo) {
+    throw new Error('DatabaseReference was not properly memoized using useMemoFirebase');
+  }
 
   return { data, isLoading, error };
 }

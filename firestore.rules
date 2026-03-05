@@ -1,0 +1,180 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * CAREINGO SECURITY RULES DOCUMENTATION
+     *
+     * Core Philosophy:
+     * This ruleset implements a strict User-Ownership model. Access to sensitive data is isolated 
+     * by user identity, while core application content remains globally readable.
+     *
+     * Data Structure:
+     * - Private Data: Nested under /users/{userId}/. Includes profiles, progress, tasks, achievements, and reminders.
+     * - Public Data: Root-level collections for /tracks, /achievements, and /resourceArticles.
+     *
+     * Key Security Decisions:
+     * 1. Authorization Independence: Every user-owned document includes a denormalized 'userId' 
+     *    field. Rules verify this field against the authenticated UID to ensure ownership 
+     *    without requiring recursive document lookups.
+     * 2. Structural Segregation: User-specific subcollections provide implicit query security. 
+     *    A user listing their own tasks only ever hits documents they own.
+     * 3. Immutability: Critical relational fields (like userId) are made immutable after 
+     *    creation to prevent data hijacking or accidental re-assignment.
+     * 4. Prototyping Flexibility: Logic focuses on 'Who' (authorization) rather than 'What' 
+     *    (schema validation), allowing developers to iterate on data shapes quickly.
+     * 
+     * Note: Although Realtime Database was mentioned in the request, these rules are 
+     * architected for Cloud Firestore as per the provided Technical IR.
+     */
+
+    // --- GLOBAL HELPER FUNCTIONS ---
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Used for update/delete to ensure the document exists and the requester owns it.
+    function isExistingOwner(userId) {
+      return resource != null && isOwner(userId);
+    }
+
+    // Validates that the internal ownership field matches the path and the requester's UID.
+    function isInternalFieldValid(field, userId) {
+      return request.resource.data[field] == userId && request.resource.data[field] == request.auth.uid;
+    }
+
+    // --- COLLECTION RULES ---
+
+    /**
+     * @description Rules for User Profiles. Users can only manage their own profile.
+     * @path /users/{userId}
+     * @allow (create) { auth.uid: "user123", data: { id: "user123", ... } }
+     * @deny (get) { auth.uid: "user456" } requesting /users/user123
+     * @principle Enforces strict ownership of the root user document.
+     */
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false; // Users should not be listable for privacy.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
+
+      /**
+       * @description Progress records for specific tracks.
+       * @path /users/{userId}/trackProgresses/{id}
+       * @allow (list) { auth.uid: "user123" } to list their own progress.
+       * @deny (update) { auth.uid: "user123", data: { userId: "user456" } } attempting to change owner.
+       * @principle Path-based ownership with internal field immutability.
+       */
+      match /trackProgresses/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isInternalFieldValid('userId', userId);
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Daily tasks assigned to or created by the user.
+       * @path /users/{userId}/dailyTasks/{id}
+       * @allow (create) { auth.uid: "user123", data: { userId: "user123" } }
+       * @deny (delete) { auth.uid: "stranger" }
+       * @principle Restricts task management to the assigned user.
+       */
+      match /dailyTasks/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isInternalFieldValid('userId', userId);
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Singleton document for user performance metrics.
+       * @path /users/{userId}/performance
+       * @allow (get) { auth.uid: "user123" } accessing their own metrics.
+       * @principle Ensures performance metrics are private to the user.
+       */
+      match /performance {
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && isInternalFieldValid('userId', userId);
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Records of achievements earned by the user.
+       * @path /users/{userId}/achievements/{id}
+       * @allow (create) { auth.uid: "user123" } when an achievement is awarded.
+       * @principle User-scoped achievement logs.
+       */
+      match /achievements/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isInternalFieldValid('userId', userId);
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+
+      /**
+       * @description Personal reminders set by the user.
+       * @path /users/{userId}/reminders/{id}
+       * @allow (update) { auth.uid: "user123" } changing reminder time.
+       * @principle Private configuration for user notifications.
+       */
+      match /reminders/{id} {
+        allow get, list: if isOwner(userId);
+        allow create: if isOwner(userId) && isInternalFieldValid('userId', userId);
+        allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+
+    /**
+     * @description Core care tracks. Static and globally readable.
+     * @path /tracks/{trackId}
+     * @allow (get) Any user or anonymous guest.
+     * @deny (create) Any client-side request.
+     * @principle Public content with read-only client access.
+     */
+    match /tracks/{trackId} {
+      allow get, list: if true;
+      allow create, update, delete: if false; // System managed only.
+
+      /**
+       * @description Stages within a track.
+       * @path /tracks/{trackId}/stages/{stageId}
+       * @principle Hierarchical public content.
+       */
+      match /stages/{stageId} {
+        allow get, list: if true;
+        allow create, update, delete: if false;
+      }
+    }
+
+    /**
+     * @description Achievement definitions available in the app.
+     * @path /achievements/{achievementId}
+     * @allow (list) All users to see what's possible.
+     * @principle Public achievement directory.
+     */
+    match /achievements/{achievementId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+
+    /**
+     * @description Resource Hub articles, tips, and legal docs.
+     * @path /resourceArticles/{articleId}
+     * @allow (get) Publicly accessible informational content.
+     * @principle Public resource library.
+     */
+    match /resourceArticles/{articleId} {
+      allow get, list: if true;
+      allow create, update, delete: if false;
+    }
+  }
+}

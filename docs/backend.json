@@ -1,0 +1,618 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user's profile information and application preferences within Careingo.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "The user's chosen display name or alias."
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address, primarily for identification purposes. Authentication is handled by an external system.",
+          "format": "email"
+        },
+        "avatarUrl": {
+          "type": "string",
+          "description": "URL to the user's selected avatar image or a default avatar.",
+          "format": "uri"
+        },
+        "languagePreference": {
+          "type": "string",
+          "description": "The user's preferred language for the application interface (e.g., 'en', 'es')."
+        },
+        "themePreference": {
+          "type": "string",
+          "description": "The user's preferred visual theme for the application (e.g., 'light', 'dark')."
+        },
+        "registrationRank": {
+          "type": "number",
+          "description": "A numeric rank indicating the user's order of registration, showcasing early adopters."
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was initially created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user profile was last updated.",
+          "format": "date-time"
+        },
+        "adPersonalizationEnabled": {
+          "type": "boolean",
+          "description": "Boolean flag indicating whether the user has consented to personalized advertising."
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "avatarUrl",
+        "languagePreference",
+        "themePreference",
+        "registrationRank",
+        "createdAt",
+        "updatedAt",
+        "adPersonalizationEnabled"
+      ]
+    },
+    "Track": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Track",
+      "type": "object",
+      "description": "Defines the static information for a core care track (e.g., Fitness, Nutrition, Behavior, Study).",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Track entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the care track (e.g., 'Fitness', 'Nutrition')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of what the track entails."
+        },
+        "totalStages": {
+          "type": "number",
+          "description": "The total number of stages within this track (e.g., 30)."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "totalStages"
+      ]
+    },
+    "Stage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Stage",
+      "type": "object",
+      "description": "Defines the static information for a specific stage within a track.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Stage entity."
+        },
+        "trackId": {
+          "type": "string",
+          "description": "Reference to the Track this stage belongs to. (Relationship: Track 1:N Stage)"
+        },
+        "stageNumber": {
+          "type": "number",
+          "description": "The sequential number of the stage within its track (e.g., 1 to 30)."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or short name of the stage (e.g., 'Day 1', 'Introduction to Mindfulness')."
+        },
+        "defaultDescription": {
+          "type": "string",
+          "description": "A general, static description of the stage's purpose or content."
+        },
+        "stageImageUrl": {
+          "type": "string",
+          "description": "URL to an image representing this stage, if applicable.",
+          "format": "uri"
+        }
+      },
+      "required": [
+        "id",
+        "trackId",
+        "stageNumber",
+        "title",
+        "defaultDescription"
+      ]
+    },
+    "UserTrackProgress": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserTrackProgress",
+      "type": "object",
+      "description": "Tracks a user's overall progression through a specific care track.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserTrackProgress entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who owns this progress record. (Relationship: UserProfile 1:N UserTrackProgress)"
+        },
+        "trackId": {
+          "type": "string",
+          "description": "Reference to the Track this progress record is for. (Relationship: Track 1:N UserTrackProgress)"
+        },
+        "currentOpenStageNumber": {
+          "type": "number",
+          "description": "The highest stage number that is currently unlocked and accessible for the user in this track."
+        },
+        "lastDailyCompletionDate": {
+          "type": "string",
+          "description": "The date when a stage in this specific track was last completed, used to enforce the one-stage-per-track-per-day rule.",
+          "format": "date"
+        },
+        "completedStageNumbers": {
+          "type": "array",
+          "description": "An array of stage numbers that the user has successfully completed within this track.",
+          "items": {
+            "type": "number"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "trackId",
+        "currentOpenStageNumber",
+        "lastDailyCompletionDate",
+        "completedStageNumbers"
+      ]
+    },
+    "UserDailyTask": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserDailyTask",
+      "type": "object",
+      "description": "Represents a specific daily task or challenge assigned to a user for a given stage and date. This holds both AI-generated content and user-defined fitness plans.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserDailyTask entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile this task is assigned to. (Relationship: UserProfile 1:N UserDailyTask)"
+        },
+        "trackId": {
+          "type": "string",
+          "description": "Reference to the Track this task belongs to. (Relationship: Track 1:N UserDailyTask)"
+        },
+        "stageNumber": {
+          "type": "number",
+          "description": "The stage number within the track that this daily task corresponds to."
+        },
+        "taskDate": {
+          "type": "string",
+          "description": "The specific date for which this daily task is assigned or completed.",
+          "format": "date"
+        },
+        "content": {
+          "type": "string",
+          "description": "The actual content of the task. This can be AI-generated text for Nutrition/Behavior/Study tracks, or user-defined fitness activities/rest day details for the Fitness track."
+        },
+        "isCompleted": {
+          "type": "boolean",
+          "description": "Boolean flag indicating whether the user has completed this daily task."
+        },
+        "completedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the user completed this daily task.",
+          "format": "date-time"
+        },
+        "aiGeneratedMetadata": {
+          "type": "string",
+          "description": "Optional JSON string containing metadata or parameters used during the AI content generation for this task."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "trackId",
+        "stageNumber",
+        "taskDate",
+        "content",
+        "isCompleted",
+        "completedAt"
+      ]
+    },
+    "UserPerformance": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserPerformance",
+      "type": "object",
+      "description": "Stores aggregated performance metrics for a user, used for progress tracking and leaderboards.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserPerformance entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile associated with these performance metrics. (Relationship: UserProfile 1:1 UserPerformance)"
+        },
+        "overallProgressPercentage": {
+          "type": "number",
+          "description": "The user's overall progress across all tracks, expressed as a percentage (0-100)."
+        },
+        "currentDailyStreak": {
+          "type": "number",
+          "description": "The number of consecutive days the user has completed at least one task."
+        },
+        "longestDailyStreak": {
+          "type": "number",
+          "description": "The user's longest achieved streak of consecutive task completions."
+        },
+        "lastStreakUpdateDate": {
+          "type": "string",
+          "description": "The last date when the user's streak was checked or updated.",
+          "format": "date"
+        },
+        "globalRank": {
+          "type": "number",
+          "description": "The user's current global ranking on the leaderboard, based on overall progress or other metrics."
+        },
+        "lastUpdatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when these performance metrics were last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "overallProgressPercentage",
+        "currentDailyStreak",
+        "longestDailyStreak",
+        "lastStreakUpdateDate",
+        "lastUpdatedAt"
+      ]
+    },
+    "Achievement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Achievement",
+      "type": "object",
+      "description": "Defines the static information for an achievement badge that users can earn.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Achievement entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the achievement (e.g., 'First Track Complete', '7 Day Streak')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the achievement and how it is earned."
+        },
+        "badgeImageUrl": {
+          "type": "string",
+          "description": "URL to the graphic image representing the achievement badge.",
+          "format": "uri"
+        },
+        "criteria": {
+          "type": "string",
+          "description": "A programmatic or human-readable string defining the conditions required to earn this achievement."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "badgeImageUrl",
+        "criteria"
+      ]
+    },
+    "UserAchievement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserAchievement",
+      "type": "object",
+      "description": "Records an instance of a user having earned a specific achievement.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserAchievement entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who earned the achievement. (Relationship: UserProfile 1:N UserAchievement)"
+        },
+        "achievementId": {
+          "type": "string",
+          "description": "Reference to the Achievement definition that was earned. (Relationship: Achievement 1:N UserAchievement)"
+        },
+        "earnedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the achievement was earned.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "achievementId",
+        "earnedAt"
+      ]
+    },
+    "UserReminder": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserReminder",
+      "type": "object",
+      "description": "Stores personalized reminder settings configured by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserReminder entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the UserProfile who set this reminder. (Relationship: UserProfile 1:N UserReminder)"
+        },
+        "message": {
+          "type": "string",
+          "description": "The customizable message for the reminder notification."
+        },
+        "scheduledTime": {
+          "type": "string",
+          "description": "The time of day when the reminder should be sent (e.g., '09:00:00').",
+          "format": "time"
+        },
+        "isEnabled": {
+          "type": "boolean",
+          "description": "Boolean flag indicating whether this reminder is currently active."
+        },
+        "trackId": {
+          "type": "string",
+          "description": "Optional reference to a specific Track if the reminder is track-specific. (Relationship: Track 1:N UserReminder)"
+        },
+        "daysOfWeek": {
+          "type": "array",
+          "description": "An array of strings indicating the days of the week on which the reminder should be active (e.g., ['monday', 'wednesday']).",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "message",
+        "scheduledTime",
+        "isEnabled",
+        "daysOfWeek"
+      ]
+    },
+    "ResourceArticle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ResourceArticle",
+      "type": "object",
+      "description": "Contains informational content for the Resource Hub, including tips, health information, and legal documents.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ResourceArticle entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the article or resource."
+        },
+        "content": {
+          "type": "string",
+          "description": "The full content of the article, which can be in a rich text format like HTML or Markdown."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category the article belongs to (e.g., 'Health Tips', 'Legal', 'Support')."
+        },
+        "url": {
+          "type": "string",
+          "description": "Optional URL for external resources or a canonical link to this article, if hosted externally.",
+          "format": "uri"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the resource article was created.",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Timestamp indicating when the resource article was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "content",
+        "category",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores individual user profiles. Documents are identified by the user's authentication UID. This is private data, owned by the user."
+        }
+      },
+      {
+        "path": "/tracks/{trackId}",
+        "definition": {
+          "entityName": "Track",
+          "schema": {
+            "$ref": "#/backend/entities/Track"
+          },
+          "description": "Defines the static information for core care tracks (e.g., Fitness, Nutrition). This is global, public data."
+        }
+      },
+      {
+        "path": "/tracks/{trackId}/stages/{stageId}",
+        "definition": {
+          "entityName": "Stage",
+          "schema": {
+            "$ref": "#/backend/entities/Stage"
+          },
+          "description": "Defines the static information for a specific stage within a track. The 'trackId' field in the document serves as a denormalized reference. This is global, public data.",
+          "params": [
+            {
+              "name": "trackId",
+              "description": "The unique identifier of the parent Track."
+            },
+            {
+              "name": "stageId",
+              "description": "The unique identifier of the Stage."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/trackProgresses/{userTrackProgressId}",
+        "definition": {
+          "entityName": "UserTrackProgress",
+          "schema": {
+            "$ref": "#/backend/entities/UserTrackProgress"
+          },
+          "description": "Tracks a user's overall progression through a specific care track. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the UserProfile who owns this progress record."
+            },
+            {
+              "name": "userTrackProgressId",
+              "description": "The unique identifier for this user's track progress record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/dailyTasks/{userDailyTaskId}",
+        "definition": {
+          "entityName": "UserDailyTask",
+          "schema": {
+            "$ref": "#/backend/entities/UserDailyTask"
+          },
+          "description": "Represents a specific daily task or challenge assigned to a user for a given stage and date. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the UserProfile to whom this task is assigned."
+            },
+            {
+              "name": "userDailyTaskId",
+              "description": "The unique identifier for this specific daily task."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/performance",
+        "definition": {
+          "entityName": "UserPerformance",
+          "schema": {
+            "$ref": "#/backend/entities/UserPerformance"
+          },
+          "description": "Stores aggregated performance metrics for a user. This is a singleton document per user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the UserProfile associated with these performance metrics."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/achievements/{achievementId}",
+        "definition": {
+          "entityName": "Achievement",
+          "schema": {
+            "$ref": "#/backend/entities/Achievement"
+          },
+          "description": "Defines the static information for an achievement badge that users can earn. This is global, public data."
+        }
+      },
+      {
+        "path": "/users/{userId}/achievements/{userAchievementId}",
+        "definition": {
+          "entityName": "UserAchievement",
+          "schema": {
+            "$ref": "#/backend/entities/UserAchievement"
+          },
+          "description": "Records an instance of a user having earned a specific achievement. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the UserProfile who earned the achievement."
+            },
+            {
+              "name": "userAchievementId",
+              "description": "The unique identifier for this user's earned achievement record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/reminders/{userReminderId}",
+        "definition": {
+          "entityName": "UserReminder",
+          "schema": {
+            "$ref": "#/backend/entities/UserReminder"
+          },
+          "description": "Stores personalized reminder settings configured by a user. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier of the UserProfile who set this reminder."
+            },
+            {
+              "name": "userReminderId",
+              "description": "The unique identifier for this user's specific reminder."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/resourceArticles/{articleId}",
+        "definition": {
+          "entityName": "ResourceArticle",
+          "schema": {
+            "$ref": "#/backend/entities/ResourceArticle"
+          },
+          "description": "Contains informational content for the Resource Hub. This is global, public data."
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to be secure, scalable, and debuggable, strictly adhering to the core design principles and strategy mandates. \n\n**Authorization Independence via Denormalization (Strategy A):**\nAll user-specific data is structured under `/users/{userId}/...`. For every document in these user-specific subcollections (e.g., `UserTrackProgress`, `UserDailyTask`, `UserAchievement`, `UserReminder`), the `userId` field is explicitly denormalized within the document. This is critical for authorization independence. Security rules can directly compare `request.auth.uid` with `resource.data.userId` without needing to perform `get()` operations on parent documents. This approach allows for atomic writes (e.g., creating a user profile and their first track progress in a single batch) and greatly simplifies rule logic, making it easier to reason about and debug. For instance, a rule for `/users/{userId}/trackProgresses/{userTrackProgressId}` can simply be `allow read, write: if request.auth.uid == resource.data.userId;` or `request.auth.uid == userTrackProgressId.userId;` (where `userTrackProgressId` is the wildcard and `userId` is the denormalized field in the document, which must match the path wildcard). Static, global entities like `Track`, `Stage`, `Achievement`, and `ResourceArticle` naturally have no authorization dependencies and are globally readable.\n\n**QAPs (Rules are not Filters) (Principle 4 & Strategy B):**\nThis structure ensures Query Authorization Predictability (QAPs) by implementing **Structural Segregation (Strategy B)**. \n1.  **Public/Global Data:** Collections like `/tracks`, `/achievements`, and `/resourceArticles` contain static, universally accessible data. Any `list` query on these collections is inherently secure because all documents within them share the same 'public read' security posture. Rules for these collections are simple: `allow read: if true;`.\n2.  **Private/User-Owned Data:** All user-specific data is located under `/users/{userId}/...`. When a client queries `/users/{request.auth.uid}/dailyTasks`, the path itself acts as an implicit filter, ensuring that only tasks belonging to the authenticated user are retrieved. The security rules will then verify that `request.auth.uid` matches the `{userId}` wildcard in the path. Because all documents within these user-specific paths belong to that user, a `list` operation on these subcollections is always secure and doesn't require rules to filter results, which is inefficient and insecure. This segregation prevents scenarios where a single collection might contain mixed access permissions, thus keeping rules concise and performant.\n\n**User Request for Realtime Database:** The user explicitly requested to use Realtime Database instead of Firestore. However, the provided schema specifically requires `firestorePaths` and adheres to Firestore collection modeling. Therefore, this response provides a Firestore structure as per the schema, assuming a Firestore context. If a Realtime Database structure is required, a different schema or a manual translation of these principles would be necessary."
+  }
+}

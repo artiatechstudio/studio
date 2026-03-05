@@ -28,7 +28,8 @@ export default function Home() {
   useEffect(() => {
     const initializeUser = async () => {
       if (user && !isDataLoading && !userData) {
-        const registeredName = localStorage.getItem('registered_name') || user.displayName || 'صديق كاري';
+        // محاولة جلب الاسم من localStorage أو من بيانات المستخدم في Firebase
+        const registeredName = localStorage.getItem('registered_name') || user.displayName || 'صديق جديد';
 
         const usersSnap = await get(child(ref(database), 'users'));
         const userCount = usersSnap.exists() ? Object.keys(usersSnap.val()).length : 0;

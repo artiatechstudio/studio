@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
@@ -9,6 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Flame, CalendarDays, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { playSound } from '@/lib/sounds';
 
 export default function StreakPage() {
   const { user, isUserLoading } = useUser();
@@ -17,10 +18,13 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
-  const playClickSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audio.play().catch(() => {});
-  };
+  const activeDates = useMemo(() => {
+    if (!userData?.dailyPoints) return [];
+    return Object.keys(userData.dailyPoints).map(dateStr => new Date(dateStr));
+  }, [userData]);
+  
+  const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA'), []); // Local date string YYYY-MM-DD
+  const isDoneToday = useMemo(() => !!userData?.dailyPoints?.[todayStr], [userData, todayStr]);
 
   if (isUserLoading || isLoading) {
     return (
@@ -30,12 +34,6 @@ export default function StreakPage() {
     );
   }
 
-  const dailyPoints = userData?.dailyPoints || {};
-  const activeDates = Object.keys(dailyPoints).map(dateStr => new Date(dateStr));
-  
-  const today = new Date().toISOString().split('T')[0];
-  const isDoneToday = !!dailyPoints[today];
-
   return (
     <div className="min-h-screen bg-background pb-32" dir="rtl">
       <NavSidebar />
@@ -44,7 +42,7 @@ export default function StreakPage() {
           <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 shadow-xl border-4 border-white dark:border-slate-800">
             <Flame size={40} fill="currentColor" />
           </div>
-          <div>
+          <div className="text-right">
             <h1 className="text-4xl font-black text-primary">سجل الحماسة</h1>
             <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية</p>
           </div>
@@ -53,12 +51,12 @@ export default function StreakPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Card className="md:col-span-2 border-none shadow-2xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
             <CardHeader className="bg-primary/5 p-8 border-b border-border">
-              <CardTitle className="text-xl font-black text-primary flex items-center gap-3">
-                <CalendarDays className="text-primary" /> تقويم الإنجاز
+              <CardTitle className="text-xl font-black text-primary flex items-center justify-end gap-3">
+                تقويم الإنجاز <CalendarDays className="text-primary" />
               </CardTitle>
             </CardHeader>
             <CardContent className="p-8 flex justify-center items-center overflow-x-auto">
-              <div className="flex justify-center w-full" dir="ltr">
+              <div className="flex justify-center w-full rtl-calendar">
                 <Calendar
                   mode="multiple"
                   selected={activeDates}
@@ -86,7 +84,7 @@ export default function StreakPage() {
 
           <div className="space-y-6">
             <Card 
-              onClick={playClickSound}
+              onClick={() => playSound('click')}
               className="border-none shadow-xl rounded-[2.5rem] bg-orange-500 text-white p-8 text-center flex flex-col items-center justify-center gap-4 cursor-pointer hover:scale-105 transition-transform"
             >
               <div className="text-6xl animate-bounce">🔥</div>
@@ -96,10 +94,10 @@ export default function StreakPage() {
               </div>
             </Card>
 
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border">
-              <h3 className="font-black text-primary mb-4 flex items-center gap-2">
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border text-right">
+              <h3 className="font-black text-primary mb-4 flex items-center justify-end gap-2">
+                {isDoneToday ? "حالة اليوم" : "حالة اليوم"}
                 {isDoneToday ? <CheckCircle2 className="text-green-500" /> : <AlertCircle className="text-orange-500" />}
-                حالة اليوم
               </h3>
               <p className="text-sm font-bold text-muted-foreground leading-relaxed">
                 {isDoneToday 
@@ -107,15 +105,17 @@ export default function StreakPage() {
                   : "لم تسجل أي إنجاز لليوم بعد. أسرع قبل أن تنتهي السلسلة!"}
               </p>
               {!isDoneToday && (
-                <Badge variant="outline" className="mt-4 border-orange-500 text-orange-500 font-black px-3 py-1">
-                  مهمة مطلوبة 🔥
-                </Badge>
+                <div className="flex justify-end mt-4">
+                  <Badge variant="outline" className="border-orange-500 text-orange-500 font-black px-3 py-1">
+                    مهمة مطلوبة 🔥
+                  </Badge>
+                </div>
               )}
             </Card>
           </div>
         </div>
 
-        <section className="bg-secondary/20 rounded-[2.5rem] p-8 border border-border">
+        <section className="bg-secondary/20 rounded-[2.5rem] p-8 border border-border text-right">
           <h3 className="text-xl font-black text-primary mb-6">كيف تعمل الحماسة؟</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm font-bold text-muted-foreground">
             <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">

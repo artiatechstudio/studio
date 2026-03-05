@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
+import { playSound } from '@/lib/sounds';
 
 const navItems = [
   { label: 'الرئيسية', icon: LayoutDashboard, href: '/' },
@@ -23,12 +24,8 @@ export function NavSidebar() {
   const { user } = useUser();
   const auth = useAuth();
 
-  const playClickSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audio.play().catch(() => {});
-  };
-
   const handleLogout = async () => {
+    playSound('click');
     await signOut(auth);
     toast({ title: "تم تسجيل الخروج", description: "نراك قريباً!" });
     router.replace('/login');
@@ -37,7 +34,7 @@ export function NavSidebar() {
   return (
     <>
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-card border-l border-border z-40 p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-12" dir="rtl">
+        <div className="flex items-center gap-3 mb-12 justify-end" dir="rtl">
           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">🐱</div>
           <span className="text-3xl font-black text-primary tracking-tighter">كارينجو</span>
         </div>
@@ -47,7 +44,7 @@ export function NavSidebar() {
             <Link
               key={item.href}
               href={item.href}
-              onClick={playClickSound}
+              onClick={() => playSound('click')}
               className={cn(
                 "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group",
                 pathname === item.href 
@@ -64,7 +61,7 @@ export function NavSidebar() {
         <div className="pt-8 border-t border-secondary mt-auto space-y-3" dir="rtl">
           {user ? (
             <>
-              <Link href="/settings" onClick={playClickSound} className={cn(
+              <Link href="/settings" onClick={() => playSound('click')} className={cn(
                 "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all",
                 pathname === '/settings' ? "bg-accent text-white shadow-xl" : "text-muted-foreground hover:bg-secondary"
               )}>
@@ -72,7 +69,7 @@ export function NavSidebar() {
                 <span className="font-black text-lg">الإعدادات</span>
               </Link>
               <button 
-                onClick={() => { playClickSound(); handleLogout(); }}
+                onClick={handleLogout}
                 className="flex items-center gap-4 px-5 py-4 rounded-2xl text-destructive hover:bg-destructive/10 transition-all w-full text-right"
               >
                 <LogOut className="w-6 h-6" />
@@ -80,7 +77,7 @@ export function NavSidebar() {
               </button>
             </>
           ) : (
-            <Link href="/login" onClick={playClickSound} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-primary text-white shadow-xl">
+            <Link href="/login" onClick={() => playSound('click')} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-primary text-white shadow-xl">
               <LogIn className="w-6 h-6" />
               <span className="font-black text-lg">دخول</span>
             </Link>
@@ -93,7 +90,7 @@ export function NavSidebar() {
           <Link
             key={item.href}
             href={item.href}
-            onClick={playClickSound}
+            onClick={() => playSound('click')}
             className={cn(
               "flex flex-col items-center justify-center gap-1 transition-all flex-1 py-2 h-full",
               pathname === item.href ? "text-primary scale-110" : "text-muted-foreground opacity-60"
@@ -110,7 +107,7 @@ export function NavSidebar() {
         ))}
         <Link
           href="/settings"
-          onClick={playClickSound}
+          onClick={() => playSound('click')}
           className={cn(
             "flex flex-col items-center justify-center gap-1 transition-all flex-1 py-2 h-full",
             pathname === '/settings' ? "text-primary scale-110" : "text-muted-foreground opacity-60"

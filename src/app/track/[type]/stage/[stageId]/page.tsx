@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { use, useState, useEffect } from 'react';
+import React, { use, useState, useEffect, useCallback } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, get } from 'firebase/database';
+import { playSound } from '@/lib/sounds';
 
 export default function StageDetailPage({ params }: { params: Promise<{ type: string, stageId: string }> }) {
   const resolvedParams = use(params);
@@ -22,6 +23,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const { user } = useUser();
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
 
@@ -38,28 +40,26 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     }
   }, [progressData, stageId]);
 
-  const playSuccessSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3');
-    audio.play().catch(() => {});
-  };
+  const handleComplete = useCallback(async () => {
+    if (!user || !database || isUpdating || completed) return;
 
-  const handleComplete = async () => {
-    if (!user || !database) return;
-
+    setIsUpdating(true);
     try {
       const currentProgress = progressData || { currentStage: 1, completedStages: [] };
       const completedStages = [...(currentProgress.completedStages || [])];
       
       if (completedStages.includes(stageId)) {
         toast({ title: "منجز بالفعل!", description: "لقد أتممت هذه المهمة سابقاً." });
+        setIsUpdating(false);
         return;
       }
 
+      // Use local date string to avoid UTC conflicts
       const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const yesterdayDate = new Date(now);
-      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-      const yesterday = yesterdayDate.toISOString().split('T')[0];
+      const todayStr = now.toLocaleDateString('en-CA'); // YYYY-MM-DD
+      const yesterday = new Date(now);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
       const hour = now.getHours();
       const basePoints = 100;
@@ -78,8 +78,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
       if (!lastActiveDate) {
         newStreak = 1;
-      } else if (lastActiveDate !== today) {
-        if (lastActiveDate === yesterday) {
+      } else if (lastActiveDate !== todayStr) {
+        if (lastActiveDate === yesterdayStr) {
           newStreak += 1;
         } else {
           newStreak = 1;
@@ -87,61 +87,65 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       }
 
       const currentDailyPoints = userData.dailyPoints || {};
-      const todayPoints = (currentDailyPoints[today] || 0) + pointsEarned;
+      const todayPoints = (currentDailyPoints[todayStr] || 0) + pointsEarned;
 
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
         streak: newStreak,
-        lastActiveDate: today,
-        [`dailyPoints/${today}`]: todayPoints,
+        lastActiveDate: todayStr,
+        [`dailyPoints/${todayStr}`]: todayPoints,
         [`trackProgress/${trackKey}`]: {
           completedStages,
           currentStage: nextStage,
-          lastCompletedDate: today
+          lastCompletedDate: todayStr
         }
       });
 
       setCompleted(true);
-      playSuccessSound();
+      playSound('success');
       toast({
         title: "تم الإنجاز! 🎉",
         description: `أحسنت! حصلت على ${pointsEarned} نقطة لإنجازك مهمة اليوم.`,
       });
     } catch (e) {
       toast({ variant: "destructive", title: "خطأ", description: "فشل في حفظ التقدم." });
+    } finally {
+      setIsUpdating(false);
     }
-  };
+  }, [user, database, isUpdating, completed, progressData, trackKey, stageId]);
 
   return (
     <div className="min-h-screen bg-background" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
-        <Link href={`/track/${resolvedParams.type}`}>
-          <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
-            <ArrowLeft size={18} className="rotate-180" />
-            العودة للمسار
-          </Button>
-        </Link>
+        <div className="flex justify-end">
+          <Link href={`/track/${resolvedParams.type}`} onClick={() => playSound('click')}>
+            <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
+              العودة للمسار
+              <ArrowLeft size={18} className="rotate-0" />
+            </Button>
+          </Link>
+        </div>
 
         {loading ? (
           <div className="space-y-4 animate-pulse">
-            <div className="h-12 w-2/3 bg-secondary rounded-xl" />
+            <div className="h-12 w-2/3 bg-secondary rounded-xl mr-auto" />
             <div className="h-64 bg-secondary rounded-[3rem]" />
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8">
-              <header>
-                <div className="flex items-center gap-3 mb-2">
-                  <div className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-black uppercase">اليوم {stageId}</div>
+            <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
+              <header className="text-right">
+                <div className="flex items-center justify-end gap-3 mb-2">
                   <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black uppercase">{trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</div>
+                  <div className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-black uppercase">اليوم {stageId}</div>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
 
-              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border">
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border text-right">
                 <CardHeader className="bg-primary text-white p-8">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-row-reverse">
                     <CardTitle className="text-2xl font-bold">مهمة اليوم</CardTitle>
                     <div className="flex gap-4 text-sm font-medium opacity-90">
                       <div className="flex items-center gap-1"><Clock size={16} /> {challenge.time}د</div>
@@ -157,9 +161,10 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                   {!completed ? (
                     <Button 
                       onClick={handleComplete}
+                      disabled={isUpdating}
                       className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-xl font-black shadow-xl shadow-accent/20 transition-all hover:scale-[1.02]"
                     >
-                      أنجزت المهمة الآن!
+                      {isUpdating ? "جاري الحفظ..." : "أنجزت المهمة الآن!"}
                     </Button>
                   ) : (
                     <div className="bg-green-500/10 border-4 border-green-500/20 p-10 rounded-[2.5rem] flex flex-col items-center gap-4 text-center">
@@ -176,23 +181,23 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
               </Card>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 order-1 lg:order-2">
               <div className="sticky top-12">
                 <Mascot messageOnly />
-                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-card border border-border">
+                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-card border border-border text-right">
                   <div className="p-6 space-y-4">
-                    <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                      <Trophy size={20} className="text-yellow-500" />
+                    <h3 className="text-lg font-bold text-primary flex items-center justify-end gap-2">
                       مكافأة الإنجاز
+                      <Trophy size={20} className="text-yellow-500" />
                     </h3>
                     <div className="p-4 bg-secondary/30 rounded-2xl space-y-2">
                       <div className="flex justify-between font-bold text-sm">
-                        <span>النقاط الأساسية</span>
                         <span>100</span>
+                        <span>النقاط الأساسية</span>
                       </div>
                       <div className="flex justify-between font-bold text-sm text-accent">
-                        <span>بونص التبكير</span>
                         <span>+{(20 - new Date().getHours()) * 5}</span>
+                        <span>بونص التبكير</span>
                       </div>
                     </div>
                   </div>

@@ -1,22 +1,23 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 276 17% 95%; /* #F2EFF4 */
+    --background: 276 17% 95%;
     --foreground: 231 43% 15%;
     --card: 0 0% 100%;
     --card-foreground: 231 43% 15%;
     --popover: 0 0% 100%;
     --popover-foreground: 231 43% 15%;
-    --primary: 231 43% 42%; /* #3D4A99 */
+    --primary: 231 43% 42%;
     --primary-foreground: 0 0% 98%;
     --secondary: 231 20% 90%;
     --secondary-foreground: 231 43% 15%;
     --muted: 231 20% 90%;
     --muted-foreground: 231 15% 40%;
-    --accent: 281 70% 53%; /* #A833DB */
+    --accent: 281 70% 53%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -24,11 +25,6 @@
     --input: 231 20% 85%;
     --ring: 231 43% 42%;
     --radius: 1rem;
-    --chart-1: 231 43% 42%;
-    --chart-2: 281 70% 53%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
   }
   .dark {
     --background: 231 43% 10%;
@@ -61,4 +57,25 @@
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
+}
+
+/* RTL Calendar Overrides */
+.rtl-calendar .rdp-month {
+  @apply space-y-4 text-right;
+}
+
+.rtl-calendar .rdp-caption_label {
+  @apply font-black;
+}
+
+.rtl-calendar .rdp-nav {
+  @apply flex gap-2;
+}
+
+.rtl-calendar .rdp-head_cell {
+  @apply text-center;
+}
+
+.rtl-calendar .rdp-cell {
+  @apply text-center;
 }

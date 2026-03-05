@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -7,7 +8,7 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BadgeCheck, Trophy, Flame, Calendar, MapPin } from 'lucide-react';
+import { BadgeCheck, Trophy, Flame, Hash, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -15,92 +16,144 @@ export default function ProfilePage() {
   const { database } = useFirebase();
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
-  const { data: profile } = useDatabase(profileRef);
+  const { data: profile, isLoading } = useDatabase(profileRef);
 
-  if (isUserLoading) return <div className="p-10 text-center font-black text-primary">جاري تحميل الملف الشخصي...</div>;
+  if (isUserLoading || isLoading) return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="font-black text-primary">جاري تحميل ملفك الشخصي...</p>
+      </div>
+    </div>
+  );
 
   const userData = profile || {
-    name: user?.displayName || 'عضو Careingo',
+    name: user?.displayName || 'عضو كاري',
     streak: 0,
-    rank: '-',
-    badges: ['عضو جديد']
+    points: 0,
+    registrationRank: '...',
+    badges: ['مستكشف جديد']
   };
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#F8F9FE]">
       <NavSidebar />
-      <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-12 pb-24 md:pb-12">
-        <header className="flex flex-col md:flex-row items-center gap-8 bg-white p-10 rounded-[3rem] shadow-xl border border-border">
-          <div className="relative">
-            <Avatar className="w-40 h-40 border-8 border-secondary shadow-2xl">
+      <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-10 pb-32">
+        {/* رأس الصفحة */}
+        <header className="flex flex-col md:flex-row items-center gap-8 bg-white p-8 md:p-12 rounded-[3rem] shadow-2xl shadow-primary/5 border border-white">
+          <div className="relative group">
+            <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full scale-110 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Avatar className="w-40 h-40 border-8 border-secondary shadow-xl relative">
               <AvatarImage src={user?.photoURL || `https://picsum.photos/seed/${user?.uid}/150/150`} />
-              <AvatarFallback>{userData.name?.substring(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback className="bg-primary text-white text-4xl font-black">
+                {userData.name?.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
-            <div className="absolute bottom-2 right-2 bg-primary text-white p-2 rounded-full shadow-lg border-4 border-white">
-              <BadgeCheck size={20} fill="currentColor" />
+            <div className="absolute -bottom-2 -right-2 bg-accent text-white p-3 rounded-2xl shadow-lg border-4 border-white">
+              <BadgeCheck size={24} fill="currentColor" />
             </div>
           </div>
           
-          <div className="flex-1 text-center md:text-right space-y-2">
-            <h1 className="text-4xl font-black text-primary leading-tight">{userData.name}</h1>
-            <p className="text-muted-foreground text-lg font-medium">عضو متحمس في Careingo • ينمو منذ 2024</p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
-              <div className="flex items-center gap-2 bg-orange-100 text-orange-600 px-4 py-2 rounded-xl font-bold">
-                <Flame size={18} fill="currentColor" /> {userData.streak} يوم متواصل
+          <div className="flex-1 text-center md:text-right space-y-4">
+            <div>
+              <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{userData.name}</h1>
+              <p className="text-muted-foreground text-lg font-medium">عضو في مجتمع كاري للنمو اليومي</p>
+            </div>
+            
+            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+              <div className="flex items-center gap-2 bg-orange-100 text-orange-600 px-5 py-2.5 rounded-2xl font-black shadow-sm">
+                <Flame size={20} fill="currentColor" /> {userData.streak || 0} يوم متواصل
               </div>
-              <div className="flex items-center gap-2 bg-yellow-100 text-yellow-600 px-4 py-2 rounded-xl font-bold">
-                <Trophy size={18} fill="currentColor" /> الترتيب #{userData.rank}
+              <div className="flex items-center gap-2 bg-primary/10 text-primary px-5 py-2.5 rounded-2xl font-black shadow-sm">
+                <Hash size={20} /> العضو رقم {userData.registrationRank || '...'}
               </div>
             </div>
           </div>
 
           <div className="shrink-0 w-full md:w-auto">
             <Link href="/settings">
-              <Button className="w-full md:w-auto rounded-2xl bg-primary hover:bg-primary/90 px-8 py-6 text-lg font-bold shadow-lg shadow-primary/20">
-                تعديل الملف
+              <Button className="w-full md:w-auto rounded-2xl bg-primary hover:bg-primary/90 px-8 py-6 text-lg font-black shadow-xl shadow-primary/20">
+                <SettingsIcon className="ml-2" /> الإعدادات
               </Button>
             </Link>
           </div>
         </header>
 
+        {/* الإحصائيات والإنجازات */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-8">
-            <Card className="border-none shadow-xl rounded-[2.5rem]">
-              <CardHeader className="p-8 pb-0">
-                <CardTitle className="text-2xl font-black text-primary text-right">الإنجازات</CardTitle>
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
+              <CardHeader className="p-8 border-b border-secondary/50">
+                <CardTitle className="text-2xl font-black text-primary flex items-center gap-3">
+                  <Trophy className="text-accent" /> أوسمة الإنجاز
+                </CardTitle>
               </CardHeader>
-              <CardContent className="p-8 pt-6 flex flex-wrap gap-4 justify-end">
-                {userData.badges?.map((badge: string, i: number) => (
-                  <div key={i} className="bg-secondary px-6 py-3 rounded-2xl flex items-center gap-3 group hover:bg-primary hover:text-white transition-all cursor-default shadow-sm">
-                    <div className="w-10 h-10 bg-accent rounded-xl flex items-center justify-center text-white group-hover:bg-white group-hover:text-accent transition-colors">
-                      <Trophy size={20} />
+              <CardContent className="p-8 flex flex-wrap gap-4">
+                {userData.badges?.length > 0 ? userData.badges.map((badge: string, i: number) => (
+                  <div key={i} className="bg-secondary/40 px-6 py-4 rounded-[1.5rem] flex items-center gap-4 group hover:bg-primary hover:text-white transition-all cursor-default shadow-sm">
+                    <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary group-hover:bg-white group-hover:text-primary shadow-sm">
+                      <Trophy size={24} />
                     </div>
-                    <span className="font-bold">{badge}</span>
+                    <span className="font-black text-lg">{badge}</span>
                   </div>
-                ))}
+                )) : (
+                  <p className="text-muted-foreground font-bold italic p-4">لم تحصل على أوسمة بعد. ابدأ مسارك الآن!</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
+              <CardHeader className="p-8 border-b border-secondary/50">
+                <CardTitle className="text-2xl font-black text-primary flex items-center gap-3">
+                  <UserIcon className="text-accent" /> معلومات الحساب
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-8 space-y-4">
+                <div className="flex justify-between items-center p-4 bg-secondary/20 rounded-2xl">
+                  <span className="font-bold text-muted-foreground">تاريخ الانضمام</span>
+                  <span className="font-black text-primary">مارس 2024</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-secondary/20 rounded-2xl">
+                  <span className="font-bold text-muted-foreground">ترتيب التسجيل العالمي</span>
+                  <span className="font-black text-primary">#{userData.registrationRank || '...'}</span>
+                </div>
+                <div className="flex justify-between items-center p-4 bg-secondary/20 rounded-2xl">
+                  <span className="font-bold text-muted-foreground">البريد الإلكتروني</span>
+                  <span className="font-black text-primary">{user?.email}</span>
+                </div>
               </CardContent>
             </Card>
           </div>
 
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white h-fit">
-            <CardHeader className="p-8 pb-4">
-              <CardTitle className="text-2xl font-black text-right">إحصائيات النمو</CardTitle>
-            </CardHeader>
-            <CardContent className="p-8 pt-0 space-y-6">
-              <div className="space-y-2">
-                <div className="flex justify-between font-bold text-sm opacity-80">
+          <div className="space-y-8">
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-accent text-white p-8 space-y-6">
+              <h3 className="text-2xl font-black">قوة النمو</h3>
+              <div className="space-y-3">
+                <div className="flex justify-between font-black text-sm">
                   <span>التقدم الإجمالي</span>
-                  <span>45%</span>
+                  <span>{userData.points ? Math.min(100, Math.floor(userData.points / 100)) : 0}%</span>
                 </div>
-                <div className="w-full bg-white/20 h-3 rounded-full overflow-hidden">
-                  <div className="bg-accent h-full w-[45%]" />
+                <div className="w-full bg-white/20 h-4 rounded-full overflow-hidden border border-white/10">
+                  <div className="bg-white h-full transition-all duration-1000" style={{ width: `${userData.points ? Math.min(100, Math.floor(userData.points / 100)) : 0}%` }} />
                 </div>
               </div>
-              <p className="text-sm font-medium leading-relaxed opacity-90 italic text-right">
-                "خطوات صغيرة كل يوم تؤدي إلى تغييرات كبيرة. أنت أفضل من 65% من الأعضاء هذا الشهر!"
+              <p className="text-lg font-bold leading-relaxed opacity-90">
+                "أنت العضو رقم {userData.registrationRank} في مجتمعنا الصغير، وهذا يعني أنك من الرواد الأوائل الذين يمهدون الطريق للآخرين!"
               </p>
-            </CardContent>
-          </Card>
+            </Card>
+
+            <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white p-8">
+              <div className="flex flex-col items-center text-center space-y-4">
+                <div className="w-20 h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center">
+                  <Flame size={48} fill="currentColor" />
+                </div>
+                <div>
+                  <h4 className="text-3xl font-black">{userData.points?.toLocaleString() || 0}</h4>
+                  <p className="text-sm font-bold opacity-80 uppercase tracking-widest">إجمالي النقاط</p>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

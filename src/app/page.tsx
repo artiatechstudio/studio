@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useEffect } from 'react';
@@ -5,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, set } from 'firebase/database';
+import { ref, set, get, child } from 'firebase/database';
 import { Flame, Trophy, Calendar, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -25,29 +26,37 @@ export default function Home() {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    if (user && !isDataLoading && !userData) {
-      set(userRef!, {
-        name: user.displayName || 'صديق كاري',
-        id: user.uid,
-        points: 0,
-        streak: 0,
-        rank: '-',
-        badges: ['بداية الرحلة'],
-        trackProgress: {
-          Fitness: { currentStage: 1, completedStages: [] },
-          Nutrition: { currentStage: 1, completedStages: [] },
-          Behavior: { currentStage: 1, completedStages: [] },
-          Study: { currentStage: 1, completedStages: [] },
-        }
-      });
-    }
-  }, [user, userData, isDataLoading, userRef]);
+    const initializeUser = async () => {
+      if (user && !isDataLoading && !userData) {
+        // محاولة جلب عدد المستخدمين لتعيين رتبة التسجيل
+        const usersSnap = await get(child(ref(database), 'users'));
+        const userCount = usersSnap.exists() ? Object.keys(usersSnap.val()).length : 0;
+
+        set(userRef!, {
+          name: user.displayName || 'صديق كاري',
+          id: user.uid,
+          points: 0,
+          streak: 0,
+          registrationRank: userCount + 1, // رتبة التسجيل بناءً على العدد الحالي
+          badges: ['بداية الرحلة'],
+          trackProgress: {
+            Fitness: { currentStage: 1, completedStages: [] },
+            Nutrition: { currentStage: 1, completedStages: [] },
+            Behavior: { currentStage: 1, completedStages: [] },
+            Study: { currentStage: 1, completedStages: [] },
+          }
+        });
+      }
+    };
+
+    initializeUser();
+  }, [user, userData, isDataLoading, userRef, database]);
 
   if (isUserLoading || isDataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#F8F9FE]">
+        <div className="flex flex-col items-center gap-6">
+          <div className="w-20 h-20 border-8 border-primary border-t-transparent rounded-[2rem] animate-spin" />
           <div className="text-primary font-black text-2xl animate-pulse">جاري التحميل...</div>
         </div>
       </div>
@@ -60,17 +69,16 @@ export default function Home() {
     name: user?.displayName || 'صديق',
     points: 0,
     streak: 0,
-    rank: '-',
+    registrationRank: '...',
     badges: [],
     trackProgress: {
-      Fitness: { currentStage: 1 },
-      Nutrition: { currentStage: 1 },
-      Behavior: { currentStage: 1 },
-      Study: { currentStage: 1 },
+      Fitness: { currentStage: 1, completedStages: [] },
+      Nutrition: { currentStage: 1, completedStages: [] },
+      Behavior: { currentStage: 1, completedStages: [] },
+      Study: { currentStage: 1, completedStages: [] },
     }
   };
 
-  // حساب النسبة الإجمالية
   const totalStages = 120;
   const completedCount = Object.values(profile.trackProgress || {}).reduce((acc: number, curr: any) => acc + (curr.completedStages?.length || 0), 0);
   const progressPercent = Math.round((completedCount / totalStages) * 100);
@@ -82,47 +90,48 @@ export default function Home() {
       <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10 pb-32">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">أهلاً، {profile.name}!</h1>
-            <p className="text-muted-foreground text-lg font-medium">خطواتك اليوم تحدد مستقبلك. استمر!</p>
+            <h1 className="text-4xl md:text-6xl font-black text-primary leading-tight">أهلاً، {profile.name}!</h1>
+            <p className="text-muted-foreground text-xl font-bold">كل يوم هو خطوة جديدة نحو نسخة أفضل منك. استمر!</p>
           </div>
           
           <div className="flex flex-wrap gap-4">
-            <Card className="flex items-center gap-3 px-5 py-3 rounded-2xl border-none shadow-xl bg-white group hover:scale-105 transition-transform">
-              <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
-                <Flame size={24} fill="currentColor" />
+            <Card className="flex items-center gap-4 px-6 py-4 rounded-[2rem] border-none shadow-2xl shadow-orange-500/10 bg-white group hover:scale-105 transition-all">
+              <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600">
+                <Flame size={28} fill="currentColor" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">السلسلة</p>
-                <p className="text-lg font-black text-orange-600">{profile.streak} يوم</p>
+                <p className="text-xs font-black text-muted-foreground uppercase">السلسلة</p>
+                <p className="text-2xl font-black text-orange-600">{profile.streak} يوم</p>
               </div>
             </Card>
             
-            <Card className="flex items-center gap-3 px-5 py-3 rounded-2xl border-none shadow-xl bg-white group hover:scale-105 transition-transform">
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600">
-                <Star size={24} fill="currentColor" />
+            <Card className="flex items-center gap-4 px-6 py-4 rounded-[2rem] border-none shadow-2xl shadow-yellow-500/10 bg-white group hover:scale-105 transition-all">
+              <div className="w-12 h-12 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600">
+                <Star size={28} fill="currentColor" />
               </div>
               <div>
-                <p className="text-[10px] font-bold text-muted-foreground uppercase">النقاط</p>
-                <p className="text-lg font-black text-yellow-600">{profile.points?.toLocaleString()}</p>
+                <p className="text-xs font-black text-muted-foreground uppercase">النقاط</p>
+                <p className="text-2xl font-black text-yellow-600">{profile.points?.toLocaleString() || 0}</p>
               </div>
             </Card>
           </div>
         </header>
 
-        <section className="bg-primary/5 rounded-[2.5rem] p-6 md:p-10 border border-primary/10">
+        <section className="bg-primary/5 rounded-[3rem] p-8 md:p-12 border border-primary/10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
           <Mascot />
         </section>
 
         <section className="space-y-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-primary">مساراتك الـ 30 يوماً</h2>
-            <div className="hidden md:flex items-center gap-2 text-primary font-bold bg-white px-5 py-2 rounded-full shadow-md border border-border">
-              <Calendar size={18} />
-              <span>{new Date().toLocaleDateString('ar-SA')}</span>
+            <h2 className="text-3xl font-black text-primary">مسارات النمو</h2>
+            <div className="hidden md:flex items-center gap-3 text-primary font-black bg-white px-6 py-3 rounded-full shadow-lg border border-border">
+              <Calendar size={20} />
+              <span>{new Date().toLocaleDateString('ar-SA', { weekday: 'long', day: 'numeric', month: 'long' })}</span>
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
             <TrackCard type="Fitness" currentStage={profile.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
             <TrackCard type="Nutrition" currentStage={profile.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
             <TrackCard type="Behavior" currentStage={profile.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
@@ -130,21 +139,21 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-black/5 space-y-6">
+        <section className="bg-white rounded-[3rem] p-10 shadow-2xl shadow-primary/5 space-y-8 border border-white">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-primary flex items-center gap-3">
-              <Trophy className="text-accent" />
-              تقدمك الإجمالي
+            <h2 className="text-3xl font-black text-primary flex items-center gap-4">
+              <Trophy className="text-accent w-10 h-10" />
+              مستوى التقدم الإجمالي
             </h2>
-            <span className="bg-accent/10 text-accent px-4 py-1 rounded-full font-black">{progressPercent}%</span>
+            <div className="bg-accent/10 text-accent px-6 py-2 rounded-full font-black text-xl">{progressPercent}%</div>
           </div>
-          <div className="w-full bg-secondary h-4 rounded-full overflow-hidden">
+          <div className="w-full bg-secondary h-6 rounded-full overflow-hidden border-4 border-secondary shadow-inner">
             <div 
-              className="bg-accent h-full transition-all duration-1000" 
+              className="bg-accent h-full transition-all duration-1000 ease-out rounded-full shadow-lg shadow-accent/20" 
               style={{ width: `${progressPercent}%` }}
             />
           </div>
-          <p className="text-muted-foreground font-medium text-center">أتممت {completedCount} من أصل {totalStages} مهمة في جميع المسارات.</p>
+          <p className="text-muted-foreground font-bold text-center text-lg">أتممت {completedCount} من أصل {totalStages} مهمة في جميع المسارات. استمر في التألق!</p>
         </section>
       </div>
     </div>

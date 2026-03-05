@@ -1,22 +1,24 @@
 
 "use client"
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Trophy, UserPlus } from 'lucide-react';
+import { Flame, Star, Trophy } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { aiHelperContextualResponse } from '@/ai/flows/ai-helper-contextual-response';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
   const router = useRouter();
+  const [aiMessage, setAiMessage] = useState<string>("");
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
@@ -26,6 +28,31 @@ export default function Home() {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    async function fetchAiMessage() {
+      if (userData && user) {
+        try {
+          // جلب مسار نشط عشوائي للتحفيز
+          const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
+          const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
+          const trackProgress = userData.trackProgress?.[randomTrack] || { currentStage: 1 };
+          
+          const response = await aiHelperContextualResponse({
+            userName: userData.name || "صديقي",
+            currentTrack: randomTrack as any,
+            currentStage: trackProgress.currentStage || 1,
+            isCompletedToday: userData.lastActiveDate === new Date().toISOString().split('T')[0],
+            completionStreak: userData.streak || 0
+          });
+          setAiMessage(response.message);
+        } catch (e) {
+          console.error("AI Error:", e);
+        }
+      }
+    }
+    if (userData) fetchAiMessage();
+  }, [userData, user]);
 
   if (isUserLoading || (user && isDataLoading)) {
     return (
@@ -40,7 +67,6 @@ export default function Home() {
 
   if (!user) return null;
 
-  // معالجة حالة وجود مستخدم في Auth ولكن ليس له بيانات في الداتا بيس
   if (!isDataLoading && !userData) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background p-6 text-center">
@@ -95,7 +121,7 @@ export default function Home() {
         </header>
 
         <section className="bg-primary/5 dark:bg-primary/10 rounded-[2.5rem] p-6 md:p-10 border border-primary/10">
-          <Mascot />
+          <Mascot customMessage={aiMessage} />
         </section>
 
         <section className="space-y-8">

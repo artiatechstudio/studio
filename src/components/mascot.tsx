@@ -15,15 +15,20 @@ const MESSAGES = [
 
 interface MascotProps {
   messageOnly?: boolean;
+  customMessage?: string;
 }
 
-export function Mascot({ messageOnly = false }: MascotProps) {
+export function Mascot({ messageOnly = false, customMessage }: MascotProps) {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
-    const randomIdx = Math.floor(Math.random() * MESSAGES.length);
-    setMessage(MESSAGES[randomIdx]);
-  }, []);
+    if (customMessage) {
+      setMessage(customMessage);
+    } else {
+      const randomIdx = Math.floor(Math.random() * MESSAGES.length);
+      setMessage(MESSAGES[randomIdx]);
+    }
+  }, [customMessage]);
 
   if (messageOnly) {
     return (

@@ -52,9 +52,11 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
       const now = new Date();
       const today = now.toISOString().split('T')[0];
-      const yesterday = new Date(now.getTime() - 86400000).toISOString().split('T')[0];
-      const hour = now.getHours();
+      const yesterdayDate = new Date(now);
+      yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+      const yesterday = yesterdayDate.toISOString().split('T')[0];
       
+      const hour = now.getHours();
       const basePoints = 100;
       const earlyBonus = Math.max(0, (20 - hour) * 5); 
       const pointsEarned = basePoints + earlyBonus;
@@ -66,22 +68,24 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const userSnap = await get(userRef);
       const userData = userSnap.val();
 
-      // منطق الحماسة (السلسلة) - يعتمد على الأيام
+      // منطق الحماسة (السلسلة) - إصلاح جذري
       let newStreak = userData.streak || 0;
       const lastActiveDate = userData.lastActiveDate;
 
-      if (lastActiveDate !== today) {
+      if (!lastActiveDate) {
+        newStreak = 1;
+      } else if (lastActiveDate !== today) {
         if (lastActiveDate === yesterday) {
           newStreak += 1;
-        } else if (!lastActiveDate || lastActiveDate < yesterday) {
+        } else {
           newStreak = 1;
         }
       }
+      // إذا كان lastActiveDate === today، يبقى الـ streak كما هو دون تغيير
 
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[today] || 0) + pointsEarned;
 
-      // تحديث كل البيانات في قاعدة البيانات
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
         streak: newStreak,

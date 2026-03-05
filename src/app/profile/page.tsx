@@ -38,6 +38,15 @@ export default function ProfilePage() {
 
   const userData = profile || {};
 
+  // حساب الرتبة بناءً على النقاط
+  const getRankName = (points: number = 0) => {
+    if (points >= 10000) return "أسطورة كاري 👑";
+    if (points >= 5000) return "بطل متميز 🏅";
+    if (points >= 2000) return "مكافح محترف 🔥";
+    if (points >= 500) return "عضو نشط 🐱";
+    return "مبتدئ طموح 🌱";
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-32" dir="rtl">
       <NavSidebar />
@@ -57,7 +66,7 @@ export default function ProfilePage() {
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
               <span className="bg-secondary px-4 py-1 rounded-full text-xs font-black text-muted-foreground">العضو رقم {userData.id?.substring(0, 6)}</span>
             </div>
-            <p className="text-muted-foreground font-bold text-lg italic">رفيق "كاري" المتميز 🐱</p>
+            <p className="text-muted-foreground font-bold text-lg italic">{getRankName(userData.points)}</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
               <div className="bg-primary/10 text-primary dark:bg-primary/20 px-4 py-2 rounded-xl font-black flex items-center gap-2 border border-primary/10">
                 <Calendar size={18} /> {userData.age || '--'} سنة

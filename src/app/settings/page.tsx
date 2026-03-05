@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Ruler, Weight, Calendar } from 'lucide-react';
+import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon } from 'lucide-react';
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -72,9 +72,13 @@ export default function SettingsPage() {
   };
 
   const handleLogout = async () => {
-    await signOut(auth);
-    router.push('/login');
-    toast({ title: "تم تسجيل الخروج" });
+    try {
+      await signOut(auth);
+      router.push('/login');
+      toast({ title: "تم تسجيل الخروج" });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleDeleteAccount = async () => {
@@ -82,18 +86,18 @@ export default function SettingsPage() {
     
     try {
       const uid = user.uid;
-      // 1. حذف البيانات من الداتابيس
+      // 1. مسح البيانات من الداتابيس أولاً
       await remove(ref(database, `users/${uid}`));
-      // 2. حذف المستخدم من الأوث
+      // 2. حذف المستخدم من نظام الأوث
       await deleteUser(user);
       
-      toast({ title: "تم حذف الحساب" });
+      toast({ title: "تم حذف الحساب نهائياً" });
       router.push('/login');
     } catch (e: any) {
       toast({ 
         variant: "destructive", 
         title: "خطأ في الحذف", 
-        description: "يرجى إعادة تسجيل الدخول للتحقق من هويتك قبل حذف الحساب." 
+        description: "يرجى تسجيل الخروج والدخول مرة أخرى للتحقق من هويتك قبل الحذف." 
       });
     }
   };
@@ -114,25 +118,25 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden">
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
           <CardHeader className="bg-primary/5 p-8 border-b border-border">
             <CardTitle className="text-xl font-black text-primary flex items-center gap-3">
-              <UserIcon /> تعديل الملف الشخصي
+              <UserIcon /> تعديل المعلومات الشخصية
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label>الاسم</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12" />
+              <Label>الاسم الكامل</Label>
+              <Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
             </div>
             <div className="space-y-2">
               <Label>العمر</Label>
-              <Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12" />
+              <Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
             </div>
             <div className="space-y-2">
               <Label>الجنس</Label>
               <Select onValueChange={setGender} value={gender}>
-                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12">
+                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -143,49 +147,51 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>الطول (سم)</Label>
-              <Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12" />
+              <Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
             </div>
             <div className="space-y-2">
               <Label>الوزن (كجم)</Label>
-              <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12" />
+              <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
             </div>
             <Button 
               onClick={handleUpdateProfile} 
               disabled={saving}
-              className="col-span-1 md:col-span-2 h-12 rounded-xl bg-primary font-black mt-4"
+              className="col-span-1 md:col-span-2 h-14 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-black shadow-lg shadow-primary/20 mt-4"
             >
-              <Save size={18} className="ml-2" /> {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
+              <Save size={20} className="ml-2" /> {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 space-y-6">
-          <div className="flex items-center justify-between p-4 bg-secondary/20 rounded-2xl">
-            <div className="flex items-center gap-3">
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 space-y-6 border border-border">
+          <div className="flex items-center justify-between p-6 bg-secondary/20 rounded-3xl border border-border">
+            <div className="flex items-center gap-4">
               {isDark ? <Moon className="text-accent" /> : <Sun className="text-yellow-500" />}
               <div>
-                <p className="font-black text-primary">الوضع الليلي</p>
-                <p className="text-sm text-muted-foreground font-bold">التبديل بين المظهر الفاتح والمظلم</p>
+                <p className="font-black text-primary">المظهر الداكن</p>
+                <p className="text-xs text-muted-foreground font-bold">تغيير واجهة التطبيق للوضع الليلي</p>
               </div>
             </div>
             <Switch checked={isDark} onCheckedChange={toggleTheme} />
           </div>
 
-          <Button 
-            onClick={handleLogout} 
-            variant="outline" 
-            className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5"
-          >
-            <LogOut size={20} className="ml-2" /> تسجيل الخروج
-          </Button>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <Button 
+              onClick={handleLogout} 
+              variant="outline" 
+              className="h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5 text-lg"
+            >
+              <LogOut size={20} className="ml-2" /> تسجيل الخروج
+            </Button>
 
-          <Button 
-            onClick={handleDeleteAccount} 
-            variant="ghost" 
-            className="w-full h-14 rounded-2xl text-destructive hover:bg-destructive/10 font-black"
-          >
-            <Trash2 size={20} className="ml-2" /> حذف الحساب نهائياً
-          </Button>
+            <Button 
+              onClick={handleDeleteAccount} 
+              variant="ghost" 
+              className="h-14 rounded-2xl text-destructive hover:bg-destructive/10 font-black text-lg"
+            >
+              <Trash2 size={20} className="ml-2" /> حذف الحساب
+            </Button>
+          </div>
         </Card>
       </div>
     </div>

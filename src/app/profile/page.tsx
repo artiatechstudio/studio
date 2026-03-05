@@ -8,7 +8,7 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BadgeCheck, Trophy, Flame, User as UserIcon, Settings as SettingsIcon, Ruler, Weight } from 'lucide-react';
+import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -18,7 +18,13 @@ export default function ProfilePage() {
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
 
-  if (isUserLoading || isLoading) return null;
+  if (isUserLoading || isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
+      </div>
+    );
+  }
 
   const userData = profile || {};
 
@@ -40,54 +46,65 @@ export default function ProfilePage() {
           </div>
           
           <div className="flex-1 text-center md:text-right space-y-3">
-            <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
-            <p className="text-muted-foreground font-bold text-lg">أهلاً بك في رحلة الـ 120 يوماً 🐱</p>
+            <div className="flex flex-col md:flex-row items-center gap-3">
+              <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
+              <span className="bg-secondary px-4 py-1 rounded-full text-xs font-black text-muted-foreground">العضو رقم {userData.id?.substring(0, 6)}</span>
+            </div>
+            <p className="text-muted-foreground font-bold text-lg italic">رفيق "كاري" المتميز 🐱</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
-              <div className="bg-primary/10 text-primary px-4 py-2 rounded-xl font-black flex items-center gap-2">
-                <Calendar size={18} /> {userData.age} سنة
+              <div className="bg-primary/10 text-primary dark:bg-primary/20 px-4 py-2 rounded-xl font-black flex items-center gap-2 border border-primary/10">
+                <Calendar size={18} /> {userData.age || '--'} سنة
               </div>
-              <div className="bg-accent/10 text-accent px-4 py-2 rounded-xl font-black flex items-center gap-2">
-                <Ruler size={18} /> {userData.height} سم
+              <div className="bg-accent/10 text-accent dark:bg-accent/20 px-4 py-2 rounded-xl font-black flex items-center gap-2 border border-accent/10">
+                <Ruler size={18} /> {userData.height || '--'} سم
               </div>
-              <div className="bg-orange-100 text-orange-600 dark:bg-orange-900/30 px-4 py-2 rounded-xl font-black flex items-center gap-2">
-                <Weight size={18} /> {userData.weight} كجم
+              <div className="bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 px-4 py-2 rounded-xl font-black flex items-center gap-2 border border-orange-200 dark:border-orange-800">
+                <Weight size={18} /> {userData.weight || '--'} كجم
               </div>
             </div>
           </div>
 
           <Link href="/settings">
-            <Button variant="outline" className="rounded-2xl border-2 border-primary text-primary font-black px-6 py-6 h-auto">
+            <Button variant="outline" className="rounded-2xl border-2 border-primary text-primary font-black px-6 py-6 h-auto hover:bg-primary/5 transition-all">
               <SettingsIcon className="ml-2" /> الإعدادات
             </Button>
           </Link>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="md:col-span-2 border-none shadow-xl rounded-[2.5rem] bg-card p-8">
+          <Card className="md:col-span-2 border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border">
             <CardHeader className="p-0 mb-6">
               <CardTitle className="text-2xl font-black text-primary flex items-center gap-3">
-                <Trophy className="text-accent" /> الأوسمة والإنجازات
+                <Trophy className="text-accent" /> الأوسمة المكتسبة
               </CardTitle>
             </CardHeader>
             <div className="flex flex-wrap gap-4">
-              {userData.badges?.map((badge: string, i: number) => (
-                <div key={i} className="bg-secondary/40 px-6 py-3 rounded-2xl font-black text-primary shadow-sm hover:bg-primary hover:text-white transition-all cursor-default">
+              {userData.badges && userData.badges.length > 0 ? userData.badges.map((badge: string, i: number) => (
+                <div key={i} className="bg-secondary/40 dark:bg-secondary/20 px-6 py-3 rounded-2xl font-black text-primary dark:text-primary-foreground shadow-sm hover:scale-105 transition-all cursor-default border border-border">
                   {badge}
                 </div>
-              ))}
+              )) : (
+                <p className="text-muted-foreground font-bold italic">لم تكتسب أوسمة بعد، استمر في التقدم! 🔥</p>
+              )}
             </div>
           </Card>
 
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white p-8 flex flex-col items-center justify-center text-center gap-4">
-            <div className="text-6xl">🐱</div>
+          <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white p-8 flex flex-col items-center justify-center text-center gap-4 relative overflow-hidden group">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
+              <Trophy size={80} />
+            </div>
+            <div className="text-6xl animate-bounce">🐱</div>
             <div>
               <p className="text-4xl font-black">{userData.points || 0}</p>
-              <p className="font-bold opacity-80 uppercase tracking-widest text-xs mt-1">إجمالي النقاط</p>
+              <p className="font-bold opacity-80 uppercase tracking-widest text-[10px] mt-1">إجمالي النقاط</p>
             </div>
             <div className="w-full h-px bg-white/20" />
-            <div>
-              <p className="text-3xl font-black">{userData.streak || 0} يوم</p>
-              <p className="font-bold opacity-80 text-xs mt-1">سلسلة الحماسة</p>
+            <div className="flex items-center gap-3">
+              <Flame size={28} className="text-orange-300" fill="currentColor" />
+              <div>
+                <p className="text-3xl font-black">{userData.streak || 0} يوم</p>
+                <p className="font-bold opacity-80 text-[10px] mt-1">سلسلة الإنجاز</p>
+              </div>
             </div>
           </Card>
         </div>

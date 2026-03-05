@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useEffect } from 'react';
@@ -28,11 +27,11 @@ export default function Home() {
   useEffect(() => {
     if (user && !isDataLoading && !userData) {
       set(userRef!, {
-        name: user.displayName || 'Friend',
+        name: user.displayName || 'صديق Careingo',
         id: user.uid,
         streak: 0,
         rank: 9999,
-        badges: ['New Joiner'],
+        badges: ['عضو جديد'],
         trackProgress: {
           Fitness: { currentStage: 1, completedStages: [] },
           Nutrition: { currentStage: 1, completedStages: [] },
@@ -48,7 +47,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <div className="text-primary font-black text-2xl animate-pulse">Careingo is waking up...</div>
+          <div className="text-primary font-black text-2xl animate-pulse italic">Careingo يستعد...</div>
         </div>
       </div>
     );
@@ -57,7 +56,7 @@ export default function Home() {
   if (!user) return null;
 
   const profile = userData || {
-    name: user?.displayName || 'Friend',
+    name: user?.displayName || 'صديق',
     streak: 0,
     rank: '-',
     badges: [],
@@ -73,11 +72,11 @@ export default function Home() {
     <div className="min-h-screen">
       <NavSidebar />
       
-      <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-12">
+      <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">Hey, {profile.name}!</h1>
-            <p className="text-muted-foreground text-lg font-medium">Ready to make some progress today?</p>
+            <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">أهلاً، {profile.name}!</h1>
+            <p className="text-muted-foreground text-lg font-medium">هل أنت مستعد لإحراز تقدم اليوم؟</p>
           </div>
           
           <div className="flex gap-4">
@@ -86,8 +85,8 @@ export default function Home() {
                 <Flame size={24} fill="currentColor" />
               </div>
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Streak</p>
-                <p className="text-xl font-black text-orange-600">{profile.streak} Days</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">السلسلة</p>
+                <p className="text-xl font-black text-orange-600">{profile.streak} يوم</p>
               </div>
             </Card>
             
@@ -96,23 +95,23 @@ export default function Home() {
                 <Trophy size={24} fill="currentColor" />
               </div>
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Rank</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">الترتيب</p>
                 <p className="text-xl font-black text-yellow-600">#{profile.rank}</p>
               </div>
             </Card>
           </div>
         </header>
 
-        <section className="bg-secondary/30 rounded-[3.5rem] p-8 md:p-12 border border-border/50">
+        <section className="bg-secondary/30 rounded-[3rem] p-6 md:p-10 border border-border/50">
           <Mascot currentTrack="Fitness" />
         </section>
 
         <section className="space-y-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-primary">Your Tracks</h2>
+            <h2 className="text-3xl font-black text-primary">مساراتك</h2>
             <div className="flex items-center gap-2 text-primary font-bold bg-white px-5 py-2 rounded-full shadow-md border border-border">
               <Calendar size={18} />
-              <span>{new Date().toLocaleDateString()}</span>
+              <span>{new Date().toLocaleDateString('ar-SA')}</span>
             </div>
           </div>
           
@@ -127,7 +126,7 @@ export default function Home() {
         <section className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl shadow-black/5 space-y-8 border border-border/50">
           <h2 className="text-2xl font-black text-primary flex items-center gap-3">
             <Trophy className="text-accent" />
-            Recent Achievements
+            الإنجازات الأخيرة
           </h2>
           <div className="flex flex-wrap gap-4">
             {profile.badges && profile.badges.map((badge: string, i: number) => (
@@ -139,7 +138,7 @@ export default function Home() {
               </div>
             ))}
             <div className="bg-secondary/50 border-2 border-dashed border-border px-6 py-4 rounded-2xl flex items-center gap-3 text-muted-foreground italic font-medium">
-              <span>Next Milestone Awaits!</span>
+              <span>الإنجاز القادم بانتظارك!</span>
             </div>
           </div>
         </section>

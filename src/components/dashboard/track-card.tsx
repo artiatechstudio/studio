@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Dumbbell, Apple, Brain, BookOpen, ChevronRight } from "lucide-react";
+import { Dumbbell, Apple, Brain, BookOpen, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TrackType } from '@/lib/mock-data';
 
@@ -12,6 +12,20 @@ const icons = {
   Nutrition: Apple,
   Behavior: Brain,
   Study: BookOpen
+};
+
+const labels: Record<TrackType, string> = {
+  Fitness: 'اللياقة',
+  Nutrition: 'التغذية',
+  Behavior: 'السلوك',
+  Study: 'الدراسة'
+};
+
+const descriptions: Record<TrackType, string> = {
+  Fitness: 'قوِّ جسدك بتمارين يومية مخصصة.',
+  Nutrition: 'وقود أفضل لحياة أكثر صحة ونشاطاً.',
+  Behavior: 'أدوات نفسية وعادات يومية للنجاح.',
+  Study: 'أطر تعليمية وخطوات لإتقان المعرفة.'
 };
 
 interface TrackCardProps {
@@ -36,22 +50,19 @@ export function TrackCard({ type, currentStage, totalStages }: TrackCardProps) {
               <Icon size={28} />
             </div>
             <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
-              <ChevronRight size={18} />
+              <ChevronLeft size={18} />
             </div>
           </div>
           
-          <h3 className="text-xl font-bold text-primary mb-2">{type}</h3>
+          <h3 className="text-xl font-bold text-primary mb-2">{labels[type]}</h3>
           <p className="text-muted-foreground text-sm line-clamp-2 mb-6 flex-grow">
-            {type === 'Fitness' && 'Master your body with routines and strength training.'}
-            {type === 'Nutrition' && 'Optimized fuel for a healthier, more energetic you.'}
-            {type === 'Behavior' && 'Psychological tools and daily habits for success.'}
-            {type === 'Study' && 'Learning frameworks and cognitive mastery steps.'}
+            {descriptions[type]}
           </p>
 
           <div className="space-y-2 mt-auto">
             <div className="flex justify-between items-end">
-              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Progress</span>
-              <span className="text-sm font-black text-primary">{currentStage}/{totalStages} Stages</span>
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">التقدم</span>
+              <span className="text-sm font-black text-primary">{currentStage}/{totalStages} مرحلة</span>
             </div>
             <Progress value={progressPercent} className="h-3 bg-secondary rounded-full" />
           </div>

@@ -7,9 +7,11 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Trophy } from 'lucide-react';
+import { Flame, Star, Trophy, UserPlus } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -25,7 +27,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || isDataLoading) {
+  if (isUserLoading || (user && isDataLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6">
@@ -36,11 +38,20 @@ export default function Home() {
     );
   }
 
-  // إذا لم يكن هناك مستخدم، التوجيه يتم عبر useEffect، هنا نعرض حالة انتظار بسيطة
-  if (!user || !userData) {
+  if (!user) return null;
+
+  // معالجة حالة وجود مستخدم في Auth ولكن ليس له بيانات في الداتا بيس
+  if (!isDataLoading && !userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 text-center">
+        <div className="max-w-md space-y-6">
+          <div className="text-8xl animate-bounce">🐱</div>
+          <h1 className="text-3xl font-black text-primary">أهلاً بك! يبدو أنك جديد هنا</h1>
+          <p className="text-muted-foreground font-bold text-lg">تحتاج لإكمال ملفك الشخصي لنبدأ رحلة النمو معاً.</p>
+          <Link href="/register">
+            <Button className="w-full h-14 rounded-2xl bg-accent text-xl font-black shadow-lg">إكمال البيانات 🐱</Button>
+          </Link>
+        </div>
       </div>
     );
   }

@@ -109,7 +109,13 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-32" dir="rtl">

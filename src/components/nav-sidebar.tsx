@@ -25,7 +25,7 @@ export function NavSidebar() {
   const handleLogout = async () => {
     await signOut(auth);
     toast({ title: "تم تسجيل الخروج", description: "نراك قريباً!" });
-    router.push('/login');
+    router.replace('/login');
   };
 
   return (
@@ -34,7 +34,7 @@ export function NavSidebar() {
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-card border-l border-border z-40 p-6 shadow-2xl">
         <div className="flex items-center gap-3 mb-12" dir="rtl">
           <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">🐱</div>
-          <span className="text-3xl font-black text-primary tracking-tighter">Careingo</span>
+          <span className="text-3xl font-black text-primary tracking-tighter">كارينجو</span>
         </div>
 
         <nav className="flex-1 space-y-3" dir="rtl">

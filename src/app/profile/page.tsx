@@ -8,8 +8,9 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BadgeCheck, Trophy, Flame, Hash, Settings as SettingsIcon, User as UserIcon } from 'lucide-react';
+import { BadgeCheck, Trophy, Flame, Hash, Settings as SettingsIcon, User as UserIcon, Share2 } from 'lucide-react';
 import Link from 'next/link';
+import { toast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -17,6 +18,25 @@ export default function ProfilePage() {
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
+
+  const handleShare = async () => {
+    const shareData = {
+      title: 'كارينجو | رفيقك للنمو',
+      text: 'انضم إلي في رحلة الـ 30 يوماً للتطوير الشخصي على منصة كارينجو!',
+      url: window.location.origin,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.origin);
+        toast({ title: "تم نسخ الرابط!", description: "يمكنك الآن إرساله لأصدقائك." });
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (isUserLoading || isLoading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -70,9 +90,12 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="shrink-0 w-full md:w-auto">
+          <div className="shrink-0 w-full md:w-auto flex flex-col gap-3">
+            <Button onClick={handleShare} className="w-full md:w-auto rounded-2xl bg-accent hover:bg-accent/90 px-8 py-6 text-lg font-black shadow-xl shadow-accent/20">
+              <Share2 className="ml-2" /> شارك مع أصدقائك
+            </Button>
             <Link href="/settings">
-              <Button className="w-full md:w-auto rounded-2xl bg-primary hover:bg-primary/90 px-8 py-6 text-lg font-black shadow-xl shadow-primary/20">
+              <Button variant="outline" className="w-full md:w-auto rounded-2xl border-primary text-primary hover:bg-primary/5 px-8 py-6 text-lg font-black">
                 <SettingsIcon className="ml-2" /> الإعدادات
               </Button>
             </Link>
@@ -101,52 +124,19 @@ export default function ProfilePage() {
                 )}
               </CardContent>
             </Card>
-
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-white overflow-hidden">
-              <CardHeader className="p-8 border-b border-secondary/50">
-                <CardTitle className="text-2xl font-black text-primary flex items-center gap-3">
-                  <UserIcon className="text-accent" /> معلومات الحساب
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-8 space-y-4">
-                <div className="flex justify-between items-center p-4 bg-secondary/20 rounded-2xl">
-                  <span className="font-bold text-muted-foreground">تاريخ الانضمام</span>
-                  <span className="font-black text-primary">مارس 2024</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-secondary/20 rounded-2xl">
-                  <span className="font-bold text-muted-foreground">ترتيب التسجيل العالمي</span>
-                  <span className="font-black text-primary">#{userData.registrationRank || '...'}</span>
-                </div>
-                <div className="flex justify-between items-center p-4 bg-secondary/20 rounded-2xl">
-                  <span className="font-bold text-muted-foreground">البريد الإلكتروني</span>
-                  <span className="font-black text-primary">{user?.email}</span>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           <div className="space-y-8">
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-accent text-white p-8 space-y-6">
               <h3 className="text-2xl font-black">قوة النمو</h3>
-              <div className="space-y-3">
-                <div className="flex justify-between font-black text-sm">
-                  <span>التقدم الإجمالي</span>
-                  <span>{userData.points ? Math.min(100, Math.floor(userData.points / 100)) : 0}%</span>
-                </div>
-                <div className="w-full bg-white/20 h-4 rounded-full overflow-hidden border border-white/10">
-                  <div className="bg-white h-full transition-all duration-1000" style={{ width: `${userData.points ? Math.min(100, Math.floor(userData.points / 100)) : 0}%` }} />
-                </div>
-              </div>
               <p className="text-lg font-bold leading-relaxed opacity-90">
-                "أنت العضو رقم {userData.registrationRank} في مجتمعنا الصغير، وهذا يعني أنك من الرواد الأوائل الذين يمهدون الطريق للآخرين!"
+                "أنت العضو رقم {userData.registrationRank} في مجتمعنا، شارك نجاحك مع أصدقائك لنتطور سوياً!"
               </p>
             </Card>
 
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white p-8">
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="w-20 h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center">
-                  <Flame size={48} fill="currentColor" />
-                </div>
+                <div className="text-5xl">🐱</div>
                 <div>
                   <h4 className="text-3xl font-black">{userData.points?.toLocaleString() || 0}</h4>
                   <p className="text-sm font-bold opacity-80 uppercase tracking-widest">إجمالي النقاط</p>

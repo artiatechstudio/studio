@@ -6,7 +6,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, set } from 'firebase/database';
-import { Flame, Trophy, Calendar } from 'lucide-react';
+import { Flame, Trophy, Calendar, Star } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 
@@ -15,7 +15,6 @@ export default function Home() {
   const { database } = useFirebase();
   const router = useRouter();
   
-  // تثبيت المرجع لتجنب الـ Infinite Loop
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
 
@@ -28,11 +27,12 @@ export default function Home() {
   useEffect(() => {
     if (user && !isDataLoading && !userData) {
       set(userRef!, {
-        name: user.displayName || 'صديق Careingo',
+        name: user.displayName || 'صديق كاري',
         id: user.uid,
+        points: 0,
         streak: 0,
-        rank: 9999,
-        badges: ['عضو جديد'],
+        rank: '-',
+        badges: ['بداية الرحلة'],
         trackProgress: {
           Fitness: { currentStage: 1, completedStages: [] },
           Nutrition: { currentStage: 1, completedStages: [] },
@@ -48,7 +48,7 @@ export default function Home() {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <div className="text-primary font-black text-2xl animate-pulse italic">جاري التحميل...</div>
+          <div className="text-primary font-black text-2xl animate-pulse">جاري التحميل...</div>
         </div>
       </div>
     );
@@ -58,6 +58,7 @@ export default function Home() {
 
   const profile = userData || {
     name: user?.displayName || 'صديق',
+    points: 0,
     streak: 0,
     rank: '-',
     badges: [],
@@ -69,48 +70,53 @@ export default function Home() {
     }
   };
 
+  // حساب النسبة الإجمالية
+  const totalStages = 120;
+  const completedCount = Object.values(profile.trackProgress || {}).reduce((acc: number, curr: any) => acc + (curr.completedStages?.length || 0), 0);
+  const progressPercent = Math.round((completedCount / totalStages) * 100);
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#F8F9FE]">
       <NavSidebar />
       
-      <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10">
+      <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10 pb-32">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
             <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">أهلاً، {profile.name}!</h1>
-            <p className="text-muted-foreground text-lg font-medium">هل أنت مستعد لإحراز تقدم اليوم؟</p>
+            <p className="text-muted-foreground text-lg font-medium">خطواتك اليوم تحدد مستقبلك. استمر!</p>
           </div>
           
-          <div className="flex gap-4">
-            <Card className="flex items-center gap-3 px-5 py-3 rounded-2xl border-none shadow-lg bg-white group hover:scale-105 transition-transform">
+          <div className="flex flex-wrap gap-4">
+            <Card className="flex items-center gap-3 px-5 py-3 rounded-2xl border-none shadow-xl bg-white group hover:scale-105 transition-transform">
               <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center text-orange-600">
                 <Flame size={24} fill="currentColor" />
               </div>
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">السلسلة</p>
-                <p className="text-xl font-black text-orange-600">{profile.streak} يوم</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">السلسلة</p>
+                <p className="text-lg font-black text-orange-600">{profile.streak} يوم</p>
               </div>
             </Card>
             
-            <Card className="flex items-center gap-3 px-5 py-3 rounded-2xl border-none shadow-lg bg-white group hover:scale-105 transition-transform">
+            <Card className="flex items-center gap-3 px-5 py-3 rounded-2xl border-none shadow-xl bg-white group hover:scale-105 transition-transform">
               <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center text-yellow-600">
-                <Trophy size={24} fill="currentColor" />
+                <Star size={24} fill="currentColor" />
               </div>
               <div>
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">الترتيب</p>
-                <p className="text-xl font-black text-yellow-600">#{profile.rank}</p>
+                <p className="text-[10px] font-bold text-muted-foreground uppercase">النقاط</p>
+                <p className="text-lg font-black text-yellow-600">{profile.points?.toLocaleString()}</p>
               </div>
             </Card>
           </div>
         </header>
 
-        <section className="bg-secondary/30 rounded-[3rem] p-6 md:p-10 border border-border/50">
-          <Mascot currentTrack="Fitness" />
+        <section className="bg-primary/5 rounded-[2.5rem] p-6 md:p-10 border border-primary/10">
+          <Mascot />
         </section>
 
-        <section className="space-y-8 pb-20 md:pb-0">
+        <section className="space-y-8">
           <div className="flex items-center justify-between">
-            <h2 className="text-3xl font-black text-primary">مساراتك</h2>
-            <div className="flex items-center gap-2 text-primary font-bold bg-white px-5 py-2 rounded-full shadow-md border border-border">
+            <h2 className="text-3xl font-black text-primary">مساراتك الـ 30 يوماً</h2>
+            <div className="hidden md:flex items-center gap-2 text-primary font-bold bg-white px-5 py-2 rounded-full shadow-md border border-border">
               <Calendar size={18} />
               <span>{new Date().toLocaleDateString('ar-SA')}</span>
             </div>
@@ -124,21 +130,21 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl shadow-black/5 space-y-8 border border-border/50">
-          <h2 className="text-2xl font-black text-primary flex items-center gap-3">
-            <Trophy className="text-accent" />
-            الإنجازات الأخيرة
-          </h2>
-          <div className="flex flex-wrap gap-4">
-            {profile.badges && profile.badges.map((badge: string, i: number) => (
-              <div key={i} className="bg-secondary px-6 py-4 rounded-2xl flex items-center gap-3 hover:bg-primary hover:text-white transition-all shadow-sm">
-                <div className="w-8 h-8 bg-accent rounded-lg flex items-center justify-center text-white font-bold">
-                  <Trophy size={16} />
-                </div>
-                <span className="font-bold">{badge}</span>
-              </div>
-            ))}
+        <section className="bg-white rounded-[2.5rem] p-8 shadow-2xl shadow-black/5 space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black text-primary flex items-center gap-3">
+              <Trophy className="text-accent" />
+              تقدمك الإجمالي
+            </h2>
+            <span className="bg-accent/10 text-accent px-4 py-1 rounded-full font-black">{progressPercent}%</span>
           </div>
+          <div className="w-full bg-secondary h-4 rounded-full overflow-hidden">
+            <div 
+              className="bg-accent h-full transition-all duration-1000" 
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+          <p className="text-muted-foreground font-medium text-center">أتممت {completedCount} من أصل {totalStages} مهمة في جميع المسارات.</p>
         </section>
       </div>
     </div>

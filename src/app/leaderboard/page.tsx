@@ -5,87 +5,80 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Medal, Star, Flame } from "lucide-react";
-
-const MOCK_LEADERBOARD = [
-  { id: 1, name: 'Sarah Miller', score: 4500, avatar: 'https://picsum.photos/seed/user1/100/100', streak: 12 },
-  { id: 2, name: 'John Doe', score: 4200, avatar: 'https://picsum.photos/seed/user2/100/100', streak: 25 },
-  { id: 3, name: 'Chris Evans', score: 3900, avatar: 'https://picsum.photos/seed/user3/100/100', streak: 8 },
-  { id: 4, name: 'Emma Wilson', score: 3600, avatar: 'https://picsum.photos/seed/user4/100/100', streak: 15 },
-  { id: 5, name: 'Alex Rivera (You)', score: 3450, avatar: 'https://picsum.photos/seed/user123/100/100', streak: 5 },
-  { id: 6, name: 'Liam Neeson', score: 3100, avatar: 'https://picsum.photos/seed/user6/100/100', streak: 4 },
-];
+import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
+import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 
 export default function LeaderboardPage() {
+  const { database } = useFirebase();
+  
+  // جلب أفضل 50 مستخدم حسب النقاط
+  const leadersQuery = useMemoFirebase(() => {
+    return query(ref(database, 'users'), orderByChild('points'), limitToLast(50));
+  }, [database]);
+
+  const { data: rawData, isLoading } = useDatabase(leadersQuery);
+
+  // تحويل البيانات من أوبجكت إلى مصفوفة مرتبة تنازلياً
+  const leaders = rawData ? Object.values(rawData).sort((a: any, b: any) => (b.points || 0) - (a.points || 0)) : [];
+
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[#F8F9FE]">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-12">
+      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-12 pb-32">
         <header className="space-y-4">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 shadow-xl">
+            <div className="w-16 h-16 bg-yellow-100 rounded-2xl flex items-center justify-center text-yellow-600 shadow-xl border-4 border-white">
               <Trophy size={40} />
             </div>
             <div>
-              <h1 className="text-4xl font-black text-primary">Leaderboard</h1>
-              <p className="text-muted-foreground font-medium">See how you stack up against the Careingo community.</p>
+              <h1 className="text-4xl font-black text-primary leading-tight">لوحة المتصدرين</h1>
+              <p className="text-muted-foreground font-medium">تنافس مع أصدقاء كاري لتكون الأفضل!</p>
             </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="border-none shadow-xl rounded-3xl bg-primary text-white text-center p-8">
-            <Star className="mx-auto mb-4 text-yellow-400" size={32} fill="currentColor" />
-            <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-1">Your Score</p>
-            <p className="text-4xl font-black">3,450</p>
-          </Card>
-          <Card className="border-none shadow-xl rounded-3xl bg-accent text-white text-center p-8">
-            <Trophy className="mx-auto mb-4 text-white" size={32} />
-            <p className="text-sm font-bold uppercase tracking-widest opacity-80 mb-1">Your Rank</p>
-            <p className="text-4xl font-black">#5</p>
-          </Card>
-          <Card className="border-none shadow-xl rounded-3xl bg-white text-center p-8">
-            <Flame className="mx-auto mb-4 text-orange-500" size={32} fill="currentColor" />
-            <p className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-1">Best Streak</p>
-            <p className="text-4xl font-black text-primary">14 Days</p>
-          </Card>
-        </div>
-
-        <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-border">
-          <div className="p-8 border-b border-border bg-secondary/20">
-            <h2 className="text-2xl font-black text-primary">Global Ranking</h2>
-          </div>
-          <div className="divide-y divide-border">
-            {MOCK_LEADERBOARD.map((user, index) => (
-              <div 
-                key={user.id} 
-                className={`p-6 flex items-center justify-between hover:bg-secondary/10 transition-colors ${user.name.includes('(You)') ? 'bg-secondary/30' : ''}`}
-              >
-                <div className="flex items-center gap-6">
-                  <div className="w-8 text-center font-black text-xl text-primary">
-                    {index === 0 ? <Medal className="text-yellow-500 mx-auto" /> : 
-                     index === 1 ? <Medal className="text-slate-400 mx-auto" /> : 
-                     index === 2 ? <Medal className="text-amber-600 mx-auto" /> : 
-                     index + 1}
-                  </div>
-                  <Avatar className="h-12 w-12 border-2 border-white shadow-md">
-                    <AvatarImage src={user.avatar} />
-                    <AvatarFallback>{user.name.substring(0, 2)}</AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-bold text-primary text-lg">{user.name}</h3>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <span className="flex items-center gap-1"><Flame size={14} className="text-orange-500" /> {user.streak} day streak</span>
+        {isLoading ? (
+          <div className="text-center p-20 font-black text-primary animate-pulse">جاري تحديث الترتيب...</div>
+        ) : (
+          <div className="bg-white rounded-[3rem] shadow-2xl overflow-hidden border border-border">
+            <div className="p-8 border-b border-border bg-secondary/10">
+              <h2 className="text-2xl font-black text-primary">الترتيب العالمي</h2>
+            </div>
+            <div className="divide-y divide-border">
+              {leaders.length > 0 ? leaders.map((user: any, index: number) => (
+                <div 
+                  key={user.id} 
+                  className={`p-6 flex items-center justify-between hover:bg-secondary/10 transition-colors ${index < 3 ? 'bg-primary/5' : ''}`}
+                >
+                  <div className="flex items-center gap-6">
+                    <div className="w-8 text-center font-black text-xl text-primary">
+                      {index === 0 ? <Medal className="text-yellow-500 mx-auto" /> : 
+                       index === 1 ? <Medal className="text-slate-400 mx-auto" /> : 
+                       index === 2 ? <Medal className="text-amber-600 mx-auto" /> : 
+                       index + 1}
+                    </div>
+                    <Avatar className="h-12 w-12 border-2 border-white shadow-md">
+                      <AvatarImage src={user.avatar || `https://picsum.photos/seed/${user.id}/100/100`} />
+                      <AvatarFallback>{user.name?.substring(0, 2)}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h3 className="font-bold text-primary text-lg">{user.name}</h3>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1"><Flame size={12} className="text-orange-500" /> {user.streak || 0} يوم</span>
+                      </div>
                     </div>
                   </div>
+                  <div className="text-left">
+                    <p className="font-black text-primary text-xl">{user.points?.toLocaleString() || 0}</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">نقطة</p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-black text-primary text-xl">{user.score.toLocaleString()}</p>
-                  <p className="text-xs font-bold text-muted-foreground uppercase">Points</p>
-                </div>
-              </div>
-            ))}
+              )) : (
+                <div className="p-20 text-center text-muted-foreground font-bold">لا يوجد متسابقون بعد. كن الأول!</div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

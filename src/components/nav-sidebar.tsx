@@ -29,7 +29,7 @@ export function NavSidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar (Right side for RTL) */}
+      {/* القائمة الجانبية لسطح المكتب (على اليمين) */}
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-white border-l border-border z-40 p-6">
         <div className="flex items-center gap-2 mb-10">
           <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-primary/20">C</div>
@@ -81,29 +81,39 @@ export function NavSidebar() {
         </div>
       </aside>
 
-      {/* Mobile Bottom Navigation (PWA Style) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border flex justify-around items-center h-20 px-4 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+      {/* شريط التنقل السفلي للجوال (ستايل PWA) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-border flex justify-around items-center h-20 px-4 z-50 shadow-[0_-4px_15px_rgba(0,0,0,0.1)]">
         {navItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             className={cn(
-              "flex flex-col items-center gap-1 min-w-[64px] transition-all",
-              pathname === item.href ? "text-primary scale-110" : "text-muted-foreground"
+              "flex flex-col items-center gap-1 transition-all",
+              pathname === item.href ? "text-primary" : "text-muted-foreground"
             )}
           >
-            <item.icon className={cn("w-6 h-6", pathname === item.href && "stroke-[3px]")} />
+            <div className={cn(
+              "p-2 rounded-xl transition-all",
+              pathname === item.href ? "bg-primary/10" : ""
+            )}>
+              <item.icon className={cn("w-6 h-6", pathname === item.href && "stroke-[2.5px]")} />
+            </div>
             <span className="text-[10px] font-bold">{item.label}</span>
           </Link>
         ))}
         <Link
           href="/settings"
           className={cn(
-            "flex flex-col items-center gap-1 min-w-[64px] transition-all",
-            pathname === '/settings' ? "text-primary scale-110" : "text-muted-foreground"
+            "flex flex-col items-center gap-1 transition-all",
+            pathname === '/settings' ? "text-primary" : "text-muted-foreground"
           )}
         >
-          <Settings className={cn("w-6 h-6", pathname === '/settings' && "stroke-[3px]")} />
+          <div className={cn(
+            "p-2 rounded-xl transition-all",
+            pathname === '/settings' ? "bg-primary/10" : ""
+          )}>
+            <Settings className={cn("w-6 h-6", pathname === '/settings' && "stroke-[2.5px]")} />
+          </div>
           <span className="text-[10px] font-bold">الإعدادات</span>
         </Link>
       </nav>

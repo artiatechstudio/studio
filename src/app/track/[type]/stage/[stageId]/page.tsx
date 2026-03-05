@@ -4,7 +4,7 @@ import React, { use, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, BarChart3, Star, Zap } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, BarChart3, Star, Zap, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -24,7 +24,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   const challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
 
-  // تثبيت المرجع لتجنب الـ Infinite Loop
   const progressRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${trackKey}`) : null, [user, database, trackKey]);
   const { data: progressData } = useDatabase(progressRef);
 
@@ -45,40 +44,51 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const currentProgress = progressData || { currentStage: 1, completedStages: [] };
       const completedStages = currentProgress.completedStages || [];
       
-      if (!completedStages.includes(stageId)) {
-        completedStages.push(stageId);
+      if (completedStages.includes(stageId)) {
+        toast({ title: "منجز بالفعل!", description: "لقد أتممت هذه المهمة سابقاً." });
+        return;
       }
 
+      completedStages.push(stageId);
       const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
+
+      // منطق النقاط: كلما بكرت حصلت على نقاط أكثر
+      const now = new Date();
+      const hour = now.getHours();
+      const basePoints = 100;
+      // بونص إنجاز مبكر (قبل الساعة 12 ظهراً)
+      const earlyBonus = Math.max(0, (20 - hour) * 5); 
+      const pointsEarned = basePoints + earlyBonus;
 
       await update(ref(database, `users/${user.uid}/trackProgress/${trackKey}`), {
         completedStages,
         currentStage: nextStage,
-        lastCompletedDate: new Date().toISOString().split('T')[0]
+        lastCompletedDate: now.toISOString().split('T')[0]
       });
 
       const userRef = ref(database, `users/${user.uid}`);
       const userSnap = await get(userRef);
       const userData = userSnap.val();
+      
       await update(userRef, {
+        points: (userData.points || 0) + pointsEarned,
         streak: (userData.streak || 0) + 1
       });
 
       setCompleted(true);
       toast({
-        title: "تم الإنجاز!",
-        description: `عمل رائع! انتهيت من اليوم ${stageId} في مسار ${trackKey}.`,
+        title: "تم الإنجاز! 🎉",
+        description: `أحسنت! حصلت على ${pointsEarned} نقطة لإنجازك مهمة اليوم.`,
       });
     } catch (e) {
-      console.error(e);
       toast({ variant: "destructive", title: "خطأ", description: "فشل في حفظ التقدم." });
     }
   };
 
   return (
-    <div className="min-h-screen bg-background" dir="rtl">
+    <div className="min-h-screen bg-[#F8F9FE]">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-24 md:pb-12">
+      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <Link href={`/track/${resolvedParams.type}`}>
           <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
             <ArrowLeft size={18} className="rotate-180" />
@@ -89,15 +99,15 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         {loading ? (
           <div className="space-y-4 animate-pulse">
             <div className="h-12 w-2/3 bg-secondary rounded-xl" />
-            <div className="h-64 bg-secondary rounded-3xl" />
+            <div className="h-64 bg-secondary rounded-[3rem]" />
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               <header>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="px-3 py-1 bg-accent/20 text-accent rounded-full text-xs font-black uppercase tracking-tighter">اليوم {stageId}</div>
-                  <div className="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-black uppercase tracking-tighter">{trackKey}</div>
+                  <div className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-black uppercase">اليوم {stageId}</div>
+                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black uppercase">{trackKey}</div>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
@@ -105,34 +115,36 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
               <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden">
                 <CardHeader className="bg-primary text-white p-8">
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-2xl font-bold">مهمتك</CardTitle>
+                    <CardTitle className="text-2xl font-bold">مهمة اليوم</CardTitle>
                     <div className="flex gap-4 text-sm font-medium opacity-90">
                       <div className="flex items-center gap-1"><Clock size={16} /> {challenge.time}د</div>
                       <div className="flex items-center gap-1"><Zap size={16} /> {challenge.difficulty}</div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-8 space-y-6">
-                  <div className="text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap text-right">
+                <CardContent className="p-8 space-y-8">
+                  <div className="text-xl leading-relaxed text-muted-foreground whitespace-pre-wrap">
                     {challenge.description}
                   </div>
                   
                   {!completed ? (
                     <Button 
                       onClick={handleComplete}
-                      className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-xl font-black shadow-xl shadow-accent/20"
+                      className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-xl font-black shadow-xl shadow-accent/20 transition-all hover:scale-[1.02]"
                     >
-                      لقد أنجزت المهمة!
+                      أنجزت المهمة الآن!
                     </Button>
                   ) : (
-                    <div className="bg-green-50 border-2 border-green-200 p-8 rounded-3xl flex flex-col items-center gap-4 text-center">
-                      <CheckCircle className="text-green-500" size={64} />
-                      <div>
-                        <h3 className="text-2xl font-black text-green-700">عمل رائع!</h3>
-                        <p className="text-green-600 font-medium">لقد أكملت مهمتك اليومية بنجاح.</p>
+                    <div className="bg-green-50 border-4 border-green-100 p-10 rounded-[2.5rem] flex flex-col items-center gap-4 text-center">
+                      <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg">
+                        <CheckCircle size={48} />
                       </div>
-                      <Link href="/" className="w-full">
-                        <Button className="w-full rounded-2xl bg-green-600 hover:bg-green-700">العودة للرئيسية</Button>
+                      <div>
+                        <h3 className="text-3xl font-black text-green-700 italic">مذهل!</h3>
+                        <p className="text-green-600 font-medium mt-2">لقد أكملت مهمتك وحصلت على النقاط.</p>
+                      </div>
+                      <Link href="/" className="w-full mt-4">
+                        <Button className="w-full h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black">العودة للرئيسية</Button>
                       </Link>
                     </div>
                   )}
@@ -142,24 +154,25 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
             <div className="space-y-6">
               <div className="sticky top-12">
-                <Mascot messageOnly currentTrack={trackKey as any} />
+                <Mascot messageOnly />
                 
-                <Card className="mt-8 border-none shadow-xl rounded-3xl overflow-hidden">
+                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-white">
                   <div className="p-6 space-y-4">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2">
-                      <BarChart3 size={20} />
-                      إحصائيات {trackKey}
+                      <Trophy size={20} className="text-yellow-500" />
+                      مكافأة الإنجاز
                     </h3>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">إجمالي المراحل</span>
-                        <span className="text-sm font-bold text-primary">30</span>
+                    <div className="p-4 bg-secondary/30 rounded-2xl space-y-2">
+                      <div className="flex justify-between font-bold text-sm">
+                        <span>النقاط الأساسية</span>
+                        <span>100</span>
                       </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">اليوم الحالي</span>
-                        <span className="text-sm font-bold text-primary">{stageId}</span>
+                      <div className="flex justify-between font-bold text-sm text-accent">
+                        <span>بونص التبكير</span>
+                        <span>+{(20 - new Date().getHours()) * 5}</span>
                       </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground text-center">أنجز مهامك في الصباح لتحصل على نقاط أكثر وتتصدر القائمة!</p>
                   </div>
                 </Card>
               </div>

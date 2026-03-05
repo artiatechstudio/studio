@@ -8,15 +8,25 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar, User as UserIcon } from 'lucide-react';
+import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar, User as UserIcon, LogOut } from 'lucide-react';
 import Link from 'next/link';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import { toast } from '@/hooks/use-toast';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
-  const { database } = useFirebase();
+  const { database, auth } = useFirebase();
+  const router = useRouter();
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
+
+  const handleLogout = async () => {
+    await signOut(auth);
+    toast({ title: "تم تسجيل الخروج" });
+    router.push('/login');
+  };
 
   if (isUserLoading || isLoading) {
     return (
@@ -67,6 +77,9 @@ export default function ProfilePage() {
                 <SettingsIcon className="ml-2" /> الإعدادات
               </Button>
             </Link>
+            <Button onClick={handleLogout} variant="ghost" className="text-destructive font-black hover:bg-destructive/10">
+              <LogOut className="ml-2" size={18} /> تسجيل الخروج
+            </Button>
           </div>
         </header>
 

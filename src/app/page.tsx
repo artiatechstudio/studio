@@ -19,7 +19,6 @@ export default function Home() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
 
-  // منطق التحقق من الدخول الفوري
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.push('/login');

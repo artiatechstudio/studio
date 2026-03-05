@@ -5,83 +5,82 @@ export interface Challenge {
   title: string;
   description: string;
   time: number;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
+  difficulty: 'سهل' | 'متوسط' | 'صعب';
 }
 
 const fitnessChallenges: Challenge[] = [
-  { title: "Day 1: Start Small", description: "Do 10 air squats and 5 pushups. Form over speed!", time: 5, difficulty: 'Easy' },
-  { title: "Day 2: Morning Stretch", description: "Hold a plank for 30 seconds and do 2 minutes of stretching.", time: 5, difficulty: 'Easy' },
-  { title: "Day 3: Power Walk", description: "Take a 15-minute brisk walk outside.", time: 15, difficulty: 'Easy' },
-  { title: "Day 4: Core Stability", description: "3 sets of 15-second side planks on each side.", time: 10, difficulty: 'Easy' },
-  { title: "Day 5: Full Body Flow", description: "10 burpees and 20 mountain climbers. Take your time.", time: 10, difficulty: 'Easy' },
-  { title: "Day 6: Lower Body Burn", description: "20 lunges (10 each leg) and 15 glute bridges.", time: 12, difficulty: 'Easy' },
-  { title: "Day 7: Active Recovery", description: "Go for a light 20-minute walk or light stretching.", time: 20, difficulty: 'Easy' },
-  { title: "Day 8: Pushup Mastery", description: "Try to do 3 sets of 8 pushups (knees are okay!).", time: 10, difficulty: 'Easy' },
-  { title: "Day 9: Wall Sit Challenge", description: "Hold a wall sit for a total of 60 seconds (can be split).", time: 5, difficulty: 'Medium' },
-  { title: "Day 10: Cardio Burst", description: "30 seconds of jumping jacks followed by 30 seconds of rest. Repeat 5 times.", time: 10, difficulty: 'Medium' },
-  // ... (Repeating structure to reach 30)
+  { title: "اليوم 1: البداية الصغيرة", description: "قم بـ 10 تمارين سكوات و 5 تمارين ضغط. التركيز على الأداء الصحيح أهم من السرعة!", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 2: تمدد الصباح", description: "ثبات بلانك لمدة 30 ثانية و دقيقتين من تمارين التمدد.", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 3: مشي القوة", description: "امشِ مشياً سريعاً لمدة 15 دقيقة في الهواء الطلق.", time: 15, difficulty: 'سهل' },
+  { title: "اليوم 4: استقرار الجذع", description: "3 مجموعات من ثبات البلانك الجانبي لمدة 15 ثانية لكل جانب.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 5: تدفق الجسم بالكامل", description: "10 تمارين بربي و 20 تمرين تسلق الجبال. خذ وقتك.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 6: حرق الجزء السفلي", description: "20 تمرين لنجز (10 لكل رجل) و 15 تمرين جسر الجلوتس.", time: 12, difficulty: 'سهل' },
+  { title: "اليوم 7: الاستشفاء النشط", description: "اخرج للمشي الخفيف لمدة 20 دقيقة أو قم بتمارين تمدد خفيفة.", time: 20, difficulty: 'سهل' },
+  { title: "اليوم 8: إتقان الضغط", description: "حاول القيام بـ 3 مجموعات من 8 تمارين ضغط (يمكنك استخدام الركبتين).", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 9: تحدي القرفصاء على الحائط", description: "اثبت بوضعية القرفصاء على الحائط لمدة 60 ثانية إجمالاً.", time: 5, difficulty: 'متوسط' },
+  { title: "اليوم 10: انفجار الكارديو", description: "30 ثانية جامبينج جاكس متبوعة بـ 30 ثانية راحة. كرر 5 مرات.", time: 10, difficulty: 'متوسط' },
   ...Array.from({ length: 20 }, (_, i) => ({
-    title: `Day ${i + 11}: Progression Stage`,
-    description: `Complete 4 sets of 15 bodyweight squats and 10 diamond pushups.`,
+    title: `اليوم ${i + 11}: مرحلة التقدم`,
+    description: `أكمل 4 مجموعات من 15 تمرين سكوات و 10 تمارين ضغط ماسية.`,
     time: 15 + i,
-    difficulty: (i + 11) > 20 ? 'Hard' : 'Medium' as any
+    difficulty: (i + 11) > 20 ? 'صعب' : 'متوسط' as any
   }))
 ];
 
 const nutritionChallenges: Challenge[] = [
-  { title: "Day 1: Water First", description: "Drink a glass of water immediately after waking up.", time: 2, difficulty: 'Easy' },
-  { title: "Day 2: No Sugary Drinks", description: "Replace all sodas or juices with water or tea today.", time: 0, difficulty: 'Easy' },
-  { title: "Day 3: Green Plate", description: "Include at least one green vegetable in your lunch.", time: 10, difficulty: 'Easy' },
-  { title: "Day 4: Mindful Eating", description: "Eat one meal without looking at your phone or TV.", time: 20, difficulty: 'Easy' },
-  { title: "Day 5: Fruit Snack", description: "Swap your afternoon snack for a piece of whole fruit.", time: 5, difficulty: 'Easy' },
-  { title: "Day 6: Protein Focus", description: "Ensure every meal today has a healthy source of protein.", time: 10, difficulty: 'Easy' },
-  { title: "Day 7: Whole Grains", description: "Switch white bread/rice for whole grain options today.", time: 5, difficulty: 'Easy' },
-  { title: "Day 8: Salt Reduction", description: "Avoid adding extra salt to your meals today.", time: 0, difficulty: 'Easy' },
-  { title: "Day 9: Nutritious Breakfast", description: "Prepare a breakfast with oats or eggs instead of cereal.", time: 15, difficulty: 'Medium' },
-  { title: "Day 10: Homemade Meal", description: "Prepare your dinner entirely from scratch using fresh ingredients.", time: 40, difficulty: 'Medium' },
+  { title: "اليوم 1: الماء أولاً", description: "اشرب كوباً من الماء فور استيقاظك من النوم.", time: 2, difficulty: 'سهل' },
+  { title: "اليوم 2: لا مشروبات سكرية", description: "استبدل جميع المشروبات الغازية أو العصائر بالماء أو الشاي اليوم.", time: 0, difficulty: 'سهل' },
+  { title: "اليوم 3: الطبق الأخضر", description: "أضف خضاراً ورقياً واحداً على الأقل إلى وجبة غدائك.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 4: الأكل بوعي", description: "تناول وجبة واحدة دون النظر إلى هاتفك أو التلفاز.", time: 20, difficulty: 'سهل' },
+  { title: "اليوم 5: سناك الفاكهة", description: "استبدل وجبتك الخفيفة المعتادة بقطعة فاكهة طازجة.", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 6: التركيز على البروتين", description: "تأكد أن كل وجبة اليوم تحتوي على مصدر بروتين صحي.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 7: الحبوب الكاملة", description: "استخدم الخبز الأسمر أو الأرز البني بدلاً من الأبيض اليوم.", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 8: تقليل الملح", description: "تجنب إضافة الملح الزائد إلى وجباتك طوال اليوم.", time: 0, difficulty: 'سهل' },
+  { title: "اليوم 9: فطور مغذٍ", description: "حضر فطوراً يحتوي على الشوفان أو البيض بدلاً من حبوب الإفطار المحلاة.", time: 15, difficulty: 'متوسط' },
+  { title: "اليوم 10: وجبة منزلية", description: "حضر عشاءك بالكامل في المنزل باستخدام مكونات طازجة.", time: 40, difficulty: 'متوسط' },
   ...Array.from({ length: 20 }, (_, i) => ({
-    title: `Day ${i + 11}: Healthy Habit`,
-    description: `Log your meals today and ensure you reach your hydration goal of 2.5 Liters.`,
+    title: `اليوم ${i + 11}: عادة صحية`,
+    description: `سجل وجباتك اليوم وتأكد من شرب 2.5 لتر من الماء.`,
     time: 10,
-    difficulty: 'Medium' as any
+    difficulty: 'متوسط' as any
   }))
 ];
 
 const behaviorChallenges: Challenge[] = [
-  { title: "Day 1: Breath Awareness", description: "Sit quietly for 2 minutes and focus only on your breath.", time: 5, difficulty: 'Easy' },
-  { title: "Day 2: Gratitude List", description: "Write down 3 things you are grateful for today.", time: 5, difficulty: 'Easy' },
-  { title: "Day 3: Digital Detox", description: "No social media for 1 hour before sleep.", time: 60, difficulty: 'Easy' },
-  { title: "Day 4: Compliment Someone", description: "Give a genuine compliment to a friend or stranger.", time: 2, difficulty: 'Easy' },
-  { title: "Day 5: Tidy Space", description: "Spend 10 minutes decluttering one small area of your room.", time: 10, difficulty: 'Easy' },
-  { title: "Day 6: Early Wake Up", description: "Wake up 15 minutes earlier than usual and enjoy the quiet.", time: 15, difficulty: 'Easy' },
-  { title: "Day 7: Reflection", description: "Journal for 5 minutes about what went well this week.", time: 10, difficulty: 'Easy' },
-  { title: "Day 8: Say No", description: "Identify one task you do out of habit but don't need to, and skip it.", time: 5, difficulty: 'Easy' },
-  { title: "Day 9: Learning Moment", description: "Read a few pages of a non-fiction book or a helpful article.", time: 15, difficulty: 'Medium' },
-  { title: "Day 10: Goal Setting", description: "Write down 3 goals for the next month and the first step for each.", time: 15, difficulty: 'Medium' },
+  { title: "اليوم 1: وعي التنفس", description: "اجلس بهدوء لمدة دقيقتين وركز فقط على تنفسك.", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 2: قائمة الامتنان", description: "اكتب 3 أشياء أنت ممتن لها اليوم.", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 3: ديتوكس رقمي", description: "لا تستخدم وسائل التواصل الاجتماعي قبل النوم بساعة.", time: 60, difficulty: 'سهل' },
+  { title: "اليوم 4: جامل شخصاً ما", description: "قدم مجاملة صادقة لصديق أو غريب.", time: 2, difficulty: 'سهل' },
+  { title: "اليوم 5: ترتيب المكان", description: "اقضِ 10 دقائق في ترتيب ركن صغير من غرفتك.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 6: استيقاظ مبكر", description: "استيقظ 15 دقيقة أبكر من المعتاد واستمتع بالهدوء.", time: 15, difficulty: 'سهل' },
+  { title: "اليوم 7: مراجعة الأسبوع", description: "اكتب لمدة 5 دقائق عن أفضل ما حدث لك هذا الأسبوع.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 8: قل لا", description: "حدد مهمة واحدة تفعلها بدافع العادة ولا تحتاجها، وتوقف عنها.", time: 5, difficulty: 'سهل' },
+  { title: "اليوم 9: لحظة تعلم", description: "اقرأ بضع صفحات من كتاب مفيد أو مقال ملهم.", time: 15, difficulty: 'متوسط' },
+  { title: "اليوم 10: تحديد الأهداف", description: "اكتب 3 أهداف للشهر القادم والخطوة الأولى لكل منها.", time: 15, difficulty: 'متوسط' },
   ...Array.from({ length: 20 }, (_, i) => ({
-    title: `Day ${i + 11}: Mindset Shift`,
-    description: `Practice positive self-talk for 5 minutes and visualize your success.`,
+    title: `اليوم ${i + 11}: تغيير العقلية`,
+    description: `مارس التحدث الإيجابي مع النفس لمدة 5 دقائق وتخيل نجاحك.`,
     time: 5,
-    difficulty: 'Medium' as any
+    difficulty: 'متوسط' as any
   }))
 ];
 
 const studyChallenges: Challenge[] = [
-  { title: "Day 1: Goal Definition", description: "Define exactly what you want to learn this month.", time: 10, difficulty: 'Easy' },
-  { title: "Day 2: Pomodoro Intro", description: "Study one topic for 25 minutes, then take a 5-minute break.", time: 30, difficulty: 'Easy' },
-  { title: "Day 3: Active Recall", description: "Try to write down everything you remember from yesterday's study.", time: 15, difficulty: 'Easy' },
-  { title: "Day 4: Clean Workspace", description: "Organize your study desk for maximum focus.", time: 10, difficulty: 'Easy' },
-  { title: "Day 5: Summary Notes", description: "Summarize a complex topic in only 3 bullet points.", time: 15, difficulty: 'Easy' },
-  { title: "Day 6: Questioning", description: "Write 5 questions about what you are currently studying.", time: 10, difficulty: 'Easy' },
-  { title: "Day 7: Review Day", description: "Spend 20 minutes reviewing all notes from the week.", time: 20, difficulty: 'Easy' },
-  { title: "Day 8: Deep Focus", description: "Study for 40 minutes with zero notifications.", time: 40, difficulty: 'Easy' },
-  { title: "Day 9: Teaching Method", description: "Explain what you learned to an imaginary student.", time: 15, difficulty: 'Medium' },
-  { title: "Day 10: Resource Hunt", description: "Find one new high-quality source for your current topic.", time: 20, difficulty: 'Medium' },
+  { title: "اليوم 1: تحديد الهدف", description: "حدد بالضبط ما تريد تعلمه هذا الشهر.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 2: تقنية بومودورو", description: "ادرس موضوعاً لمدة 25 دقيقة، ثم خذ استراحة لمدة 5 دقائق.", time: 30, difficulty: 'سهل' },
+  { title: "اليوم 3: الاستذكار النشط", description: "حاول كتابة كل ما تتذكره مما درسته بالأمس دون النظر للملاحظات.", time: 15, difficulty: 'سهل' },
+  { title: "اليوم 4: مساحة دراسة نظيفة", description: "نظم مكتبك لزيادة التركيز وتقليل التشتت.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 5: ملخص النقاط", description: "لخص موضوعاً معقداً في 3 نقاط رئيسية فقط.", time: 15, difficulty: 'سهل' },
+  { title: "اليوم 6: طرح الأسئلة", description: "اكتب 5 أسئلة حول ما تدرسه حالياً.", time: 10, difficulty: 'سهل' },
+  { title: "اليوم 7: يوم المراجعة", description: "اقضِ 20 دقيقة في مراجعة جميع ملاحظات الأسبوع.", time: 20, difficulty: 'سهل' },
+  { title: "اليوم 8: التركيز العميق", description: "ادرس لمدة 40 دقيقة مع إغلاق كافة التنبيهات.", time: 40, difficulty: 'سهل' },
+  { title: "اليوم 9: طريقة الشرح", description: "اشرح ما تعلمته لطالب خيالي لتعميق فهمك.", time: 15, difficulty: 'متوسط' },
+  { title: "اليوم 10: البحث عن مصادر", description: "ابحث عن مصدر تعليمي جديد وعالي الجودة لموضوعك الحالي.", time: 20, difficulty: 'متوسط' },
   ...Array.from({ length: 20 }, (_, i) => ({
-    title: `Day ${i + 11}: Master Session`,
-    description: `Engage in 2 hours of deep work split into 4 Pomodoro cycles.`,
+    title: `اليوم ${i + 11}: جلسة الإتقان`,
+    description: `انخرط في ساعتين من العمل العميق مقسمة إلى 4 دورات بومودورو.`,
     time: 120,
-    difficulty: 'Hard' as any
+    difficulty: 'صعب' as any
   }))
 ];
 

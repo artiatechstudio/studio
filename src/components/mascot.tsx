@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -21,7 +22,6 @@ export function Mascot({ messageOnly = false }: MascotProps) {
   const [message, setMessage] = useState<string>("");
 
   useEffect(() => {
-    // اختيار رسالة عشوائية عند التحميل
     const randomIdx = Math.floor(Math.random() * MESSAGES.length);
     setMessage(MESSAGES[randomIdx]);
   }, []);
@@ -40,12 +40,12 @@ export function Mascot({ messageOnly = false }: MascotProps) {
       <div className="relative shrink-0 animate-float">
         <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full scale-110" />
         <Image
-          src="https://picsum.photos/seed/cary-bird/200/200"
+          src="https://picsum.photos/seed/cat-smile/200/200"
           alt="Cary Mascot"
           width={100}
           height={100}
           className="rounded-full border-4 border-white shadow-xl relative z-10"
-          data-ai-hint="cartoon bird"
+          data-ai-hint="smiling cat"
         />
         <div className="absolute -bottom-1 -left-1 bg-primary text-white px-2 py-0.5 rounded-full text-[10px] font-black z-20 shadow-md">
           كاري

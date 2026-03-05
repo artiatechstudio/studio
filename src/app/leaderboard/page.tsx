@@ -13,7 +13,8 @@ export default function LeaderboardPage() {
   const { database } = useFirebase();
   
   const leadersQuery = useMemoFirebase(() => {
-    return query(ref(database, 'users'), limitToLast(100));
+    // جلب أعلى 100 مستخدم حسب النقاط
+    return query(ref(database, 'users'), orderByChild('points'), limitToLast(100));
   }, [database]);
 
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
@@ -38,20 +39,22 @@ export default function LeaderboardPage() {
       ...user,
       avgScore: getAverageScore(user)
     }))
+    // فلترة المستخدمين الذين ليس لديهم نقاط (لم يبدأوا بعد)
+    .filter((user: any) => user.points > 0)
     .sort((a: any, b: any) => b.avgScore - a.avgScore) : [];
 
   return (
     <div className="min-h-screen bg-background">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-12 pb-32">
+      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <header className="space-y-4">
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-yellow-100 rounded-[2rem] flex items-center justify-center text-yellow-600 shadow-2xl border-4 border-white">
-              <Trophy size={48} />
+            <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-[1.5rem] flex items-center justify-center text-yellow-600 shadow-xl border-4 border-white dark:border-slate-800">
+              <Trophy size={40} />
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">قائمة العظماء</h1>
-              <p className="text-muted-foreground text-lg font-bold flex items-center gap-2">
+              <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">قائمة العظماء</h1>
+              <p className="text-muted-foreground text-sm md:text-lg font-bold flex items-center gap-2">
                 <TrendingUp size={20} className="text-accent" />
                 الترتيب بناءً على متوسط إنجازك في آخر 3 أيام
               </p>
@@ -65,44 +68,44 @@ export default function LeaderboardPage() {
              <p className="font-black text-primary text-xl">جاري تحديث القائمة...</p>
           </div>
         ) : (
-          <div className="bg-card rounded-[3rem] shadow-2xl overflow-hidden border border-white/5">
-            <div className="p-8 border-b border-secondary/50 bg-secondary/10">
-              <h2 className="text-2xl font-black text-primary">المتصدرون حالياً</h2>
+          <div className="bg-card rounded-[2.5rem] shadow-2xl overflow-hidden border border-border">
+            <div className="p-6 border-b border-border bg-secondary/10">
+              <h2 className="text-xl font-black text-primary">المتصدرون حالياً</h2>
             </div>
-            <div className="divide-y divide-secondary/30">
+            <div className="divide-y divide-border">
               {leaders.length > 0 ? leaders.map((user: any, index: number) => (
                 <div 
                   key={user.id} 
-                  className={`p-6 md:p-8 flex items-center justify-between hover:bg-secondary/10 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
+                  className={`p-5 md:p-8 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
                 >
-                  <div className="flex items-center gap-6">
-                    <div className="w-10 text-center font-black text-2xl text-primary">
-                      {index === 0 ? <Medal className="text-yellow-500 w-10 h-10 mx-auto" /> : 
-                       index === 1 ? <Medal className="text-slate-400 w-10 h-10 mx-auto" /> : 
-                       index === 2 ? <Medal className="text-amber-600 w-10 h-10 mx-auto" /> : 
+                  <div className="flex items-center gap-4 md:gap-6">
+                    <div className="w-8 md:w-10 text-center font-black text-xl md:text-2xl text-primary">
+                      {index === 0 ? <Medal className="text-yellow-500 w-8 h-8 md:w-10 md:h-10 mx-auto" /> : 
+                       index === 1 ? <Medal className="text-slate-400 w-8 h-8 md:w-10 md:h-10 mx-auto" /> : 
+                       index === 2 ? <Medal className="text-amber-600 w-8 h-8 md:w-10 md:h-10 mx-auto" /> : 
                        index + 1}
                     </div>
-                    <Avatar className="h-16 w-16 border-4 border-card shadow-lg">
+                    <Avatar className="h-12 w-12 md:h-16 md:w-16 border-2 md:border-4 border-card shadow-lg">
                       <AvatarImage src={`https://picsum.photos/seed/${user.id}/150/150`} />
                       <AvatarFallback className="bg-primary text-white font-black">{user.name?.substring(0, 2)}</AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-black text-primary text-xl">{user.name}</h3>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground font-bold">
-                        <span className="flex items-center gap-1.5"><Flame size={16} className="text-orange-500" fill="currentColor" /> {user.streak || 0} يوم</span>
+                      <h3 className="font-black text-primary text-base md:text-xl">{user.name}</h3>
+                      <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground font-bold">
+                        <span className="flex items-center gap-1"><Flame size={14} className="text-orange-500" fill="currentColor" /> {user.streak || 0} يوم</span>
                       </div>
                     </div>
                   </div>
-                  <div className="text-left bg-primary/5 px-6 py-3 rounded-2xl">
+                  <div className="text-left bg-primary/5 px-4 py-2 md:px-6 md:py-3 rounded-2xl">
                     <div className="flex items-center gap-2">
-                      <Star size={18} className="text-yellow-500" fill="currentColor" />
-                      <p className="font-black text-primary text-2xl">{user.avgScore}</p>
+                      <Star size={16} className="text-yellow-500" fill="currentColor" />
+                      <p className="font-black text-primary text-lg md:text-2xl">{user.avgScore}</p>
                     </div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest text-center mt-1">نقطة/يوم</p>
+                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest text-center mt-1">نقطة/يوم</p>
                   </div>
                 </div>
               )) : (
-                <div className="p-24 text-center text-muted-foreground font-black text-xl italic">لا يوجد متسابقون بعد.</div>
+                <div className="p-24 text-center text-muted-foreground font-black text-xl italic">لا يوجد متسابقون نشطون حالياً.</div>
               )}
             </div>
           </div>

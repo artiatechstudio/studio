@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Trophy, User, BookMarked, Settings, LogOut, LogIn } from 'lucide-react';
+import { LayoutDashboard, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -11,6 +11,7 @@ import { toast } from '@/hooks/use-toast';
 
 const navItems = [
   { label: 'الرئيسية', icon: LayoutDashboard, href: '/' },
+  { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
   { label: 'الملف الشخصي', icon: User, href: '/profile' },

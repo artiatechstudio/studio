@@ -7,18 +7,16 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Trophy } from 'lucide-react';
+import { Flame, Star, Trophy, CalendarDays } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { aiHelperContextualResponse } from '@/ai/flows/ai-helper-contextual-response';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
   const router = useRouter();
-  const [aiMessage, setAiMessage] = useState<string>("");
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
@@ -28,31 +26,6 @@ export default function Home() {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
-
-  useEffect(() => {
-    async function fetchAiMessage() {
-      if (userData && user) {
-        try {
-          // جلب مسار نشط عشوائي للتحفيز
-          const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
-          const randomTrack = tracks[Math.floor(Math.random() * tracks.length)];
-          const trackProgress = userData.trackProgress?.[randomTrack] || { currentStage: 1 };
-          
-          const response = await aiHelperContextualResponse({
-            userName: userData.name || "صديقي",
-            currentTrack: randomTrack as any,
-            currentStage: trackProgress.currentStage || 1,
-            isCompletedToday: userData.lastActiveDate === new Date().toISOString().split('T')[0],
-            completionStreak: userData.streak || 0
-          });
-          setAiMessage(response.message);
-        } catch (e) {
-          console.error("AI Error:", e);
-        }
-      }
-    }
-    if (userData) fetchAiMessage();
-  }, [userData, user]);
 
   if (isUserLoading || (user && isDataLoading)) {
     return (
@@ -98,15 +71,17 @@ export default function Home() {
           </div>
           
           <div className="flex flex-wrap gap-4">
-            <Card className="flex items-center gap-4 px-5 py-3 rounded-2xl border-none shadow-xl bg-card">
-              <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600">
-                <Flame size={24} fill="currentColor" />
-              </div>
-              <div>
-                <p className="text-[10px] font-black text-muted-foreground uppercase">الحماسة</p>
-                <p className="text-xl font-black text-orange-600">{profile.streak || 0} يوم</p>
-              </div>
-            </Card>
+            <Link href="/streak">
+              <Card className="flex items-center gap-4 px-5 py-3 rounded-2xl border-none shadow-xl bg-card hover:bg-secondary/50 transition-colors cursor-pointer">
+                <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600">
+                  <Flame size={24} fill="currentColor" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase">الحماسة</p>
+                  <p className="text-xl font-black text-orange-600">{profile.streak || 0} يوم</p>
+                </div>
+              </Card>
+            </Link>
             
             <Card className="flex items-center gap-4 px-5 py-3 rounded-2xl border-none shadow-xl bg-card">
               <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center text-yellow-600">
@@ -121,11 +96,13 @@ export default function Home() {
         </header>
 
         <section className="bg-primary/5 dark:bg-primary/10 rounded-[2.5rem] p-6 md:p-10 border border-primary/10">
-          <Mascot customMessage={aiMessage} />
+          <Mascot />
         </section>
 
         <section className="space-y-8">
-          <h2 className="text-2xl font-black text-primary">مساراتك الحالية</h2>
+          <h2 className="text-2xl font-black text-primary flex items-center gap-3">
+             مساراتك الحالية
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <TrackCard type="Fitness" currentStage={profile.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
             <TrackCard type="Nutrition" currentStage={profile.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />

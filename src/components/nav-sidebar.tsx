@@ -23,15 +23,15 @@ export function NavSidebar() {
   const { user } = useUser();
   const auth = useAuth();
 
+  const playClickSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   const handleLogout = async () => {
     await signOut(auth);
     toast({ title: "تم تسجيل الخروج", description: "نراك قريباً!" });
     router.replace('/login');
-  };
-
-  const playClickSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-    audio.play().catch(() => {});
   };
 
   return (

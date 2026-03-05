@@ -17,6 +17,11 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
+  const playClickSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   if (isUserLoading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -80,7 +85,10 @@ export default function StreakPage() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-orange-500 text-white p-8 text-center flex flex-col items-center justify-center gap-4">
+            <Card 
+              onClick={playClickSound}
+              className="border-none shadow-xl rounded-[2.5rem] bg-orange-500 text-white p-8 text-center flex flex-col items-center justify-center gap-4 cursor-pointer hover:scale-105 transition-transform"
+            >
               <div className="text-6xl animate-bounce">🔥</div>
               <div>
                 <p className="text-5xl font-black">{userData?.streak || 0}</p>

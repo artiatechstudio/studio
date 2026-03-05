@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -38,8 +39,13 @@ export function TrackCard({ type, currentStage, totalStages }: TrackCardProps) {
   const Icon = icons[type];
   const progressPercent = (currentStage / totalStages) * 100;
 
+  const playClickSound = () => {
+    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
+    audio.play().catch(() => {});
+  };
+
   return (
-    <Link href={`/track/${type.toLowerCase()}`}>
+    <Link href={`/track/${type.toLowerCase()}`} onClick={playClickSound}>
       <Card className="overflow-hidden hover:shadow-2xl transition-all duration-300 border-none rounded-3xl group cursor-pointer h-full">
         <CardContent className="p-6 flex flex-col h-full bg-white group-hover:bg-secondary/20">
           <div className="flex items-center justify-between mb-6">

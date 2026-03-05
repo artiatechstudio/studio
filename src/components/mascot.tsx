@@ -1,11 +1,14 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { aiHelperContextualResponse } from '@/ai/flows/ai-helper-contextual-response';
-import { MOCK_USER, TrackType } from '@/lib/mock-data';
+import { TrackType } from '@/lib/mock-data';
 import { Card } from './ui/card';
+import { useUser, useFirebase, useDatabase } from '@/firebase';
+import { ref } from 'firebase/database';
 
 interface MascotProps {
   currentTrack?: TrackType;
@@ -13,30 +16,40 @@ interface MascotProps {
 }
 
 export function Mascot({ currentTrack = 'Fitness', messageOnly = false }: MascotProps) {
+  const { user } = useUser();
+  const { database } = useFirebase();
   const [message, setMessage] = useState<string>("Hi! I'm Careingo. Let's grow together!");
   const [loading, setLoading] = useState(false);
 
+  const progressRef = user ? ref(database, `users/${user.uid}`) : null;
+  const { data: userData } = useDatabase(progressRef);
+
   useEffect(() => {
     async function fetchResponse() {
+      if (!userData || !user) return;
+      
       setLoading(true);
       try {
-        const trackData = MOCK_USER.trackProgress[currentTrack];
+        const trackData = userData.trackProgress?.[currentTrack] || { currentStage: 1 };
         const res = await aiHelperContextualResponse({
-          userName: MOCK_USER.name,
+          userName: userData.name || user.displayName || 'Friend',
           currentTrack: currentTrack as any,
-          currentStage: trackData.currentStage,
+          currentStage: trackData.currentStage || 1,
           isCompletedToday: trackData.lastCompletedDate === new Date().toISOString().split('T')[0],
-          completionStreak: MOCK_USER.streak
+          completionStreak: userData.streak || 0
         });
         setMessage(res.message);
       } catch (e) {
         console.error(e);
+        setMessage("Keep going! You are doing great today!");
       } finally {
         setLoading(false);
       }
     }
-    fetchResponse();
-  }, [currentTrack]);
+    if (userData) {
+      fetchResponse();
+    }
+  }, [currentTrack, userData, user]);
 
   const mascotImage = PlaceHolderImages.find(img => img.id === 'mascot-friendly');
 

@@ -1,62 +1,80 @@
+
 "use client"
 
 import React, { use, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { dailyChallengeGeneration, DailyChallengeGenerationOutput } from '@/ai/flows/daily-challenge-generation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle, Clock, BarChart3, Star, Zap } from 'lucide-react';
 import Link from 'next/link';
 import { TrackType } from '@/lib/mock-data';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
+import { STATIC_CHALLENGES, Challenge, TrackKey } from '@/lib/challenges';
+import { useFirebase, useUser, useDatabase } from '@/firebase';
+import { ref, update, get } from 'firebase/database';
 
 export default function StageDetailPage({ params }: { params: Promise<{ type: string, stageId: string }> }) {
   const resolvedParams = use(params);
-  const trackType = resolvedParams.type.charAt(0).toUpperCase() + resolvedParams.type.slice(1) as TrackType;
+  const trackKey = resolvedParams.type.charAt(0).toUpperCase() + resolvedParams.type.slice(1) as TrackKey;
   const stageId = parseInt(resolvedParams.stageId);
   
-  const [challenge, setChallenge] = useState<DailyChallengeGenerationOutput | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { database } = useFirebase();
+  const { user } = useUser();
   const [completed, setCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  const challenge: Challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
+
+  const progressRef = user ? ref(database, `users/${user.uid}/trackProgress/${trackKey}`) : null;
+  const { data: progressData } = useDatabase(progressRef);
 
   useEffect(() => {
-    async function loadChallenge() {
-      setLoading(true);
-      try {
-        // Only Nutrition, Behavior, Study use GenAI based on proposal
-        if (trackType !== 'Fitness') {
-          const res = await dailyChallengeGeneration({
-            track: trackType as any,
-            currentDay: stageId,
-            userPreferences: "focus on progress and sustainability"
-          });
-          setChallenge(res);
-        } else {
-          // Mock fitness challenge
-          setChallenge({
-            challengeTitle: `Day ${stageId}: Full Body Strength`,
-            challengeDescription: "Complete 3 sets of pushups, squats, and planks. Focus on form and consistent breathing throughout the routine.",
-            challengeType: 'Fitness' as any,
-            difficulty: 'Medium',
-            estimatedCompletionTimeMinutes: 20
-          });
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
-      }
+    if (progressData) {
+      const isDone = progressData.completedStages?.includes(stageId);
+      setCompleted(!!isDone);
+      setLoading(false);
+    } else {
+      setLoading(false);
     }
-    loadChallenge();
-  }, [trackType, stageId]);
+  }, [progressData, stageId]);
 
-  const handleComplete = () => {
-    setCompleted(true);
-    toast({
-      title: "Task Completed!",
-      description: `Amazing job! Day ${stageId} of ${trackType} is finished.`,
-    });
+  const handleComplete = async () => {
+    if (!user || !database) return;
+
+    try {
+      const currentProgress = progressData || { currentStage: 1, completedStages: [] };
+      const completedStages = currentProgress.completedStages || [];
+      
+      if (!completedStages.includes(stageId)) {
+        completedStages.push(stageId);
+      }
+
+      const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
+
+      await update(ref(database, `users/${user.uid}/trackProgress/${trackKey}`), {
+        completedStages,
+        currentStage: nextStage,
+        lastCompletedDate: new Date().toISOString().split('T')[0]
+      });
+
+      // Update global streak if needed
+      const userRef = ref(database, `users/${user.uid}`);
+      const userSnap = await get(userRef);
+      const userData = userSnap.val();
+      await update(userRef, {
+        streak: (userData.streak || 0) + 1
+      });
+
+      setCompleted(true);
+      toast({
+        title: "Task Completed!",
+        description: `Amazing job! Day ${stageId} of ${trackKey} is finished.`,
+      });
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "Error", description: "Failed to save progress." });
+    }
   };
 
   return (
@@ -75,15 +93,15 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             <div className="h-12 w-2/3 bg-secondary rounded-xl" />
             <div className="h-64 bg-secondary rounded-3xl" />
           </div>
-        ) : challenge ? (
+        ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
               <header>
                 <div className="flex items-center gap-3 mb-2">
                   <div className="px-3 py-1 bg-accent/20 text-accent rounded-full text-xs font-black uppercase tracking-tighter">Day {stageId}</div>
-                  <div className="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-black uppercase tracking-tighter">{trackType}</div>
+                  <div className="px-3 py-1 bg-primary/20 text-primary rounded-full text-xs font-black uppercase tracking-tighter">{trackKey}</div>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.challengeTitle}</h1>
+                <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
 
               <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden">
@@ -91,14 +109,14 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-2xl font-bold">Your Task</CardTitle>
                     <div className="flex gap-4 text-sm font-medium opacity-90">
-                      <div className="flex items-center gap-1"><Clock size={16} /> {challenge.estimatedCompletionTimeMinutes}m</div>
+                      <div className="flex items-center gap-1"><Clock size={16} /> {challenge.time}m</div>
                       <div className="flex items-center gap-1"><Zap size={16} /> {challenge.difficulty}</div>
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="p-8 space-y-6">
                   <div className="text-lg leading-relaxed text-muted-foreground whitespace-pre-wrap">
-                    {challenge.challengeDescription}
+                    {challenge.description}
                   </div>
                   
                   {!completed ? (
@@ -123,7 +141,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                 </CardContent>
               </Card>
 
-              {/* Resource Hub Link integration */}
               <div className="bg-secondary/40 p-6 rounded-3xl flex items-center justify-between">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-primary shadow-sm">
@@ -140,16 +157,15 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
               </div>
             </div>
 
-            {/* Sidebar Mascot & Stats */}
             <div className="space-y-6">
               <div className="sticky top-12">
-                <Mascot messageOnly currentTrack={trackType} />
+                <Mascot messageOnly currentTrack={trackKey as any} />
                 
                 <Card className="mt-8 border-none shadow-xl rounded-3xl overflow-hidden">
                   <div className="p-6 space-y-4">
                     <h3 className="text-lg font-bold text-primary flex items-center gap-2">
                       <BarChart3 size={20} />
-                      Stats for {trackType}
+                      Stats for {trackKey}
                     </h3>
                     <div className="space-y-4">
                       <div className="flex justify-between items-center">
@@ -157,12 +173,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                         <span className="text-sm font-bold text-primary">30</span>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Completion Rate</span>
-                        <span className="text-sm font-bold text-primary">12%</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-muted-foreground">Current Streak</span>
-                        <span className="text-sm font-bold text-primary">5 Days</span>
+                        <span className="text-sm font-medium text-muted-foreground">Current Day</span>
+                        <span className="text-sm font-bold text-primary">{stageId}</span>
                       </div>
                     </div>
                   </div>
@@ -170,8 +182,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
               </div>
             </div>
           </div>
-        ) : (
-          <p>Failed to load challenge.</p>
         )}
       </div>
     </div>

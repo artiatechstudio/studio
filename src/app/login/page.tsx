@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { LogIn, UserPlus } from 'lucide-react';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -21,10 +20,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // إذا كان المستخدم مسجلاً بالفعل، توجه للصفحة الرئيسية
   useEffect(() => {
     if (!isUserLoading && user) {
-      router.push('/');
+      router.replace('/');
     }
   }, [user, isUserLoading, router]);
 
@@ -42,7 +40,13 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading) return null;
+  if (isUserLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-6">
@@ -91,7 +95,7 @@ export default function LoginPage() {
 
           <Link href="/register">
             <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
-              <UserPlus size={20} className="ml-2" /> إنشاء حساب جديد
+              إنشاء حساب جديد
             </Button>
           </Link>
         </CardContent>

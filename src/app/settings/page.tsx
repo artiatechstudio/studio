@@ -14,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Palette } from 'lucide-react';
+import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon } from 'lucide-react';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲"];
 
@@ -79,7 +79,7 @@ export default function SettingsPage() {
   const handleLogout = async () => {
     try {
       await signOut(auth);
-      router.push('/login');
+      router.replace('/login');
       toast({ title: "تم تسجيل الخروج" });
     } catch (e) {
       console.error(e);
@@ -91,11 +91,15 @@ export default function SettingsPage() {
     
     try {
       const uid = user.uid;
+      // الحذف من الداتا بيس أولاً
       await remove(ref(database, `users/${uid}`));
+      // تسجيل الخروج
+      await signOut(auth);
+      // الحذف من Auth
       await deleteUser(user);
       
       toast({ title: "تم حذف الحساب نهائياً" });
-      router.push('/login');
+      router.replace('/login');
     } catch (e: any) {
       toast({ 
         variant: "destructive", 

@@ -7,8 +7,8 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar, User as UserIcon, LogOut } from 'lucide-react';
+import { Avatar } from '@/components/ui/avatar';
+import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -25,7 +25,7 @@ export default function ProfilePage() {
   const handleLogout = async () => {
     await signOut(auth);
     toast({ title: "تم تسجيل الخروج" });
-    router.push('/login');
+    router.replace('/login');
   };
 
   if (isUserLoading || isLoading) {

@@ -21,7 +21,7 @@ export default function Home() {
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      router.push('/login');
+      router.replace('/login');
     }
   }, [user, isUserLoading, router]);
 
@@ -36,7 +36,14 @@ export default function Home() {
     );
   }
 
-  if (!user || !userData) return null;
+  // إذا لم يكن هناك مستخدم، التوجيه يتم عبر useEffect، هنا نعرض حالة انتظار بسيطة
+  if (!user || !userData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   const profile = userData;
   const totalStages = 120;
@@ -49,7 +56,7 @@ export default function Home() {
       <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-2">
-            <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">أهلاً، {profile.name}! 🐱</h1>
+            <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">أهلاً، {profile.name}! {profile.avatar || "🐱"}</h1>
             <p className="text-muted-foreground text-lg font-bold">رحلة النمو مستمرة، أنت اليوم أفضل من الأمس.</p>
           </div>
           

@@ -34,11 +34,8 @@ export default function ProfilePage() {
       <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex flex-col md:flex-row items-center gap-8 bg-card p-10 rounded-[2.5rem] shadow-xl border border-border">
           <div className="relative">
-            <Avatar className="w-32 h-32 md:w-40 md:h-40 border-8 border-secondary shadow-xl">
-              <AvatarImage src={`https://picsum.photos/seed/${user?.uid}/200/200`} />
-              <AvatarFallback className="bg-primary text-white text-4xl font-black">
-                {userData.name?.substring(0, 1)}
-              </AvatarFallback>
+            <Avatar className="w-32 h-32 md:w-40 md:h-40 border-8 border-secondary shadow-xl bg-white flex items-center justify-center">
+              <span className="text-7xl md:text-8xl">{userData.avatar || "🐱"}</span>
             </Avatar>
             <div className="absolute -bottom-2 -right-2 bg-accent text-white p-3 rounded-2xl shadow-lg border-4 border-card">
               <BadgeCheck size={24} fill="currentColor" />
@@ -64,11 +61,13 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <Link href="/settings">
-            <Button variant="outline" className="rounded-2xl border-2 border-primary text-primary font-black px-6 py-6 h-auto hover:bg-primary/5 transition-all">
-              <SettingsIcon className="ml-2" /> الإعدادات
-            </Button>
-          </Link>
+          <div className="flex flex-col gap-2">
+            <Link href="/settings">
+              <Button variant="outline" className="w-full rounded-2xl border-2 border-primary text-primary font-black px-6 py-4 h-auto hover:bg-primary/5 transition-all">
+                <SettingsIcon className="ml-2" /> الإعدادات
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -93,7 +92,7 @@ export default function ProfilePage() {
             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
               <Trophy size={80} />
             </div>
-            <div className="text-6xl animate-bounce">🐱</div>
+            <div className="text-6xl animate-bounce">{userData.avatar || "🐱"}</div>
             <div>
               <p className="text-4xl font-black">{userData.points || 0}</p>
               <p className="font-bold opacity-80 uppercase tracking-widest text-[10px] mt-1">إجمالي النقاط</p>

@@ -13,7 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { UserPlus, ArrowLeft, User, Ruler, Weight, Calendar } from 'lucide-react';
+import { UserPlus, ArrowLeft } from 'lucide-react';
+
+const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲"];
 
 export default function RegisterPage() {
   const { auth, database } = useFirebase();
@@ -26,6 +28,7 @@ export default function RegisterPage() {
   const [gender, setGender] = useState('male');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
+  const [avatar, setAvatar] = useState('🐱');
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +38,6 @@ export default function RegisterPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // تخزين البيانات في Realtime Database مباشرة بعد إنشاء الحساب
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,
         name,
@@ -44,6 +46,7 @@ export default function RegisterPage() {
         gender,
         height: parseInt(height),
         weight: parseInt(weight),
+        avatar,
         points: 0,
         streak: 0,
         registrationDate: new Date().toISOString(),
@@ -70,9 +73,9 @@ export default function RegisterPage() {
           <Link href="/login" className="absolute left-6 top-8 text-white/80 hover:text-white">
             <ArrowLeft size={24} />
           </Link>
-          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">🐱</div>
+          <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">{avatar}</div>
           <CardTitle className="text-3xl font-black">انضم إلى مجتمع كاري</CardTitle>
-          <p className="opacity-80 font-medium mt-2">رحلة الـ 120 مرحلة تبدأ هنا</p>
+          <p className="opacity-80 font-medium mt-2">رحلة النمو تبدأ هنا</p>
         </CardHeader>
         <CardContent className="p-8 space-y-6">
           <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right" dir="rtl">
@@ -87,6 +90,24 @@ export default function RegisterPage() {
               />
             </div>
             
+            <div className="space-y-2">
+              <Label>اختر رفيقك (الأفاتار)</Label>
+              <Select onValueChange={setAvatar} defaultValue="🐱">
+                <SelectTrigger className="h-12 rounded-xl bg-secondary/50 border-none text-2xl">
+                  <SelectValue placeholder="اختر إيموجي" />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="grid grid-cols-4 gap-2 p-2">
+                    {AVATAR_EMOJIS.map(emoji => (
+                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center">
+                        {emoji}
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <Label>البريد الإلكتروني</Label>
               <Input 

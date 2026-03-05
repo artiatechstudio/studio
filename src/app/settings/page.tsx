@@ -14,7 +14,9 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon } from 'lucide-react';
+import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Palette } from 'lucide-react';
+
+const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲"];
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -29,6 +31,7 @@ export default function SettingsPage() {
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
+  const [avatar, setAvatar] = useState('🐱');
   const [isDark, setIsDark] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -39,6 +42,7 @@ export default function SettingsPage() {
       setGender(userData.gender || 'male');
       setHeight(userData.height?.toString() || '');
       setWeight(userData.weight?.toString() || '');
+      setAvatar(userData.avatar || '🐱');
     }
     const savedTheme = localStorage.getItem('theme');
     setIsDark(savedTheme === 'dark');
@@ -61,7 +65,8 @@ export default function SettingsPage() {
         age: parseInt(age),
         gender,
         height: parseInt(height),
-        weight: parseInt(weight)
+        weight: parseInt(weight),
+        avatar
       });
       toast({ title: "تم التحديث!", description: "تم حفظ بياناتك الشخصية بنجاح." });
     } catch (e) {
@@ -86,9 +91,7 @@ export default function SettingsPage() {
     
     try {
       const uid = user.uid;
-      // 1. مسح البيانات من الداتابيس أولاً
       await remove(ref(database, `users/${uid}`));
-      // 2. حذف المستخدم من نظام الأوث
       await deleteUser(user);
       
       toast({ title: "تم حذف الحساب نهائياً" });
@@ -125,6 +128,25 @@ export default function SettingsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2 col-span-1 md:col-span-2 flex flex-col items-center gap-4 mb-4">
+               <Label className="text-center">اختر رفيقك (الأفاتار)</Label>
+               <div className="text-7xl bg-secondary/50 p-6 rounded-[2rem] shadow-inner mb-2">{avatar}</div>
+               <Select onValueChange={setAvatar} value={avatar}>
+                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold w-48 text-xl">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <div className="grid grid-cols-4 gap-2 p-2">
+                    {AVATAR_EMOJIS.map(emoji => (
+                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center">
+                        {emoji}
+                      </SelectItem>
+                    ))}
+                  </div>
+                </SelectContent>
+              </Select>
+            </div>
+            
             <div className="space-y-2 col-span-1 md:col-span-2">
               <Label>الاسم الكامل</Label>
               <Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />

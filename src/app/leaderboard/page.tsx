@@ -13,13 +13,11 @@ export default function LeaderboardPage() {
   const { database } = useFirebase();
   
   const leadersQuery = useMemoFirebase(() => {
-    // جلب أعلى 100 مستخدم حسب النقاط
     return query(ref(database, 'users'), orderByChild('points'), limitToLast(100));
   }, [database]);
 
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
-  // حساب متوسط آخر 3 أيام
   const getAverageScore = (user: any) => {
     const dailyPoints = user.dailyPoints || {};
     const dates = [];
@@ -39,7 +37,6 @@ export default function LeaderboardPage() {
       ...user,
       avgScore: getAverageScore(user)
     }))
-    // فلترة المستخدمين الذين ليس لديهم نقاط (لم يبدأوا بعد)
     .filter((user: any) => user.points > 0)
     .sort((a: any, b: any) => b.avgScore - a.avgScore) : [];
 
@@ -85,9 +82,8 @@ export default function LeaderboardPage() {
                        index === 2 ? <Medal className="text-amber-600 w-8 h-8 md:w-10 md:h-10 mx-auto" /> : 
                        index + 1}
                     </div>
-                    <Avatar className="h-12 w-12 md:h-16 md:w-16 border-2 md:border-4 border-card shadow-lg">
-                      <AvatarImage src={`https://picsum.photos/seed/${user.id}/150/150`} />
-                      <AvatarFallback className="bg-primary text-white font-black">{user.name?.substring(0, 2)}</AvatarFallback>
+                    <Avatar className="h-12 w-12 md:h-16 md:w-16 border-2 md:border-4 border-card shadow-lg flex items-center justify-center bg-white">
+                      <span className="text-2xl md:text-3xl">{user.avatar || "🐱"}</span>
                     </Avatar>
                     <div>
                       <h3 className="font-black text-primary text-base md:text-xl">{user.name}</h3>

@@ -4,15 +4,12 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Shield, Heart, HelpCircle, AlertTriangle, Lightbulb, ChevronLeft, Scale, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { BookOpen, Heart, Lightbulb, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
-import { useToast } from "@/hooks/use-toast";
 
 export default function ResourcesPage() {
-  const { toast } = useToast();
-
   const categories = [
     {
       title: "الموسوعة الصحية",
@@ -38,13 +35,6 @@ export default function ResourcesPage() {
       color: "text-blue-600",
       bgColor: "bg-blue-50"
     }
-  ];
-
-  const legalLinks = [
-    { title: "الأسئلة الشائعة", icon: HelpCircle, href: "#faq" },
-    { title: "الشروط والأحكام", icon: Scale, href: "#terms" },
-    { title: "سياسة الخصوصية", icon: Shield, href: "#privacy" },
-    { title: "عن كارينجو", icon: Info, href: "#about" },
   ];
 
   return (
@@ -82,26 +72,36 @@ export default function ResourcesPage() {
           ))}
         </section>
 
-        <section className="space-y-8">
-          <h2 className="text-2xl font-black text-primary flex items-center gap-3">
-             السياسات والمعلومات
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {legalLinks.map((link) => (
-              <Button 
-                key={link.title} 
-                variant="outline" 
-                onClick={() => { 
-                  playSound('click'); 
-                  toast({ title: link.title, description: "قريباً في التحديث القادم!" }); 
-                }}
-                className="h-20 rounded-2xl border-2 border-primary/10 hover:border-primary text-primary font-black text-lg gap-3"
-              >
-                <link.icon size={24} />
-                {link.title}
-              </Button>
-            ))}
-          </div>
+        <section className="bg-card p-8 rounded-[2.5rem] shadow-xl border border-border">
+          <h2 className="text-2xl font-black text-primary mb-6">السياسات والمعلومات</h2>
+          <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="faq">
+              <AccordionTrigger className="text-right font-black text-lg">الأسئلة الشائعة</AccordionTrigger>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
+                <p>1. كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
+                <p>2. هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت.</p>
+                <p>3. كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز وصعوبة المهمة.</p>
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="terms">
+              <AccordionTrigger className="text-right font-black text-lg">الشروط والأحكام</AccordionTrigger>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
+                استخدام تطبيق كارينجو يعني موافقتك على الالتزام بالقواعد الصحية والأخلاقية للمجتمع. نحن نوفر الأدوات، والمسؤولية الكاملة عن التنفيذ الصحي تقع على عاتق المستخدم.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="privacy">
+              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية</AccordionTrigger>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
+                خصوصيتك مقدسة. بياناتك الصحية والبدنية مشفرة ولا يتم مشاركتها مع أي طرف ثالث. نستخدم البيانات فقط لتحسين تجربتك الشخصية داخل التطبيق.
+              </AccordionContent>
+            </AccordionItem>
+            <AccordionItem value="about">
+              <AccordionTrigger className="text-right font-black text-lg">عن كارينجو و Artiatech Studio</AccordionTrigger>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
+                كارينجو هو مشروع طموح من تطوير Artiatech Studio، نهدف من خلاله إلى جعل عملية التطوير الذاتي رحلة ممتعة وتفاعلية تشبه الألعاب. نحن نؤمن أن النمو يبدأ بخطوة صغيرة يومية.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </section>
 
         <div className="text-center py-10 opacity-40 font-black text-primary text-xs">

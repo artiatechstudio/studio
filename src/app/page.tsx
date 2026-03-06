@@ -29,10 +29,11 @@ export default function Home() {
 
   if (isUserLoading || (user && isDataLoading)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-6">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-8">
+        <div className="text-9xl animate-bounce">🐱</div>
+        <div className="flex flex-col items-center gap-4">
           <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
-          <div className="text-primary font-black text-xl animate-pulse">جاري التحميل...</div>
+          <div className="text-primary font-black text-2xl animate-pulse">كاري ينتظرك بشوق...</div>
         </div>
       </div>
     );

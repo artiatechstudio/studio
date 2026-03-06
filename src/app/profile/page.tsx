@@ -1,24 +1,27 @@
 
 "use client"
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { BadgeCheck, Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
   const { database, auth } = useFirebase();
   const router = useRouter();
+  const [showQr, setShowQr] = useState(false);
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
@@ -30,29 +33,17 @@ export default function ProfilePage() {
     router.replace('/login');
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     playSound('click');
-    const shareUrl = "https://www.artiatechstudio.com.ly/2026/02/nova-care.html";
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'كارينجو - رفيقك للنمو',
-          text: 'انضم إلي في رحلة النمو مع تطبيق كارينجو!',
-          url: shareUrl,
-        });
-      } catch (error) {
-        // Fallback if sharing is denied or fails
-        window.open(shareUrl, '_blank');
-      }
-    } else {
-      window.open(shareUrl, '_blank');
-    }
+    setShowQr(true);
   };
 
   if (isUserLoading || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
+        <div className="text-8xl animate-bounce">🐱</div>
         <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
+        <p className="text-primary font-black text-xl animate-pulse">كاري يجهز ملفك الشخصي...</p>
       </div>
     );
   }
@@ -141,11 +132,33 @@ export default function ProfilePage() {
              </div>
              <div className="space-y-1">
                <h3 className="font-black text-primary text-xl">شارك التطبيق</h3>
-               <p className="text-xs text-muted-foreground font-bold">ادعُ أصدقاءك للانضمام ومشاركة الرحلة!</p>
+               <p className="text-xs text-muted-foreground font-bold">دع أصدقاءك يصورون الرمز للانضمام!</p>
              </div>
-             <Button onClick={handleShare} className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
-               <Share2 size={18} /> مشاركة الرابط
-             </Button>
+             <Dialog open={showQr} onOpenChange={setShowQr}>
+               <DialogTrigger asChild>
+                 <Button onClick={handleShare} className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
+                   <Share2 size={18} /> إظهار الرمز
+                 </Button>
+               </DialogTrigger>
+               <DialogContent className="rounded-[3rem] p-10 text-center sm:max-w-md">
+                 <DialogHeader>
+                   <DialogTitle className="text-2xl font-black text-primary">ادعُ أصدقاءك</DialogTitle>
+                 </DialogHeader>
+                 <div className="flex flex-col items-center gap-6 mt-4">
+                   <div className="bg-white p-6 rounded-[2rem] shadow-inner border-4 border-accent">
+                      <Image 
+                        src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.artiatechstudio.com.ly/2026/02/nova-care.html" 
+                        alt="QR Code" 
+                        width={250} 
+                        height={250} 
+                        className="rounded-lg"
+                      />
+                   </div>
+                   <p className="font-bold text-muted-foreground">اجعل أصدقاءك يصورون هذا الرمز للتحميل المباشر 🐱</p>
+                   <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-2xl font-black">إغلاق</Button>
+                 </div>
+               </DialogContent>
+             </Dialog>
           </Card>
         </div>
       </div>

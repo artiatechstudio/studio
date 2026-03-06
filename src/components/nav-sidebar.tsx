@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -100,7 +101,7 @@ export function NavSidebar() {
             onClick={() => playSound('click')}
             className={cn(
               "flex flex-col items-center justify-center transition-all flex-1 px-1",
-              item.isCenter ? "relative -top-8" : "mb-2",
+              item.isCenter ? "relative -top-10" : "mb-2",
               pathname === item.href && !item.isCenter ? "text-primary" : "text-muted-foreground"
             )}
           >
@@ -115,7 +116,7 @@ export function NavSidebar() {
             </div>
             <span className={cn(
               "text-[10px] font-black whitespace-nowrap",
-              item.isCenter ? "text-primary font-black -mt-0.5" : "opacity-60"
+              item.isCenter ? "text-primary font-black mt-1" : "opacity-60"
             )}>
               {item.label}
             </span>

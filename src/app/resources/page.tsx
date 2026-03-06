@@ -52,7 +52,7 @@ export default function ResourcesPage() {
         <header className="space-y-4 text-right">
           <div className="flex items-center justify-start gap-6">
             <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl">
-              <BookOpen size={40} />
+              < BookOpen size={40} />
             </div>
             <div>
               <h1 className="text-4xl font-black text-primary">مركز الموارد</h1>

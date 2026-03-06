@@ -1,11 +1,11 @@
 
 "use client"
 
-import React, { use, useState, useEffect, useCallback } from 'react';
+import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, AlertTriangle, Play, XCircle, FastForward } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -14,6 +14,7 @@ import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, get } from 'firebase/database';
 import { playSound } from '@/lib/sounds';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function StageDetailPage({ params }: { params: Promise<{ type: string, stageId: string }> }) {
   const resolvedParams = use(params);
@@ -28,6 +29,11 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const [isUpdating, setIsUpdating] = useState(false);
   const [onCooldown, setOnCooldown] = useState(false);
 
+  // Timer states
+  const [timerActive, setTimerActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
   const challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
 
   const progressRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${trackKey}`) : null, [user, database, trackKey]);
@@ -38,11 +44,9 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const isDone = progressData.completedStages?.includes(stageId);
       setCompleted(!!isDone);
       
-      // التحقق من نظام "مرحلة واحدة يومياً"
       const todayStr = new Date().toLocaleDateString('en-CA');
       const hasCompletedToday = progressData.lastCompletedDate === todayStr;
       
-      // إذا كان المستخدم قد أكمل مرحلة اليوم، ويحاول دخول مرحلة جديدة (ليست المرحلة الأولى)
       if (hasCompletedToday && !isDone && stageId > 1) {
         setOnCooldown(true);
       }
@@ -52,6 +56,36 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       setLoading(false);
     }
   }, [progressData, stageId]);
+
+  // Handle countdown
+  useEffect(() => {
+    if (timerActive && timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0 && timerActive) {
+      setTimerActive(false);
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [timerActive, timeLeft]);
+
+  const startChallenge = () => {
+    playSound('click');
+    setTimerActive(true);
+    setTimeLeft((challenge?.time || 5) * 60);
+    toast({ title: "بدأ التحدي!", description: "ركز الآن على تنفيذ المهمة المطلوبة." });
+  };
+
+  const cancelChallenge = () => {
+    playSound('click');
+    setTimerActive(false);
+    setTimeLeft(0);
+    toast({ variant: "destructive", title: "تم إلغاء المهمة", description: "لا بأس، يمكنك المحاولة مرة أخرى لاحقاً." });
+  };
 
   const calculateBonus = () => {
     const now = new Date();
@@ -117,6 +151,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       });
 
       setCompleted(true);
+      setTimerActive(false);
       playSound('success');
       toast({
         title: "تم الإنجاز! 🎉",
@@ -128,6 +163,12 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       setIsUpdating(false);
     }
   }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   if (onCooldown) {
     return (
@@ -196,13 +237,40 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                   </div>
                   
                   {!completed ? (
-                    <Button 
-                      onClick={handleComplete}
-                      disabled={isUpdating}
-                      className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-xl font-black shadow-2xl shadow-accent/30 transition-all hover:scale-[1.03] active:scale-95"
-                    >
-                      {isUpdating ? "جاري الحفظ..." : "أنجزت المهمة الآن! 🔥"}
-                    </Button>
+                    <div className="space-y-6">
+                      {!timerActive ? (
+                        <Button 
+                          onClick={startChallenge}
+                          className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black shadow-xl transition-all hover:scale-[1.02]"
+                        >
+                          <Play className="ml-2" /> ابدأ التحدي الآن 🐱
+                        </Button>
+                      ) : (
+                        <div className="space-y-6">
+                          <div className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 text-center space-y-4">
+                            <p className="text-sm font-black text-primary uppercase tracking-widest">الوقت المتبقي</p>
+                            <p className="text-6xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
+                          </div>
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <Button 
+                              onClick={handleComplete}
+                              disabled={isUpdating}
+                              className="h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-black shadow-xl"
+                            >
+                              <FastForward className="ml-2" /> أنهيت مبكراً 🔥
+                            </Button>
+                            <Button 
+                              onClick={cancelChallenge}
+                              variant="outline"
+                              className="h-16 rounded-2xl border-2 border-destructive text-destructive hover:bg-destructive/5 font-black text-lg"
+                            >
+                              <XCircle className="ml-2" /> لم أنهِ المهمة
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="bg-green-500/5 border-4 border-green-500/20 p-12 rounded-[3rem] flex flex-col items-center gap-6 text-center shadow-inner">
                       <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white shadow-xl animate-float">

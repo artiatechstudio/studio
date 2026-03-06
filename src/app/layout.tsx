@@ -1,8 +1,9 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
-import { SplashScreen } from '@/components/splash-screen';
+import { AppWrapper } from '@/components/app-wrapper';
 
 export const metadata: Metadata = {
   title: 'كارينجو | رفيقك اليومي للنمو',
@@ -57,15 +58,16 @@ export default function RootLayout({
         }} />
       </head>
       <body className="font-body antialiased min-h-screen bg-background text-right transition-colors duration-300" suppressHydrationWarning>
-        <SplashScreen />
-        <FirebaseClientProvider>
-          <div className="flex flex-col min-h-screen">
-            <main className="flex-1">
-              {children}
-            </main>
-          </div>
-          <Toaster />
-        </FirebaseClientProvider>
+        <AppWrapper>
+          <FirebaseClientProvider>
+            <div className="flex flex-col min-h-screen">
+              <main className="flex-1">
+                {children}
+              </main>
+            </div>
+            <Toaster />
+          </FirebaseClientProvider>
+        </AppWrapper>
       </body>
     </html>
   );

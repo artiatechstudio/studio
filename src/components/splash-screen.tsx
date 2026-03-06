@@ -1,30 +1,19 @@
+
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
  * يعرض فيديو splash.mp4 بملء الشاشة كأول شيء يراه المستخدم لمدة 8 ثوانٍ.
  */
-export function SplashScreen() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
-
+export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
-    setIsMounted(true);
-    const hasSeenSplash = sessionStorage.getItem('splash_shown');
-    
-    if (!hasSeenSplash) {
-      setIsVisible(true);
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-        sessionStorage.setItem('splash_shown', 'true');
-      }, 8000); // 8 ثواني كما طلبت
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  if (!isMounted || !isVisible) return null;
+    const timer = setTimeout(() => {
+      onComplete();
+    }, 8000); // 8 ثواني كما طلبت
+    return () => clearTimeout(timer);
+  }, [onComplete]);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden">
@@ -33,7 +22,6 @@ export function SplashScreen() {
         muted 
         playsInline 
         className="absolute w-full h-full object-cover"
-        onEnded={() => setIsVisible(false)}
       >
         <source src="/splash.mp4" type="video/mp4" />
       </video>

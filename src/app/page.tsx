@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useEffect, useMemo } from 'react';
@@ -46,12 +47,8 @@ export default function Home() {
 
   if (isUserLoading || (user && isDataLoading)) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-10">
-        <div className="text-7xl animate-bounce">🐱</div>
-        <div className="flex flex-col items-center gap-6">
-          <div className="w-16 h-16 border-[6px] border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
-          <div className="text-primary font-black text-2xl animate-pulse px-4 text-center">كاري ينتظرك بشوق...</div>
-        </div>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }

@@ -49,6 +49,8 @@ export default function ProfilePage() {
   }
 
   const userData = profile || {};
+  // استخدام المعرف من نظام المصادقة مباشرة لضمان الدقة
+  const membershipId = user?.uid?.substring(0, 6).toUpperCase() || "------";
 
   const getRankName = (points: number = 0) => {
     if (points >= 10000) return "أسطورة كاري 👑";
@@ -75,7 +77,7 @@ export default function ProfilePage() {
           <div className="flex-1 text-center md:text-right space-y-3">
             <div className="flex flex-col md:flex-row items-center gap-3">
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
-              <span className="bg-secondary px-4 py-1 rounded-full text-xs font-black text-muted-foreground">العضو رقم {userData.id?.substring(0, 6)}</span>
+              <span className="bg-secondary px-4 py-1 rounded-full text-xs font-black text-muted-foreground">العضو رقم {membershipId}</span>
             </div>
             <p className="text-muted-foreground font-bold text-lg italic">{getRankName(userData.points)}</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">

@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -70,7 +71,7 @@
 .rtl-calendar .rdp {
   --rdp-cell-size: 45px;
   width: 100% !important;
-  max-width: 350px !important;
+  max-width: 100% !important;
   margin: 0 auto !important;
 }
 
@@ -87,21 +88,9 @@
   max-width: 100% !important;
 }
 
-.rtl-calendar .rdp-head_row {
-  display: flex !important;
-  justify-content: space-around !important;
-}
-
 .rtl-calendar .rdp-row {
   display: flex !important;
   justify-content: space-around !important;
-}
-
-.rtl-calendar .rdp-head_cell {
-  @apply font-black text-primary/60;
-  text-align: center !important;
-  width: var(--rdp-cell-size) !important;
-  font-size: 0.75rem !important;
 }
 
 .rtl-calendar .rdp-cell {

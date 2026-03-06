@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo } from 'react';
@@ -80,11 +81,12 @@ export default function StreakPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 md:p-10">
-              <div className="rtl-calendar">
+              <div className="rtl-calendar flex justify-center">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
-                  className="rounded-[2.5rem] border shadow-inner p-4 md:p-8 bg-secondary/5 w-full"
+                  showHead={false}
+                  className="rounded-[2.5rem] border shadow-inner p-4 md:p-12 bg-secondary/5 w-full max-w-none"
                   modifiers={{
                     completed: completedDates
                   }}

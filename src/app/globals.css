@@ -60,17 +60,25 @@
   }
 }
 
-/* RTL Calendar Overrides */
+/* RTL Calendar Fixes */
 .rtl-calendar {
   direction: ltr !important;
 }
 
+.rtl-calendar .rdp-head_row {
+  @apply flex flex-row-reverse w-full;
+}
+
+.rtl-calendar .rdp-row {
+  @apply flex flex-row-reverse w-full mt-2;
+}
+
 .rtl-calendar .rdp-head_cell {
-  @apply text-center font-black text-xs text-primary/60;
+  @apply text-center font-black text-[10px] text-primary/60 w-9;
 }
 
 .rtl-calendar .rdp-month {
-  @apply space-y-4 text-center mx-auto;
+  @apply space-y-4 text-center mx-auto w-full;
 }
 
 .rtl-calendar .rdp-caption_label {

@@ -7,9 +7,10 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CalendarDays, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Flame, CalendarDays, CheckCircle2, AlertCircle, Trophy, TrendingUp, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { playSound } from '@/lib/sounds';
+import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
   const { user, isUserLoading } = useUser();
@@ -45,32 +46,46 @@ export default function StreakPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-64" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-10">
-        <header className="flex items-center gap-6">
-          <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 shadow-xl border-4 border-white dark:border-slate-800">
-            <Flame size={40} fill="currentColor" />
+      <div className="app-container py-10 md:py-16 space-y-12">
+        <header className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card p-10 rounded-[3rem] shadow-2xl border border-border mx-2 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full -translate-x-16 -translate-y-16" />
+          <div className="flex items-center gap-8 relative z-10">
+            <div className="w-24 h-24 bg-orange-100 dark:bg-orange-900/30 rounded-[2.5rem] flex items-center justify-center text-orange-600 shadow-xl border-4 border-white dark:border-slate-800 animate-float">
+              <Flame size={56} fill="currentColor" />
+            </div>
+            <div className="text-right">
+              <h1 className="text-4xl md:text-6xl font-black text-primary leading-none">سجل الحماسة</h1>
+              <p className="text-muted-foreground font-bold text-lg mt-2">توثيق رحلة نموك اليومية 🔥</p>
+            </div>
           </div>
-          <div className="text-right">
-            <h1 className="text-4xl font-black text-primary text-right">سجل الحماسة</h1>
-            <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية الموثقة 🔥</p>
+          
+          <div className="flex flex-wrap gap-4 justify-center relative z-10">
+            <div className="bg-orange-500 text-white px-8 py-4 rounded-[2rem] text-center shadow-lg shadow-orange-500/20">
+               <p className="text-4xl font-black">{userData?.streak || 0}</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-80">يوم مستمر</p>
+            </div>
+            <div className="bg-primary text-white px-8 py-4 rounded-[2rem] text-center shadow-lg shadow-primary/20">
+               <p className="text-4xl font-black">{(userData?.points || 0).toLocaleString()}</p>
+               <p className="text-[10px] font-black uppercase tracking-widest opacity-80">نقطة إجمالية</p>
+            </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card className="md:col-span-2 border-none shadow-2xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
-            <CardHeader className="bg-primary/5 p-8 border-b border-border">
-              <CardTitle className="text-xl font-black text-primary flex items-center justify-end gap-3">
-                تقويم الإنجاز <CalendarDays className="text-primary" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 mx-2">
+          <Card className="lg:col-span-2 border-none shadow-2xl rounded-[3rem] bg-card overflow-hidden border border-border">
+            <CardHeader className="bg-secondary/10 p-10 border-b border-border">
+              <CardTitle className="text-2xl font-black text-primary flex items-center justify-end gap-3">
+                خارطة الإنجاز <CalendarDays className="text-primary" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-8 flex justify-center items-center overflow-x-auto">
-              <div className="flex justify-center w-full rtl-calendar">
+            <CardContent className="p-10">
+              <div className="rtl-calendar flex justify-center">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
-                  className="rounded-3xl border shadow-inner p-4 bg-secondary/10 flex items-center justify-center mx-auto"
+                  className="rounded-[2.5rem] border shadow-inner p-8 bg-secondary/5"
                   modifiers={{
                     completed: completedDates
                   }}
@@ -83,38 +98,49 @@ export default function StreakPage() {
                   }}
                 />
               </div>
+              <div className="mt-8 flex items-center justify-center gap-4 text-xs font-black text-muted-foreground">
+                 <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-500 rounded-full" /> يوم منجز</div>
+                 <div className="flex items-center gap-2"><div className="w-3 h-3 bg-secondary rounded-full" /> يوم لم يكتمل</div>
+              </div>
             </CardContent>
           </Card>
 
-          <div className="space-y-6">
-            <Card 
-              onClick={() => playSound('click')}
-              className="border-none shadow-xl rounded-[2.5rem] bg-orange-500 text-white p-8 text-center flex flex-col items-center justify-center gap-4 cursor-pointer hover:scale-105 transition-transform"
-            >
-              <div className="text-6xl animate-bounce">🔥</div>
-              <div>
-                <p className="text-5xl font-black">{userData?.streak || 0}</p>
-                <p className="font-bold opacity-80 uppercase tracking-widest text-xs mt-2">يوم حماسة مستمر</p>
-              </div>
-            </Card>
-
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border text-right">
-              <h3 className="font-black text-primary mb-4 flex items-center justify-end gap-2">
+          <div className="space-y-8">
+            <Card className="border-none shadow-xl rounded-[3rem] bg-card p-10 border border-border text-right relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-full h-2 bg-gradient-to-l from-orange-500 to-primary" />
+              <h3 className="font-black text-2xl text-primary mb-6 flex items-center justify-end gap-3">
                 حالة اليوم
                 {isDoneToday ? <CheckCircle2 className="text-green-500" /> : <AlertCircle className="text-orange-500" />}
               </h3>
-              <p className="text-sm font-bold text-muted-foreground leading-relaxed">
+              <p className="text-lg font-bold text-muted-foreground leading-relaxed">
                 {isDoneToday 
-                  ? "أحسنت! لقد أتممت مهمتك لليوم وحافظت على السلسلة. نراك غداً!" 
-                  : "لم تسجل أي إنجاز لليوم بعد. أسرع قبل أن تنتهي السلسلة!"}
+                  ? "أحسنت يا بطل! لقد أتممت مهمتك لليوم وحافظت على السلسلة بنجاح. استمر!" 
+                  : "لم تسجل أي إنجاز لليوم بعد. تذكر أن كل دقيقة تمر تقربك من فقدان حماسك!"}
               </p>
               {!isDoneToday && (
-                <div className="flex justify-end mt-4">
-                  <Badge variant="outline" className="border-orange-500 text-orange-500 font-black px-3 py-1">
-                    مهمة مطلوبة 🔥
+                <div className="flex justify-end mt-8">
+                  <Badge variant="outline" className="border-orange-500 text-orange-500 font-black px-6 py-2 rounded-2xl animate-pulse">
+                    مطلوب إنجاز 🔥
                   </Badge>
                 </div>
               )}
+            </Card>
+
+            <Card className="border-none shadow-xl rounded-[3rem] bg-primary/5 p-10 border border-primary/10 text-right">
+              <div className="flex items-center justify-end gap-3 text-primary mb-6">
+                <h3 className="font-black text-xl">إحصائيات ذكية</h3>
+                <TrendingUp size={24} />
+              </div>
+              <div className="space-y-6">
+                <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
+                   <p className="font-black text-primary text-xl">{completedDates.length}</p>
+                   <p className="font-bold text-muted-foreground">أيام الإنجاز الكلية</p>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
+                   <p className="font-black text-primary text-xl">{userData?.registrationRank || '--'}</p>
+                   <p className="font-bold text-muted-foreground">رقم العضوية</p>
+                </div>
+              </div>
             </Card>
           </div>
         </div>

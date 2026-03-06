@@ -23,14 +23,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const [showQr, setShowQr] = useState(false);
   
-  // جلب كافة المستخدمين لحساب الرتبة
   const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
   const { data: allUsersData, isLoading: isAllUsersLoading } = useDatabase(allUsersRef);
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
 
-  // حساب رقم العضوية بناءً على تاريخ التسجيل
   const membershipInfo = useMemo(() => {
     if (!allUsersData || !user) return { rank: 0, total: 0 };
     
@@ -87,7 +85,7 @@ export default function ProfilePage() {
           </Avatar>
           
           <div className="flex-1 text-center md:text-right space-y-3">
-            <div className="flex flex-col md:flex-row items-center gap-3">
+            <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3">
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
               <span className="bg-primary/10 px-4 py-1 rounded-full text-xs font-black text-primary border border-primary/20">
                 العضو رقم {membershipInfo.rank} من {membershipInfo.total}

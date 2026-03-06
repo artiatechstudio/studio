@@ -13,6 +13,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { playSound } from '@/lib/sounds';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -65,7 +66,7 @@ export default function Home() {
           <div className="text-8xl animate-bounce">🐱</div>
           <h1 className="text-3xl font-black text-primary">أهلاً بك! يبدو أنك جديد هنا</h1>
           <p className="text-muted-foreground font-bold text-lg">تحتاج لإكمال ملفك الشخصي لنبدأ رحلة النمو معاً.</p>
-          <Link href="/register">
+          <Link href="/register" onClick={() => playSound('click')}>
             <Button className="w-full h-14 rounded-2xl bg-accent text-xl font-black shadow-lg">إكمال البيانات 🐱</Button>
           </Link>
         </div>
@@ -83,7 +84,6 @@ export default function Home() {
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-4 md:p-10 space-y-6">
         
-        {/* Compact App Bar Style Header */}
         <header className="flex items-center justify-between bg-card p-4 rounded-[2rem] shadow-lg border border-border sticky top-4 z-30">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white text-xl">
@@ -96,7 +96,7 @@ export default function Home() {
           </div>
           
           <div className="flex items-center gap-2">
-            <Link href="/streak">
+            <Link href="/streak" onClick={() => playSound('click')}>
               <div className="flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 px-3 py-1.5 rounded-full border border-orange-200 dark:border-orange-800 transition-transform active:scale-95">
                 <Flame size={16} className="text-orange-600" fill="currentColor" />
                 <span className="text-sm font-black text-orange-600">{profile.streak || 0}</span>
@@ -109,7 +109,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* BMI & Progress Summary Row */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card">
             <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 shrink-0">
@@ -142,12 +141,10 @@ export default function Home() {
           </Card>
         </div>
 
-        {/* Mascot Message */}
         <section className="bg-primary/5 rounded-[2rem] p-4 border border-primary/10">
           <Mascot />
         </section>
 
-        {/* Tracks Grid (2x2 on Mobile, 4x1 on Desktop) */}
         <section className="space-y-4">
           <h2 className="text-xl font-black text-primary px-2">اختر مسارك</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

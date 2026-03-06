@@ -1,9 +1,9 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser } from '@/firebase';
-import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, ArrowLeft, Sparkles } from 'lucide-react';
@@ -38,14 +38,18 @@ export default function AiChatPage() {
 
     const userMsg = inputText.trim();
     setInputText('');
+    
+    // حفظ السجل الحالي قبل الإرسال
+    const currentHistory = [...messages];
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    
     setIsLoading(true);
     playSound('click');
 
     try {
       const response = await aiChat({
         message: userMsg,
-        history: messages
+        history: currentHistory
       });
       
       setMessages(prev => [...prev, { role: 'model', content: response.response }]);

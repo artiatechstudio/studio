@@ -7,14 +7,13 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Activity, HeartPulse, AlertTriangle } from 'lucide-react';
+import { Flame, Star, Activity, HeartPulse } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { playSound } from '@/lib/sounds';
-import { toast } from '@/hooks/use-toast';
+import { AdBanner } from '@/components/ad-banner';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -123,7 +122,7 @@ export default function Home() {
                 <div className="flex items-center gap-4">
                   <span className="text-3xl font-black text-primary">{progressPercent}%</span>
                   <div className="flex-1 bg-secondary h-3 rounded-full overflow-hidden hidden sm:block shadow-inner">
-                    <div className="bg-accent h-full transition-all duration-1000 shadow-[0_0_10px_rgba(var(--accent),0.5)]" style={{ width: `${progressPercent}%` }} />
+                    <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
                   </div>
                 </div>
               </div>
@@ -134,6 +133,11 @@ export default function Home() {
         <section className="bg-primary/5 rounded-[3rem] p-6 border border-primary/10 mx-2 shadow-inner cursor-pointer" onClick={() => router.push('/streak')}>
           <Mascot />
         </section>
+
+        {/* مساحة إعلانية تجريبية */}
+        <div className="mx-2">
+          <AdBanner label="إعلان ممول" />
+        </div>
 
         <section className="space-y-6 mx-2">
           <h2 className="text-2xl font-black text-primary px-4">اختر مسارك</h2>

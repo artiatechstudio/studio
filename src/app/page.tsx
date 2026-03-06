@@ -7,11 +7,12 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Trophy, Activity, HeartPulse } from 'lucide-react';
+import { Flame, Star, Activity, HeartPulse } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -33,11 +34,11 @@ export default function Home() {
     const bmi = (userData.weight / (heightInMeters * heightInMeters)).toFixed(1);
     const val = parseFloat(bmi);
     
-    let status = "غير معروف";
-    let color = "text-gray-500";
-    if (val < 18.5) { status = "وزن ناقص"; color = "text-blue-500"; }
-    else if (val < 25) { status = "وزن مثالي"; color = "text-green-500"; }
-    else if (val < 30) { status = "وزن زائد"; color = "text-orange-500"; }
+    let status = "مثالي";
+    let color = "text-green-500";
+    if (val < 18.5) { status = "نحافة"; color = "text-blue-500"; }
+    else if (val < 25) { status = "مثالي"; color = "text-green-500"; }
+    else if (val < 30) { status = "زيادة"; color = "text-orange-500"; }
     else { status = "سمنة"; color = "text-red-500"; }
     
     return { value: bmi, status, color };
@@ -80,94 +81,84 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background pb-32 md:pr-64" dir="rtl">
       <NavSidebar />
-      <div className="max-w-7xl mx-auto p-6 md:p-12 space-y-10">
-        <header className="flex flex-col gap-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2">
-              <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">أهلاً، {profile.name}! {profile.avatar || "🐱"}</h1>
-              <p className="text-muted-foreground text-lg font-bold">رحلة النمو مستمرة، أنت اليوم أفضل من الأمس.</p>
+      <div className="max-w-5xl mx-auto p-4 md:p-10 space-y-6">
+        
+        {/* Compact App Bar Style Header */}
+        <header className="flex items-center justify-between bg-card p-4 rounded-[2rem] shadow-lg border border-border sticky top-4 z-30">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white text-xl">
+              {profile.avatar || "🐱"}
             </div>
-            
-            <div className="flex flex-wrap gap-4">
-              <Link href="/streak">
-                <Card className="flex items-center gap-4 px-5 py-3 rounded-2xl border-none shadow-xl bg-card hover:bg-secondary/50 transition-colors cursor-pointer">
-                  <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-xl flex items-center justify-center text-orange-600">
-                    <Flame size={24} fill="currentColor" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase">الحماسة</p>
-                    <p className="text-xl font-black text-orange-600">{profile.streak || 0} يوم</p>
-                  </div>
-                </Card>
-              </Link>
-              
-              <Card className="flex items-center gap-4 px-5 py-3 rounded-2xl border-none shadow-xl bg-card">
-                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center text-yellow-600">
-                  <Star size={24} fill="currentColor" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-muted-foreground uppercase">النقاط</p>
-                  <p className="text-xl font-black text-yellow-600">{profile.points?.toLocaleString() || 0}</p>
-                </div>
-              </Card>
+            <div className="hidden sm:block">
+              <p className="text-xs font-black text-muted-foreground">أهلاً بك</p>
+              <p className="text-sm font-black text-primary">{profile.name}</p>
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="bg-card p-6 rounded-[2.5rem] shadow-xl border border-border flex items-center gap-6">
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-green-600">
-                <HeartPulse size={36} />
+          
+          <div className="flex items-center gap-2">
+            <Link href="/streak">
+              <div className="flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 px-3 py-1.5 rounded-full border border-orange-200 dark:border-orange-800 transition-transform active:scale-95">
+                <Flame size={16} className="text-orange-600" fill="currentColor" />
+                <span className="text-sm font-black text-orange-600">{profile.streak || 0}</span>
               </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-black text-muted-foreground uppercase mb-1">مؤشر كتلة الجسم (BMI)</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-black text-primary">{bmiInfo?.value || '--'}</span>
-                  <span className={cn("px-3 py-1 rounded-full text-xs font-black bg-secondary/50", bmiInfo?.color)}>
-                    {bmiInfo?.status || 'غير محسوب'}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 font-bold">هدفنا هو الوصول للوزن المثالي والحفاظ عليه.</p>
-              </div>
-            </Card>
-
-            <Card className="bg-card p-6 rounded-[2.5rem] shadow-xl border border-border flex items-center gap-6">
-              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent">
-                <Activity size={36} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-black text-muted-foreground uppercase mb-1">التقدم العام</h3>
-                <div className="flex items-center gap-3">
-                  <span className="text-3xl font-black text-primary">{progressPercent}%</span>
-                  <div className="flex-1 bg-secondary h-3 rounded-full overflow-hidden">
-                    <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2 font-bold">لقد أكملت {completedCount} من أصل {totalStages} مهمة إجمالية.</p>
-              </div>
-            </Card>
+            </Link>
+            <div className="flex items-center gap-1.5 bg-yellow-100 dark:bg-yellow-900/30 px-3 py-1.5 rounded-full border border-yellow-200 dark:border-yellow-800">
+              <Star size={16} className="text-yellow-600" fill="currentColor" />
+              <span className="text-sm font-black text-yellow-600">{(profile.points || 0).toLocaleString()}</span>
+            </div>
           </div>
         </header>
 
-        <section className="bg-primary/5 dark:bg-primary/10 rounded-[2.5rem] p-6 md:p-10 border border-primary/10">
+        {/* BMI & Progress Summary Row */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card">
+            <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 shrink-0">
+              <HeartPulse size={24} />
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-[10px] font-black text-muted-foreground uppercase">مؤشر الجسم</p>
+              <div className="flex items-baseline gap-1">
+                <span className="text-lg font-black text-primary">{bmiInfo?.value || '--'}</span>
+                <span className={cn("text-[9px] font-black px-1.5 rounded-md bg-secondary", bmiInfo?.color)}>
+                  {bmiInfo?.status || '--'}
+                </span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card">
+            <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
+              <Activity size={24} />
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <p className="text-[10px] font-black text-muted-foreground uppercase">الإنجاز الكلي</p>
+              <div className="flex items-center gap-2">
+                <span className="text-lg font-black text-primary">{progressPercent}%</span>
+                <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden hidden sm:block">
+                  <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Mascot Message */}
+        <section className="bg-primary/5 rounded-[2rem] p-4 border border-primary/10">
           <Mascot />
         </section>
 
-        <section className="space-y-8">
-          <h2 className="text-2xl font-black text-primary flex items-center gap-3">
-             مساراتك الحالية
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Tracks Grid (2x2 on Mobile, 4x1 on Desktop) */}
+        <section className="space-y-4">
+          <h2 className="text-xl font-black text-primary px-2">اختر مسارك</h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <TrackCard type="Fitness" currentStage={profile.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
             <TrackCard type="Nutrition" currentStage={profile.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
             <TrackCard type="Behavior" currentStage={profile.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
             <TrackCard type="Study" currentStage={profile.trackProgress?.Study?.currentStage || 1} totalStages={30} />
           </div>
         </section>
+
       </div>
     </div>
   );
-}
-
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
 }

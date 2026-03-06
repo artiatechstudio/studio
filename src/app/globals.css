@@ -61,12 +61,40 @@
   }
 }
 
-/* RTL Calendar Clean */
+/* RTL Calendar Full Alignment */
 .rtl-calendar-clean {
   direction: rtl !important;
   width: 100% !important;
   display: flex !important;
   justify-content: center !important;
+}
+
+.rtl-calendar-clean .rdp-month {
+  width: 100% !important;
+}
+
+.rtl-calendar-clean .rdp-table {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.rtl-calendar-clean .rdp-cell {
+  width: 14.28% !important;
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+}
+
+.rtl-calendar-clean .rdp-day {
+  width: 100% !important;
+  aspect-ratio: 1/1 !important;
+  height: auto !important;
+  font-weight: 900 !important;
+  font-size: 1.2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 1rem !important;
 }
 
 .rtl-calendar-clean .rdp-month_caption {
@@ -75,13 +103,7 @@
   margin-bottom: 1.5rem !important;
   font-weight: 900 !important;
   font-size: 1.3rem !important;
-}
-
-.rtl-calendar-clean .rdp-day {
-  width: 50px !important;
-  height: 50px !important;
-  font-weight: 900 !important;
-  font-size: 1.2rem !important;
+  color: hsl(var(--primary));
 }
 
 /* Scrollbar Styling */

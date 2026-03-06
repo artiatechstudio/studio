@@ -52,10 +52,10 @@ export default function StreakPage() {
     <div className="min-h-screen bg-background pb-40 md:pr-72" dir="rtl">
       <NavSidebar />
       <div className="app-container py-10 md:py-16 space-y-12">
-        <header className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card p-10 rounded-[3rem] shadow-2xl border border-border mx-2 relative overflow-hidden">
+        <header className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card p-10 rounded-[3rem] shadow-2xl border border-border mx-2 relative overflow-hidden text-right">
           <div className="absolute top-0 left-0 w-32 h-32 bg-primary/5 rounded-full -translate-x-16 -translate-y-16" />
-          <div className="flex items-center gap-8 relative z-10">
-            <div className="w-24 h-24 bg-orange-100 dark:bg-orange-900/30 rounded-[2.5rem] flex items-center justify-center text-orange-600 shadow-xl border-4 border-white dark:border-slate-800 animate-float">
+          <div className="flex items-center gap-8 relative z-10 w-full md:w-auto">
+            <div className="w-24 h-24 bg-orange-100 dark:bg-orange-900/30 rounded-[2.5rem] flex items-center justify-center text-orange-600 shadow-xl border-4 border-white dark:border-slate-800 animate-float shrink-0">
               <Flame size={56} fill="currentColor" />
             </div>
             <div className="text-right">
@@ -64,7 +64,7 @@ export default function StreakPage() {
             </div>
           </div>
           
-          <div className="flex flex-wrap gap-4 justify-center relative z-10">
+          <div className="flex flex-wrap gap-4 justify-center md:justify-end relative z-10 w-full md:w-auto">
             <div className="bg-orange-500 text-white px-8 py-4 rounded-[2rem] text-center shadow-lg shadow-orange-500/20">
                <p className="text-4xl font-black">{userData?.streak || 0}</p>
                <p className="text-[10px] font-black uppercase tracking-widest opacity-80">يوم مستمر</p>
@@ -84,40 +84,25 @@ export default function StreakPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 md:p-10">
-              <div className="rtl-calendar-clean">
+              <div className="rtl-calendar-clean w-full overflow-hidden">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
                   showOutsideDays={false}
-                  hideHead={true}
-                  className="rounded-[2.5rem] border shadow-inner p-6 md:p-12 bg-secondary/5 w-full"
-                  modifiers={{
-                    completed: completedDates
-                  }}
-                  modifiersStyles={{
-                    completed: { 
-                      color: 'transparent',
-                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23f97316\'%3E%3Cpath d=\'M12 21c-4.97 0-9-4.03-9-9s4.03-9 9-9 9 4.03 9 9-4.03 9-9 9zm0-16c-3.86 0-7 3.14-7 7s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm0 13a6 6 0 110-12 6 6 0 010 12z\'/%3E%3Cpath d=\'M12 18l-1.41-1.41L13.17 14H8v-2h5.17l-2.58-2.59L12 8l4 4-4 4z\'/%3E%3C/svg%3E") no-repeat center',
-                      backgroundSize: '24px',
-                    }
-                  }}
+                  className="rounded-[2.5rem] border-none shadow-none p-0 bg-transparent w-full"
                   components={{
-                    Day: ({ date, ...props }) => {
+                    Head: () => null, // إخفاء أيام الأسبوع تماماً
+                    DayContent: ({ date }) => {
                       const isCompleted = completedDates.some(d => d.toDateString() === date.toDateString());
-                      return (
-                        <div {...props} className={cn("relative flex items-center justify-center", props.className)}>
-                          {isCompleted ? (
-                            <div className="text-2xl animate-pulse">🔥</div>
-                          ) : (
-                            date.getDate()
-                          )}
-                        </div>
-                      )
+                      if (isCompleted) {
+                        return <div className="text-2xl animate-pulse">🔥</div>;
+                      }
+                      return <span className="font-black opacity-60">{date.getDate()}</span>;
                     }
                   }}
                 />
               </div>
-              <div className="mt-8 flex items-center justify-center gap-6 text-[10px] font-black text-muted-foreground bg-white/50 p-4 rounded-2xl border border-border">
+              <div className="mt-8 flex items-center justify-center gap-6 text-xs font-black text-muted-foreground bg-white/50 p-4 rounded-2xl border border-border">
                  <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-lg shadow-sm" /> يوم منجز 🔥</div>
                  <div className="flex items-center gap-2"><div className="w-4 h-4 bg-secondary rounded-lg border border-border" /> يوم لم يكتمل</div>
               </div>
@@ -152,13 +137,13 @@ export default function StreakPage() {
               </div>
               <div className="space-y-6">
                 <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-border/50 text-center">
-                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">أنت عضو مميز لدينا</p>
-                   <p className="font-black text-primary text-3xl">المشترك رقم {userData?.registrationRank || '--'}</p>
-                   <p className="text-[10px] text-accent font-black mt-2">نفخر بوجودك ضمن أوائل مجتمع كارينجو 🌱</p>
+                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">رقم العضوية الفخري</p>
+                   <p className="font-black text-primary text-3xl">أنت العضو رقم {userData?.registrationRank || '--'}</p>
+                   <p className="text-[10px] text-accent font-black mt-2">نفخر بكونك من الرواد الأوائل في كارينجو 🌱</p>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
                    <p className="font-black text-primary text-xl">{completedDates.length}</p>
-                   <p className="font-bold text-muted-foreground">أيام الإنجاز الكلية</p>
+                   <p className="font-bold text-muted-foreground">إجمالي أيام الإنجاز</p>
                 </div>
               </div>
             </Card>

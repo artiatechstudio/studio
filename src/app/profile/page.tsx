@@ -23,12 +23,14 @@ export default function ProfilePage() {
   const router = useRouter();
   const [showQr, setShowQr] = useState(false);
   
+  // جلب كافة المستخدمين لحساب الرتبة
   const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
   const { data: allUsersData, isLoading: isAllUsersLoading } = useDatabase(allUsersRef);
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
 
+  // حساب رقم العضوية بناءً على تاريخ التسجيل
   const membershipInfo = useMemo(() => {
     if (!allUsersData || !user) return { rank: 0, total: 0 };
     
@@ -80,11 +82,9 @@ export default function ProfilePage() {
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex flex-col md:flex-row items-center gap-8 bg-card p-10 rounded-[2.5rem] shadow-xl border border-border">
-          <div className="relative">
-            <Avatar className="w-32 h-32 md:w-40 md:h-40 border-8 border-secondary shadow-xl bg-white flex items-center justify-center">
-              <span className="text-7xl md:text-8xl">{userData.avatar || "🐱"}</span>
-            </Avatar>
-          </div>
+          <Avatar className="w-32 h-32 md:w-40 md:h-40 border-8 border-secondary shadow-xl bg-white flex items-center justify-center shrink-0">
+            <span className="text-7xl md:text-8xl">{userData.avatar || "🐱"}</span>
+          </Avatar>
           
           <div className="flex-1 text-center md:text-right space-y-3">
             <div className="flex flex-col md:flex-row items-center gap-3">
@@ -133,7 +133,7 @@ export default function ProfilePage() {
             </CardHeader>
             <div className="flex flex-wrap gap-4">
               {userData.badges && userData.badges.length > 0 ? userData.badges.map((badge: string, i: number) => (
-                <div key={i} className="bg-secondary/40 dark:bg-secondary/20 px-6 py-3 rounded-2xl font-black text-primary dark:text-primary-foreground shadow-sm hover:scale-105 transition-all cursor-default border border-border">
+                <div key={i} className="bg-secondary/40 dark:bg-secondary/20 px-6 py-3 rounded-2xl font-black text-primary dark:text-primary-foreground shadow-sm border border-border">
                   {badge}
                 </div>
               )) : (
@@ -175,7 +175,7 @@ export default function ProfilePage() {
                  </div>
                </DialogContent>
              </Dialog>
-          </div>
+          </Card>
         </div>
       </div>
     </div>

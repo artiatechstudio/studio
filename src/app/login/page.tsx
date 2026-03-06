@@ -46,7 +46,11 @@ export default function LoginPage() {
   if (isUserLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <div className="flex flex-col items-center gap-6">
+           <div className="text-8xl animate-bounce">🐱</div>
+           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+           <p className="text-primary font-black text-xl animate-pulse">كاري يرحب بك...</p>
+        </div>
       </div>
     );
   }
@@ -105,7 +109,7 @@ export default function LoginPage() {
       </Card>
       
       <div className="mt-8 flex items-center gap-2 text-primary/40 font-black text-sm">
-         Powered by Artiatech Studio
+         Powered by Artiatech Studio 2026
       </div>
     </div>
   );

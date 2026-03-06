@@ -93,15 +93,15 @@ export function NavSidebar() {
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-28 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[3rem]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-end h-24 pb-4 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[3rem]">
         {mobileNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => playSound('click')}
             className={cn(
-              "flex flex-col items-center justify-center transition-all flex-1 h-full px-1",
-              item.isCenter ? "relative -top-4" : "pt-2",
+              "flex flex-col items-center justify-center transition-all flex-1 px-1",
+              item.isCenter ? "relative -top-8" : "mb-2",
               pathname === item.href ? "text-primary" : "text-muted-foreground opacity-60"
             )}
           >
@@ -115,8 +115,8 @@ export function NavSidebar() {
               <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[2.5px]")} />
             </div>
             <span className={cn(
-              "text-[11px] font-black whitespace-nowrap",
-              item.isCenter ? "text-primary mt-1" : ""
+              "text-[10px] font-black whitespace-nowrap",
+              item.isCenter ? "text-primary mt-2" : ""
             )}>
               {item.label}
             </span>

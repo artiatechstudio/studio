@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction } from 'firebase/database';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,12 +54,18 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setMsgText('');
   };
 
-  const handleDeleteChat = () => {
-    if (!window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة؟ لا يمكن التراجع عن ذلك.")) return;
+  const handleDeleteChat = async () => {
+    // رسالة تأكيد للمستخدم
+    const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ لا يمكن التراجع عن هذه الخطوة. 🐱⚠️");
+    if (!confirmed) return;
+
     playSound('click');
-    set(messagesRef, null).then(() => {
-      toast({ title: "تم حذف السجل" });
-    });
+    try {
+      await remove(messagesRef);
+      toast({ title: "تم حذف السجل بنجاح" });
+    } catch (error) {
+      toast({ variant: "destructive", title: "فشل الحذف", description: "حاول مجدداً لاحقاً" });
+    }
   };
 
   const handleLikeProfile = () => {
@@ -144,7 +150,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
         </div>
 
         {/* Input Form - Floating above the bottom nav */}
-        <div className="absolute bottom-[90px] md:bottom-6 left-4 right-4 z-40">
+        <div className="absolute bottom-[100px] md:bottom-6 left-4 right-4 z-40">
           <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 

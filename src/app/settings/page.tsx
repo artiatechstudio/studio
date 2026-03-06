@@ -17,7 +17,7 @@ import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Phone, Mai
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
-const AVATAR_EMOJIS = ["🐱", "🐶", "🐶", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
+const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -71,7 +71,7 @@ export default function SettingsPage() {
       toast({ 
         variant: "destructive", 
         title: "بيانات غير منطقية", 
-        description: "يرجى إدخال طول ووزن وعمر حقيقيين." 
+        description: "يرجى إدخال طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
       });
       return;
     }
@@ -109,7 +109,8 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     playSound('click');
-    if (!user || !window.confirm("تحذير نهائي! سيتم حذف كافة بياناتك وتقدمك. هل أنت متأكد؟")) return;
+    const confirmed = window.confirm("تحذير نهائي! سيتم حذف كافة بياناتك وتقدمك. هل أنت متأكد؟ 🐱⚠️");
+    if (!user || !confirmed) return;
     
     try {
       const uid = user.uid;

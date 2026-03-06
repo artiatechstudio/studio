@@ -45,7 +45,7 @@ export default function SettingsPage() {
       setWeight(userData.weight?.toString() || '');
       setAvatar(userData.avatar || '🐱');
     }
-    const savedTheme = localStorage.getItem('theme');
+    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : 'light';
     setIsDark(savedTheme === 'dark');
   }, [userData]);
 
@@ -65,10 +65,10 @@ export default function SettingsPage() {
     try {
       await update(ref(database, `users/${user.uid}`), {
         name,
-        age: parseInt(age),
+        age: parseInt(age) || 0,
         gender,
-        height: parseInt(height),
-        weight: parseInt(weight),
+        height: parseInt(height) || 0,
+        weight: parseInt(weight) || 0,
         avatar
       });
       toast({ title: "تم التحديث!", description: "تم حفظ بياناتك الشخصية بنجاح." });
@@ -209,7 +209,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* أقسام التواصل والمواقع */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border text-right space-y-6">
             <h3 className="text-xl font-black text-primary">تواصل معنا</h3>

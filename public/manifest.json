@@ -1,0 +1,27 @@
+
+{
+  "name": "كارينجو - رفيق النمو",
+  "short_name": "كارينجو",
+  "description": "منصة تفاعلية لتطوير العادات اليومية والنمو الشخصي",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4F46E5",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
+  "icons": [
+    {
+      "src": "https://picsum.photos/seed/careingo-192/192/192",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://picsum.photos/seed/careingo-512/512/512",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

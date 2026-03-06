@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60,17 +59,17 @@
   }
 }
 
-/* RTL Calendar Fixes */
+/* RTL Calendar Alignment Fix */
 .rtl-calendar {
   direction: ltr !important;
 }
 
 .rtl-calendar .rdp-head_row {
-  @apply flex flex-row-reverse w-full;
+  @apply flex flex-row-reverse w-full justify-around;
 }
 
 .rtl-calendar .rdp-row {
-  @apply flex flex-row-reverse w-full mt-2;
+  @apply flex flex-row-reverse w-full mt-2 justify-around;
 }
 
 .rtl-calendar .rdp-head_cell {

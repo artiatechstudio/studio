@@ -6,6 +6,7 @@ import { Avatar } from "@/components/ui/avatar";
 import { Trophy, Medal, Flame, Star, TrendingUp, HeartPulse } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();

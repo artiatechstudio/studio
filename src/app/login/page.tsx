@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { playSound } from '@/lib/sounds';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -26,17 +27,13 @@ export default function LoginPage() {
     }
   }, [user, isUserLoading, router]);
 
-  const playLoginSound = () => {
-    const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3');
-    audio.play().catch(() => {});
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    playSound('click');
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      playLoginSound();
+      playSound('login');
       toast({ title: "أهلاً بعودتك!", description: "جاري تحميل بياناتك..." });
       router.push('/');
     } catch (error: any) {
@@ -69,7 +66,7 @@ export default function LoginPage() {
               <Input 
                 type="email" 
                 placeholder="example@mail.com" 
-                className="h-14 rounded-2xl bg-secondary/50 border-none font-bold"
+                className="h-14 rounded-2xl bg-secondary/50 border-none font-bold text-right"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
@@ -79,7 +76,7 @@ export default function LoginPage() {
               <Label>كلمة المرور</Label>
               <Input 
                 type="password" 
-                className="h-14 rounded-2xl bg-secondary/50 border-none font-bold"
+                className="h-14 rounded-2xl bg-secondary/50 border-none font-bold text-right"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
@@ -100,7 +97,7 @@ export default function LoginPage() {
           </div>
 
           <Link href="/register">
-            <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
+            <Button variant="outline" onClick={() => playSound('click')} className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
               إنشاء حساب جديد
             </Button>
           </Link>

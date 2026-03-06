@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon } from 'lucide-react';
+import { playSound } from '@/lib/sounds';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲"];
 
@@ -49,6 +50,7 @@ export default function SettingsPage() {
   }, [userData]);
 
   const toggleTheme = () => {
+    playSound('click');
     const newTheme = !isDark ? 'dark' : 'light';
     setIsDark(!isDark);
     localStorage.setItem('theme', newTheme);
@@ -59,6 +61,7 @@ export default function SettingsPage() {
   const handleUpdateProfile = async () => {
     if (!user) return;
     setSaving(true);
+    playSound('click');
     try {
       await update(ref(database, `users/${user.uid}`), {
         name,
@@ -77,6 +80,7 @@ export default function SettingsPage() {
   };
 
   const handleLogout = async () => {
+    playSound('click');
     try {
       await signOut(auth);
       router.replace('/login');
@@ -87,6 +91,7 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
+    playSound('click');
     if (!user || !window.confirm("تحذير نهائي! سيتم حذف كافة بياناتك وتقدمك. هل أنت متأكد؟")) return;
     
     try {
@@ -115,14 +120,14 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-40" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex items-center gap-4">
           <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl">
             <Settings size={32} />
           </div>
-          <div>
+          <div className="text-right">
             <h1 className="text-3xl font-black text-primary">الإعدادات</h1>
             <p className="text-muted-foreground font-bold">إدارة ملفك الشخصي وتجربة التطبيق</p>
           </div>
@@ -130,8 +135,8 @@ export default function SettingsPage() {
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
           <CardHeader className="bg-primary/5 p-8 border-b border-border">
-            <CardTitle className="text-xl font-black text-primary flex items-center gap-3">
-              <UserIcon /> تعديل المعلومات الشخصية
+            <CardTitle className="text-xl font-black text-primary flex items-center justify-end gap-3">
+              تعديل المعلومات الشخصية <UserIcon />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -156,16 +161,16 @@ export default function SettingsPage() {
             
             <div className="space-y-2 col-span-1 md:col-span-2">
               <Label>الاسم الكامل</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
+              <Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <div className="space-y-2">
               <Label>العمر</Label>
-              <Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
+              <Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <div className="space-y-2">
               <Label>الجنس</Label>
               <Select onValueChange={setGender} value={gender}>
-                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold">
+                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -176,11 +181,11 @@ export default function SettingsPage() {
             </div>
             <div className="space-y-2">
               <Label>الطول (سم)</Label>
-              <Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
+              <Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <div className="space-y-2">
               <Label>الوزن (كجم)</Label>
-              <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold" />
+              <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <Button 
               onClick={handleUpdateProfile} 
@@ -196,7 +201,7 @@ export default function SettingsPage() {
           <div className="flex items-center justify-between p-6 bg-secondary/20 rounded-3xl border border-border">
             <div className="flex items-center gap-4">
               {isDark ? <Moon className="text-accent" /> : <Sun className="text-yellow-500" />}
-              <div>
+              <div className="text-right">
                 <p className="font-black text-primary">المظهر الداكن</p>
                 <p className="text-xs text-muted-foreground font-bold">تغيير واجهة التطبيق للوضع الليلي</p>
               </div>
@@ -226,6 +231,9 @@ export default function SettingsPage() {
         <footer className="text-center pt-10 pb-20 space-y-2">
           <div className="flex items-center justify-center gap-2 text-primary/40 font-black text-sm">
              Powered by Artiatech Studio
+          </div>
+          <div className="opacity-40 font-black text-primary text-[10px]">
+            جميع الحقوق محفوظة © 2026
           </div>
         </footer>
       </div>

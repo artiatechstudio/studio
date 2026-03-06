@@ -20,15 +20,12 @@ export default function StreakPage() {
 
   const activeDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
-    // تحويل مفاتيح التواريخ (YYYY-MM-DD) إلى كائنات Date بشكل صحيح
     return Object.keys(userData.dailyPoints).map(dateStr => {
       const [year, month, day] = dateStr.split('-').map(Number);
-      // استخدام توقيت محلي لضمان الظهور الصحيح في التقويم
       return new Date(year, month - 1, day);
     });
   }, [userData]);
   
-  // الحصول على تاريخ اليوم بالتوقيت المحلي لضمان الدقة
   const todayStr = useMemo(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -56,8 +53,8 @@ export default function StreakPage() {
             <Flame size={40} fill="currentColor" />
           </div>
           <div className="text-right">
-            <h1 className="text-4xl font-black text-primary">سجل الحماسة</h1>
-            <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية</p>
+            <h1 className="text-4xl font-black text-primary text-right">سجل الحماسة</h1>
+            <p className="text-muted-foreground font-bold text-right">تتبع استمراريتك وإنجازاتك اليومية</p>
           </div>
         </header>
 
@@ -131,11 +128,11 @@ export default function StreakPage() {
         <section className="bg-secondary/20 rounded-[2.5rem] p-8 border border-border text-right">
           <h3 className="text-xl font-black text-primary mb-6">كيف تعمل الحماسة؟</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm font-bold text-muted-foreground">
-            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border text-right">
               <p className="text-primary font-black mb-2">1. الإنجاز اليومي</p>
               تحصل على نقطة حماسة واحدة عند إكمال أي مهمة في أي مسار خلال اليوم.
             </div>
-            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border">
+            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border text-right">
               <p className="text-primary font-black mb-2">2. الاستمرارية</p>
               يجب أن تنجز مهمة واحدة على الأقل كل يوم لتنمو السلسلة. إذا فاتك يوم، سيعود العداد للصفر.
             </div>

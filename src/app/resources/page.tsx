@@ -4,12 +4,15 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Shield, Heart, HelpCircle, Activity, AlertTriangle, Lightbulb, ChevronLeft, Scale, Info } from 'lucide-react';
+import { BookOpen, Shield, Heart, HelpCircle, AlertTriangle, Lightbulb, ChevronLeft, Scale, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
+import { useToast } from "@/hooks/use-toast";
 
 export default function ResourcesPage() {
+  const { toast } = useToast();
+
   const categories = [
     {
       title: "الموسوعة الصحية",
@@ -88,7 +91,10 @@ export default function ResourcesPage() {
               <Button 
                 key={link.title} 
                 variant="outline" 
-                onClick={() => { playSound('click'); toast({ title: link.title, description: "قريباً في التحديث القادم!" }); }}
+                onClick={() => { 
+                  playSound('click'); 
+                  toast({ title: link.title, description: "قريباً في التحديث القادم!" }); 
+                }}
                 className="h-20 rounded-2xl border-2 border-primary/10 hover:border-primary text-primary font-black text-lg gap-3"
               >
                 <link.icon size={24} />

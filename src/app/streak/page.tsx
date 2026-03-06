@@ -18,9 +18,11 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
+  // تحسين منطق جلب التواريخ لتمييز الأيام في التقويم
   const activeDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
     return Object.keys(userData.dailyPoints).map(dateStr => {
+      // dateStr is expected to be YYYY-MM-DD
       const [year, month, day] = dateStr.split('-').map(Number);
       return new Date(year, month - 1, day);
     });

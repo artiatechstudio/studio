@@ -4,6 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { ArrowLeft, AlertTriangle, Shield, HeartPulse, Info, HelpCircle, Activity, Zap, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';

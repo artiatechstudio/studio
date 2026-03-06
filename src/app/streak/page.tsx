@@ -19,6 +19,10 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
+  // جلب كافة المستخدمين لحساب رقم العضوية بدقة
+  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
+  const { data: allUsersData } = useDatabase(allUsersRef);
+
   useEffect(() => {
     const now = new Date();
     const year = now.getFullYear();
@@ -26,6 +30,17 @@ export default function StreakPage() {
     const day = String(now.getDate()).padStart(2, '0');
     setTodayStr(`${year}-${month}-${day}`);
   }, []);
+
+  const membershipRank = useMemo(() => {
+    if (!allUsersData || !user) return 0;
+    const usersArray = Object.values(allUsersData) as any[];
+    const sortedUsers = usersArray.sort((a, b) => {
+      const dateA = new Date(a.registrationDate || 0).getTime();
+      const dateB = new Date(b.registrationDate || 0).getTime();
+      return dateA - dateB;
+    });
+    return sortedUsers.findIndex(u => u.id === user.uid) + 1;
+  }, [allUsersData, user]);
 
   const completedDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
@@ -91,8 +106,9 @@ export default function StreakPage() {
                   showOutsideDays={false}
                   className="rounded-[2.5rem] border-none shadow-none p-0 bg-transparent w-full"
                   components={{
-                    Head: () => null, // إخفاء أيام الأسبوع تماماً
+                    Head: () => null, 
                     DayContent: ({ date }) => {
+                      if (!date) return null;
                       const isCompleted = completedDates.some(d => d.toDateString() === date.toDateString());
                       if (isCompleted) {
                         return <div className="text-2xl animate-pulse">🔥</div>;
@@ -138,7 +154,7 @@ export default function StreakPage() {
               <div className="space-y-6">
                 <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-border/50 text-center">
                    <p className="text-xs font-black text-muted-foreground uppercase mb-2">رقم العضوية الفخري</p>
-                   <p className="font-black text-primary text-3xl">أنت العضو رقم {userData?.registrationRank || '--'}</p>
+                   <p className="font-black text-primary text-3xl">أنت العضو رقم {membershipRank || '--'}</p>
                    <p className="text-[10px] text-accent font-black mt-2">نفخر بكونك من الرواد الأوائل في كارينجو 🌱</p>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">

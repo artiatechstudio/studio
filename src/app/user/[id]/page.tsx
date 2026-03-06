@@ -1,26 +1,72 @@
 
 "use client"
 
-import React, { use } from 'react';
+import React, { use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref } from 'firebase/database';
+import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
+import { ref, runTransaction } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
-import { Trophy, Ruler, Weight, Flame, Heart, ArrowLeft, Star, HeartPulse, ShieldCheck, User as UserIcon } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, HeartPulse, ShieldCheck, User as UserIcon, Calendar as CalendarIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 export default function UserPublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
+  const { user: currentUser } = useUser();
   const { database } = useFirebase();
   const router = useRouter();
 
+  // جلب بيانات المستخدم المستهدف
   const userRef = useMemoFirebase(() => ref(database, `users/${id}`), [database, id]);
   const { data: userData, isLoading } = useDatabase(userRef);
+
+  // جلب كافة المستخدمين لحساب رقم العضوية
+  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
+  const { data: allUsersData } = useDatabase(allUsersRef);
+
+  const membershipInfo = useMemo(() => {
+    if (!allUsersData || !id) return { rank: 0, total: 0 };
+    const usersArray = Object.values(allUsersData) as any[];
+    const sortedUsers = usersArray.sort((a, b) => {
+      const dateA = new Date(a.registrationDate || 0).getTime();
+      const dateB = new Date(b.registrationDate || 0).getTime();
+      return dateA - dateB;
+    });
+    const rank = sortedUsers.findIndex(u => u.id === id) + 1;
+    return { rank: rank > 0 ? rank : 1, total: sortedUsers.length };
+  }, [allUsersData, id]);
+
+  const handleToggleLike = () => {
+    if (!currentUser || !id) return;
+    if (currentUser.uid === id) {
+      toast({ title: "لا يمكنك الإعجاب بملفك الشخصي!" });
+      return;
+    }
+
+    playSound('click');
+    const userLikesRef = ref(database, `users/${id}/likesCount`);
+    const likedByRef = ref(database, `users/${id}/likedBy/${currentUser.uid}`);
+
+    runTransaction(likedByRef, (isLiked) => {
+      if (isLiked) {
+        // إلغاء الإعجاب
+        runTransaction(userLikesRef, (count) => (count || 1) - 1);
+        toast({ title: "تم إلغاء الإعجاب" });
+        return null;
+      } else {
+        // إضافة إعجاب
+        runTransaction(userLikesRef, (count) => (count || 0) + 1);
+        toast({ title: "تم إرسال إعجاب! ❤️" });
+        playSound('success');
+        return true;
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -56,6 +102,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   };
 
   const bmiStatus = getBmiStatus(bmiValue);
+  const isLikedByMe = userData.likedBy?.[currentUser?.uid || ''];
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -77,14 +124,24 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           <div className="flex-1 text-center md:text-right space-y-3 z-10">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3">
               <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">{userData.name}</h1>
-              <span className="bg-red-50 px-4 py-1 rounded-full text-xs font-black text-red-600 border border-red-100 flex items-center gap-1 shadow-sm">
-                 {userData.likesCount || 0} إعجاب <Heart size={14} fill="currentColor" />
-              </span>
+              <Button 
+                onClick={handleToggleLike} 
+                variant="ghost" 
+                className={cn(
+                  "bg-red-50 px-4 py-1 rounded-full text-xs font-black border border-red-100 flex items-center gap-1 shadow-sm transition-all active:scale-95",
+                  isLikedByMe ? "text-red-600" : "text-gray-400 grayscale"
+                )}
+              >
+                 {userData.likesCount || 0} إعجاب <Heart size={14} fill={isLikedByMe ? "currentColor" : "none"} />
+              </Button>
             </div>
             <p className="text-muted-foreground font-bold text-lg bg-secondary/30 inline-block px-4 py-1 rounded-full italic">
                {userData.bio || "عضو طموح في كارينجو 🌱"}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">
+              <div className="bg-primary/10 text-primary px-4 py-2 rounded-xl font-black flex items-center gap-2 border border-primary/10">
+                العضو رقم {membershipInfo.rank}
+              </div>
               <div className="bg-primary/5 text-primary px-4 py-2 rounded-xl font-black flex items-center gap-2 border border-primary/10">
                 <Flame size={18} fill="currentColor" className="text-orange-500" /> {userData.streak || 0} يوم حماسة
               </div>
@@ -111,17 +168,12 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                 <p className="text-[10px] font-black text-muted-foreground uppercase">العمر</p>
                 <p className="font-black text-primary">{userData.age || '--'} سنة</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black text-muted-foreground uppercase">الطول</p>
-                <p className="font-black text-primary">{userData.height || '--'} سم</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-black text-muted-foreground uppercase">الوزن</p>
-                <p className="font-black text-primary">{userData.weight || '--'} كجم</p>
-              </div>
               <div className="col-span-2 space-y-1 bg-secondary/20 p-4 rounded-2xl">
                 <p className="text-[10px] font-black text-muted-foreground uppercase">تاريخ الانضمام</p>
-                <p className="font-black text-primary">{new Date(userData.registrationDate).toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
+                <p className="font-black text-primary flex items-center gap-2">
+                  <CalendarIcon size={14} />
+                  {userData.registrationDate ? new Date(userData.registrationDate).toLocaleDateString('ar-LY', { year: 'numeric', month: 'long', day: 'numeric' }) : '--'}
+                </p>
               </div>
             </div>
           </Card>

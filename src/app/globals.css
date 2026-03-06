@@ -1,51 +1,50 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 276 17% 95%;
-    --foreground: 231 43% 15%;
+    --background: 260 30% 98%;
+    --foreground: 231 43% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 231 43% 15%;
+    --card-foreground: 231 43% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 231 43% 15%;
-    --primary: 231 43% 42%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 231 20% 90%;
-    --secondary-foreground: 231 43% 15%;
-    --muted: 231 20% 90%;
-    --muted-foreground: 231 15% 40%;
-    --accent: 281 70% 53%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
+    --popover-foreground: 231 43% 10%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 10% 95%;
+    --secondary-foreground: 243 75% 20%;
+    --muted: 240 10% 95%;
+    --muted-foreground: 240 5% 45%;
+    --accent: 295 85% 60%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 231 20% 85%;
-    --input: 231 20% 85%;
-    --ring: 231 43% 42%;
-    --radius: 1rem;
+    --border: 240 10% 90%;
+    --input: 240 10% 90%;
+    --ring: 243 75% 59%;
+    --radius: 1.25rem;
   }
   .dark {
-    --background: 231 43% 10%;
+    --background: 231 43% 5%;
     --foreground: 0 0% 98%;
-    --card: 231 43% 12%;
+    --card: 231 43% 8%;
     --card-foreground: 0 0% 98%;
-    --popover: 231 43% 12%;
+    --popover: 231 43% 8%;
     --popover-foreground: 0 0% 98%;
-    --primary: 231 43% 50%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 231 20% 20%;
+    --primary: 243 75% 65%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 231 20% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 231 20% 20%;
+    --muted: 231 20% 15%;
     --muted-foreground: 231 15% 70%;
-    --accent: 281 70% 60%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --accent: 295 85% 70%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 98%;
-    --border: 231 20% 25%;
-    --input: 231 20% 25%;
-    --ring: 231 43% 50%;
+    --border: 231 20% 20%;
+    --input: 231 20% 20%;
+    --ring: 243 75% 65%;
   }
 }
 
@@ -59,13 +58,13 @@
   }
 }
 
-/* RTL Calendar Overrides */
+/* RTL Calendar & Modern UI Overrides */
 .rtl-calendar .rdp-month {
   @apply space-y-4 text-right;
 }
 
 .rtl-calendar .rdp-caption_label {
-  @apply font-black;
+  @apply font-black text-primary text-lg;
 }
 
 .rtl-calendar .rdp-nav {
@@ -73,9 +72,35 @@
 }
 
 .rtl-calendar .rdp-head_cell {
-  @apply text-center;
+  @apply text-center text-muted-foreground font-black p-2;
 }
 
 .rtl-calendar .rdp-cell {
-  @apply text-center;
+  @apply text-center p-1;
+}
+
+.rdp-day_selected {
+  @apply bg-primary text-white font-black rounded-xl shadow-lg !important;
+}
+
+.rdp-day_today {
+  @apply border-2 border-accent text-accent font-black rounded-xl !important;
+}
+
+/* Floating Action Button Styling for Mobile Nav */
+.center-nav-item {
+  @apply relative -top-8 scale-110 shadow-2xl transition-all duration-300;
+}
+
+.center-nav-item:hover {
+  @apply -top-10 scale-[1.2];
+}
+
+/* Improved Clarity Utilities */
+.text-balance {
+  text-wrap: balance;
+}
+
+.shadow-soft {
+  shadow-box: 0 10px 30px -10px rgba(0,0,0,0.1);
 }

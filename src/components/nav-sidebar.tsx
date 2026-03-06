@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -102,7 +101,7 @@ export function NavSidebar() {
             className={cn(
               "flex flex-col items-center justify-center transition-all flex-1 px-1",
               item.isCenter ? "relative -top-8" : "mb-2",
-              pathname === item.href ? "text-primary" : "text-muted-foreground opacity-60"
+              pathname === item.href && !item.isCenter ? "text-primary" : "text-muted-foreground"
             )}
           >
             <div className={cn(
@@ -116,7 +115,7 @@ export function NavSidebar() {
             </div>
             <span className={cn(
               "text-[10px] font-black whitespace-nowrap",
-              item.isCenter ? "text-primary mt-2" : ""
+              item.isCenter ? "text-primary font-black -mt-0.5" : "opacity-60"
             )}>
               {item.label}
             </span>

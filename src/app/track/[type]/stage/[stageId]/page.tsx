@@ -1,11 +1,10 @@
-
 "use client"
 
 import React, { use, useState, useEffect, useCallback } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -45,6 +44,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     const hour = now.getHours();
     // يبدأ وضع التبكير من الساعة 5 صباحاً. النقاط تتناقص كلما تأخر الوقت حتى الساعة 8 مساءً (20)
     if (hour < 5) return 75; // الحد الأقصى قبل الفجر
+    if (hour >= 20) return 0; // انتهاء البونص
     return Math.max(0, (20 - hour) * 5); 
   };
 
@@ -52,6 +52,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     if (!user || !database || isUpdating || completed) return;
 
     setIsUpdating(true);
+    playSound('click');
+    
     try {
       const currentProgress = progressData || { currentStage: 1, completedStages: [] };
       const completedStages = [...(currentProgress.completedStages || [])];
@@ -69,7 +71,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
       const basePoints = 100;
-      const pointsEarned = basePoints + calculateBonus();
+      const bonus = calculateBonus();
+      const pointsEarned = basePoints + bonus;
 
       completedStages.push(stageId);
       const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
@@ -116,7 +119,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       playSound('success');
       toast({
         title: "تم الإنجاز! 🎉",
-        description: `أحسنت! حصلت على ${pointsEarned} نقطة لإنجازك مهمة اليوم.`,
+        description: `أحسنت! حصلت على ${pointsEarned} نقطة (${bonus} بونص تبكير).`,
       });
     } catch (e) {
       toast({ variant: "destructive", title: "خطأ", description: "فشل في حفظ التقدم." });
@@ -139,33 +142,35 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         </div>
 
         {loading ? (
-          <div className="space-y-4 animate-pulse">
-            <div className="h-12 w-2/3 bg-secondary rounded-xl mr-auto" />
-            <div className="h-64 bg-secondary rounded-[3rem]" />
+          <div className="flex flex-col items-center justify-center p-20 gap-6">
+             <div className="text-9xl animate-bounce">🐱</div>
+             <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
+             <p className="text-primary font-black text-2xl animate-pulse">كاري يفتح لك المهمة...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
               <header className="text-right">
-                <div className="flex items-center justify-end gap-3 mb-2">
-                  <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-black uppercase">{trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</div>
-                  <div className="px-3 py-1 bg-accent/10 text-accent rounded-full text-xs font-black uppercase">اليوم {stageId}</div>
+                <div className="flex items-center justify-end gap-3 mb-4">
+                  <div className="px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-black uppercase border border-primary/20">{trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</div>
+                  <div className="px-4 py-1.5 bg-accent/10 text-accent rounded-full text-xs font-black uppercase border border-accent/20">اليوم {stageId}</div>
                 </div>
                 <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
               </header>
 
-              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border text-right">
-                <CardHeader className="bg-primary text-white p-8">
-                  <div className="flex items-center justify-between flex-row-reverse">
+              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border text-right group">
+                <CardHeader className="bg-primary text-white p-8 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-110 transition-transform" />
+                  <div className="flex items-center justify-between flex-row-reverse relative z-10">
                     <CardTitle className="text-2xl font-bold">مهمة اليوم</CardTitle>
-                    <div className="flex gap-4 text-sm font-medium opacity-90">
-                      <div className="flex items-center gap-1"><Clock size={16} /> {challenge.time}د</div>
-                      <div className="flex items-center gap-1"><Zap size={16} /> {challenge.difficulty}</div>
+                    <div className="flex gap-4 text-sm font-black opacity-90">
+                      <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full"><Clock size={16} /> {challenge.time}د</div>
+                      <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full"><Zap size={16} /> {challenge.difficulty}</div>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="p-8 space-y-8">
-                  <div className="text-xl leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                <CardContent className="p-10 space-y-10">
+                  <div className="text-xl leading-relaxed text-muted-foreground whitespace-pre-wrap font-medium">
                     {challenge.description}
                   </div>
                   
@@ -173,18 +178,18 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                     <Button 
                       onClick={handleComplete}
                       disabled={isUpdating}
-                      className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-xl font-black shadow-xl shadow-accent/20 transition-all hover:scale-[1.02]"
+                      className="w-full h-16 rounded-2xl bg-accent hover:bg-accent/90 text-xl font-black shadow-2xl shadow-accent/30 transition-all hover:scale-[1.03] active:scale-95"
                     >
-                      {isUpdating ? "جاري الحفظ..." : "أنجزت المهمة الآن!"}
+                      {isUpdating ? "جاري الحفظ..." : "أنجزت المهمة الآن! 🔥"}
                     </Button>
                   ) : (
-                    <div className="bg-green-500/10 border-4 border-green-500/20 p-10 rounded-[2.5rem] flex flex-col items-center gap-4 text-center">
-                      <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center text-white shadow-lg">
-                        <CheckCircle size={48} />
+                    <div className="bg-green-500/5 border-4 border-green-500/20 p-12 rounded-[3rem] flex flex-col items-center gap-6 text-center shadow-inner">
+                      <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white shadow-xl animate-float">
+                        <CheckCircle size={56} />
                       </div>
                       <div>
-                        <h3 className="text-3xl font-black text-green-700 dark:text-green-400 italic">مذهل!</h3>
-                        <p className="text-green-600 dark:text-green-300 font-medium mt-2">لقد أكملت مهمتك وحافظت على حماسك.</p>
+                        <h3 className="text-4xl font-black text-green-700 dark:text-green-400 italic">مذهل يا بطل!</h3>
+                        <p className="text-green-600 dark:text-green-300 font-bold text-lg mt-2">لقد أكملت مهمتك بنجاح وحافظت على حماسك.</p>
                       </div>
                     </div>
                   )}
@@ -193,24 +198,27 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             </div>
 
             <div className="space-y-6 order-1 lg:order-2">
-              <div className="sticky top-12">
+              <div className="sticky top-12 space-y-6">
                 <Mascot messageOnly />
-                <Card className="mt-8 border-none shadow-xl rounded-[2rem] overflow-hidden bg-card border border-border text-right">
-                  <div className="p-6 space-y-4">
-                    <h3 className="text-lg font-bold text-primary flex items-center justify-end gap-2">
+                <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-card border border-border text-right hover:shadow-primary/10 transition-shadow">
+                  <div className="p-8 space-y-6">
+                    <h3 className="text-xl font-black text-primary flex items-center justify-end gap-3">
                       مكافأة الإنجاز
-                      <Trophy size={20} className="text-yellow-500" />
+                      <Trophy size={24} className="text-yellow-500" />
                     </h3>
-                    <div className="p-4 bg-secondary/30 rounded-2xl space-y-2">
-                      <div className="flex justify-between font-bold text-sm">
-                        <span>100</span>
-                        <span>النقاط الأساسية</span>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center bg-secondary/30 p-4 rounded-2xl">
+                        <span className="font-black text-primary text-xl">100</span>
+                        <span className="font-bold text-muted-foreground">النقاط الأساسية</span>
                       </div>
-                      <div className="flex justify-between font-bold text-sm text-accent">
-                        <span>+{calculateBonus()}</span>
-                        <span>بونص التبكير</span>
+                      <div className="flex justify-between items-center bg-accent/10 p-4 rounded-2xl border border-accent/20">
+                        <span className="font-black text-accent text-xl">+{calculateBonus()}</span>
+                        <span className="font-bold text-accent flex items-center gap-2">بونص التبكير <Timer size={16} /></span>
                       </div>
                     </div>
+                    <p className="text-[10px] text-muted-foreground font-bold text-center italic">
+                       * بونص التبكير يبدأ في 5 صباحاً ويتناقص تدريجياً.
+                    </p>
                   </div>
                 </Card>
               </div>

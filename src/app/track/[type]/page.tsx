@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { StageNode } from '@/components/track/stage-node';
 import { TrackKey } from '@/lib/challenges';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Map as MapIcon, Info } from 'lucide-react';
+import { ArrowLeft, Map as MapIcon, Info, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
@@ -23,17 +23,26 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   const userTrackRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${typeKey}`) : null, [user, database, typeKey]);
   const { data: progressData, isLoading } = useDatabase(userTrackRef);
 
-  const progress = progressData || { currentStage: 1, completedStages: [] };
+  const progress = progressData || { currentStage: 1, completedStages: [], lastCompletedDate: null };
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  
+  // التحقق مما إذا كان المسار في فترة انتظار (تم إكمال مرحلة اليوم)
+  const isOnCooldown = progress.lastCompletedDate === todayStr;
 
   const stages = Array.from({ length: 30 }, (_, i) => {
     const id = i + 1;
-    let status: 'locked' | 'open' | 'completed' = 'locked';
+    let status: 'locked' | 'open' | 'completed' | 'cooldown' = 'locked';
     const completedStages = progress.completedStages || [];
     
     if (completedStages.includes(id)) {
       status = 'completed';
     } else if (id === (progress.currentStage || 1)) {
-      status = 'open';
+      // استثناء المرحلة الأولى من نظام الانتظار اليومي
+      if (isOnCooldown && id > 1) {
+        status = 'cooldown';
+      } else {
+        status = 'open';
+      }
     }
 
     const cycle = 8;
@@ -47,8 +56,8 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
 
   const showInfo = () => {
     toast({
-      title: `مسار ${typeKey}`,
-      description: "هذا المسار مصمم ليتم إنجازه خلال 30 يوماً. يمكنك إكمال مرحلة واحدة فقط كل يوم لضمان النمو المستدام.",
+      title: `قوانين مسار ${typeKey}`,
+      description: "نظام كارينجو صارم: مرحلة واحدة فقط يومياً لضمان بناء العادات. المرحلة القادمة تفتح دائماً عند منتصف الليل.",
     });
   };
 
@@ -77,14 +86,35 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
         </div>
 
         <div className="mb-20">
-          <Mascot />
+          <Mascot customMessage={isOnCooldown ? "لقد أبدعت اليوم! كاري ينتظرك غداً بحماس لإكمال المرحلة التالية. 🐱🌙" : "هيا بنا! اليوم يوم جديد للإنجاز والنمو. 🐱🔥"} />
         </div>
+
+        {isOnCooldown && (
+          <div className="mb-12 bg-orange-500/10 border-2 border-orange-500/20 p-6 rounded-[2rem] flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-orange-500 rounded-2xl flex items-center justify-center text-white shadow-lg">
+                <Timer className="animate-pulse" />
+              </div>
+              <div>
+                <h4 className="font-black text-orange-700">وضع الانتظار النشط</h4>
+                <p className="text-xs font-bold text-orange-600/70">أكملت تحدي اليوم، استرح واستعد لتحدي الغد!</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-black text-orange-600/50 uppercase">المرحلة التالية تفتح في</p>
+              <p className="text-2xl font-black text-orange-600">منتصف الليل</p>
+            </div>
+          </div>
+        )}
 
         <div className="relative flex flex-col items-center gap-16 pb-32">
           <div className="absolute top-0 bottom-0 left-1/2 w-4 bg-secondary/50 -translate-x-1/2 rounded-full -z-0" />
           
           {isLoading ? (
-            <div className="text-primary font-black animate-pulse">جاري تحميل المسار...</div>
+            <div className="flex flex-col items-center gap-4 py-20">
+              <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <div className="text-primary font-black">جاري رسم مسار نموك...</div>
+            </div>
           ) : (
             stages.map((stage) => (
               <StageNode 

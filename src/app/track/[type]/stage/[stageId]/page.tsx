@@ -1,10 +1,11 @@
+
 "use client"
 
 import React, { use, useState, useEffect, useCallback } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -12,17 +13,20 @@ import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, get } from 'firebase/database';
 import { playSound } from '@/lib/sounds';
+import { useRouter } from 'next/navigation';
 
 export default function StageDetailPage({ params }: { params: Promise<{ type: string, stageId: string }> }) {
   const resolvedParams = use(params);
   const trackKey = resolvedParams.type.charAt(0).toUpperCase() + resolvedParams.type.slice(1) as TrackKey;
   const stageId = parseInt(resolvedParams.stageId);
+  const router = useRouter();
   
   const { database } = useFirebase();
   const { user } = useUser();
   const [completed, setCompleted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [onCooldown, setOnCooldown] = useState(false);
 
   const challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
 
@@ -33,6 +37,16 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     if (progressData) {
       const isDone = progressData.completedStages?.includes(stageId);
       setCompleted(!!isDone);
+      
+      // التحقق من نظام "مرحلة واحدة يومياً"
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const hasCompletedToday = progressData.lastCompletedDate === todayStr;
+      
+      // إذا كان المستخدم قد أكمل مرحلة اليوم، ويحاول دخول مرحلة جديدة (ليست المرحلة الأولى)
+      if (hasCompletedToday && !isDone && stageId > 1) {
+        setOnCooldown(true);
+      }
+      
       setLoading(false);
     } else {
       setLoading(false);
@@ -42,14 +56,13 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const calculateBonus = () => {
     const now = new Date();
     const hour = now.getHours();
-    // يبدأ وضع التبكير من الساعة 5 صباحاً. النقاط تتناقص كلما تأخر الوقت حتى الساعة 8 مساءً (20)
-    if (hour < 5) return 75; // الحد الأقصى قبل الفجر
-    if (hour >= 20) return 0; // انتهاء البونص
+    if (hour < 5) return 75;
+    if (hour >= 20) return 0;
     return Math.max(0, (20 - hour) * 5); 
   };
 
   const handleComplete = useCallback(async () => {
-    if (!user || !database || isUpdating || completed) return;
+    if (!user || !database || isUpdating || completed || onCooldown) return;
 
     setIsUpdating(true);
     playSound('click');
@@ -58,12 +71,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const currentProgress = progressData || { currentStage: 1, completedStages: [] };
       const completedStages = [...(currentProgress.completedStages || [])];
       
-      if (completedStages.includes(stageId)) {
-        toast({ title: "منجز بالفعل!", description: "لقد أتممت هذه المهمة سابقاً." });
-        setIsUpdating(false);
-        return;
-      }
-
       const now = new Date();
       const todayStr = now.toLocaleDateString('en-CA');
       const yesterday = new Date(now);
@@ -97,16 +104,10 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[todayStr] || 0) + pointsEarned;
 
-      const currentBadges = userData.badges || [];
-      if (!currentBadges.includes('الخطوة الأولى 🐱')) {
-        currentBadges.push('الخطوة الأولى 🐱');
-      }
-
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
         streak: newStreak,
         lastActiveDate: todayStr,
-        badges: currentBadges,
         [`dailyPoints/${todayStr}`]: todayPoints,
         [`trackProgress/${trackKey}`]: {
           completedStages,
@@ -119,14 +120,34 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       playSound('success');
       toast({
         title: "تم الإنجاز! 🎉",
-        description: `أحسنت! حصلت على ${pointsEarned} نقطة (${bonus} بونص تبكير).`,
+        description: `أحسنت! حصلت على ${pointsEarned} نقطة وحافظت على نموك.`,
       });
     } catch (e) {
       toast({ variant: "destructive", title: "خطأ", description: "فشل في حفظ التقدم." });
     } finally {
       setIsUpdating(false);
     }
-  }, [user, database, isUpdating, completed, progressData, trackKey, stageId]);
+  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown]);
+
+  if (onCooldown) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center" dir="rtl">
+        <div className="max-w-md space-y-8">
+          <div className="w-24 h-24 bg-orange-100 text-orange-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-xl animate-float">
+            <Timer size={56} />
+          </div>
+          <div className="space-y-4">
+            <h1 className="text-4xl font-black text-primary italic">حان وقت الراحة!</h1>
+            <p className="text-xl font-bold text-muted-foreground leading-relaxed">لقد أكملت مرحلة في هذا المسار اليوم. لضمان نمو عاداتك بشكل صحي، نفتح لك المرحلة التالية غداً عند منتصف الليل.</p>
+          </div>
+          <div className="bg-secondary/20 p-6 rounded-[2.5rem] border border-border">
+            <Mascot customMessage="النمو الحقيقي ليس بالسرعة، بل بالاستمرار اليومي. أراك غداً! 🐱🌙" />
+          </div>
+          <Button onClick={() => router.back()} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl">العودة للخلف</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background md:pr-64" dir="rtl">

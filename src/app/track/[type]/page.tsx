@@ -47,15 +47,15 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
     const cycle = 8;
     const pos = i % cycle;
     let offset = 0;
-    if (pos < 4) offset = pos * 30 - 45;
-    else offset = (8 - pos) * 30 - 45;
+    if (pos < 4) offset = pos * 25 - 40;
+    else offset = (8 - pos) * 25 - 40;
 
     return { id, status, offset };
   });
 
   const showInfo = () => {
     toast({
-      title: `قوانين مسار ${typeKey}`,
+      title: `قوانين مسار ${typeKey === 'Fitness' ? 'اللياقة' : typeKey === 'Nutrition' ? 'التغذية' : typeKey === 'Behavior' ? 'السلوك' : 'الدراسة'}`,
       description: "مرحلة واحدة فقط يومياً لضمان بناء العادات. المرحلة القادمة تفتح عند منتصف الليل.",
     });
   };
@@ -65,23 +65,23 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
       <NavSidebar />
       
       <div className="app-container py-4 relative">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-4 px-2">
           <Link href="/">
-            <Button variant="ghost" size="sm" className="rounded-full gap-1 text-primary font-bold">
+            <Button variant="ghost" size="sm" className="rounded-full gap-1 text-primary font-black h-8 px-3">
               <ArrowLeft size={14} className="rotate-180" />
               رجوع
             </Button>
           </Link>
           <div className="flex items-center gap-2">
-            <MapIcon className="text-primary" size={18} />
-            <h1 className="text-xl font-black text-primary">مسار {typeKey === 'Fitness' ? 'اللياقة' : typeKey === 'Nutrition' ? 'التغذية' : typeKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</h1>
+            <MapIcon className="text-primary" size={16} />
+            <h1 className="text-sm font-black text-primary">مسار {typeKey === 'Fitness' ? 'اللياقة' : typeKey === 'Nutrition' ? 'التغذية' : typeKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</h1>
           </div>
           <Button onClick={showInfo} variant="outline" size="icon" className="h-8 w-8 rounded-full border-primary text-primary">
             <Info size={14} />
           </Button>
         </div>
 
-        <div className="relative w-full h-32 rounded-[1.5rem] overflow-hidden mb-6 shadow-md border-2 border-white">
+        <div className="relative w-full h-28 rounded-[1.5rem] overflow-hidden mb-6 shadow-md border-2 border-white mx-auto max-w-[95%]">
           <Image 
             src={`/tracks/${resolvedParams.type.toLowerCase()}.jpg`} 
             alt={typeKey}
@@ -93,36 +93,36 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
           />
           <div className="absolute inset-0 bg-gradient-to-t from-primary/70 to-transparent" />
           <div className="absolute bottom-3 right-4 text-white">
-             <p className="text-[10px] font-black uppercase opacity-80">المستوى الحالي</p>
-             <p className="text-2xl font-black">{progress.currentStage || 1} / 30</p>
+             <p className="text-[8px] font-black uppercase opacity-80">المستوى الحالي</p>
+             <p className="text-xl font-black">{progress.currentStage || 1} / 30</p>
           </div>
         </div>
 
-        <div className="mb-8 transform scale-90 origin-top">
+        <div className="mb-8 transform scale-90 origin-top px-2">
           <Mascot customMessage={isOnCooldown ? "أبدعت اليوم! كاري ينتظرك غداً بحماس. 🐱🌙" : "هيا بنا! اليوم يوم جديد للإنجاز. 🐱🔥"} />
         </div>
 
         {isOnCooldown && (
-          <div className="mb-8 bg-orange-500/5 border border-orange-500/20 p-3 rounded-2xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center text-white shadow-sm">
-                <Timer size={16} className="animate-pulse" />
+          <div className="mb-8 bg-orange-500/5 border border-orange-500/20 p-2 rounded-2xl flex items-center justify-between mx-4">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center text-white shadow-sm">
+                <Timer size={14} className="animate-pulse" />
               </div>
               <div className="text-right">
-                <h4 className="font-black text-orange-700 text-xs leading-none">وضع الانتظار</h4>
-                <p className="text-[9px] font-bold text-orange-600/70">تفتح المرحلة عند منتصف الليل</p>
+                <h4 className="font-black text-orange-700 text-[10px] leading-none">وضع الانتظار</h4>
+                <p className="text-[8px] font-bold text-orange-600/70">تفتح المرحلة القادمة عند منتصف الليل</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="relative flex flex-col items-center gap-10 pb-20">
-          <div className="absolute top-0 bottom-0 left-1/2 w-2 bg-secondary/30 -translate-x-1/2 rounded-full -z-0" />
+        <div className="relative flex flex-col items-center gap-8 pb-20">
+          <div className="absolute top-0 bottom-0 left-1/2 w-1.5 bg-secondary/30 -translate-x-1/2 rounded-full -z-0" />
           
           {isLoading ? (
             <div className="py-10 flex flex-col items-center gap-2">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <div className="text-[10px] text-primary font-black">جاري التحميل...</div>
+              <div className="text-[9px] text-primary font-black uppercase tracking-tighter">جاري التحميل...</div>
             </div>
           ) : (
             stages.map((stage) => (

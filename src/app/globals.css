@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,7 +24,7 @@
     --border: 240 10% 90%;
     --input: 240 10% 90%;
     --ring: 243 75% 59%;
-    --radius: 1.5rem;
+    --radius: 1.25rem;
   }
   .dark {
     --background: 231 43% 5%;
@@ -55,9 +56,33 @@
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     font-family: 'Cairo', sans-serif;
-    font-size: 0.85rem; /* أصغر قليلاً للوضوح */
-    line-height: 1.3;
+    font-size: 0.8rem; /* تصغير الخط العام لدعم الجوال */
+    line-height: 1.2;
   }
+}
+
+/* Container Constraint */
+.app-container {
+  @apply max-w-xl mx-auto w-full px-2 sm:px-4;
+}
+
+/* Animations */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+.animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 /* RTL Calendar Full Alignment */
@@ -85,11 +110,11 @@
 
 .rtl-calendar-clean .rdp-day {
   width: 100% !important;
-  max-width: 35px;
+  max-width: 30px;
   aspect-ratio: 1/1 !important;
   height: auto !important;
   font-weight: 900 !important;
-  font-size: 0.8rem !important;
+  font-size: 0.75rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -105,36 +130,6 @@
   justify-content: center !important;
   margin-bottom: 0.5rem !important;
   font-weight: 900 !important;
-  font-size: 0.9rem !important;
+  font-size: 0.8rem !important;
   color: hsl(var(--primary));
-}
-
-/* Container Constraint */
-.app-container {
-  @apply max-w-2xl mx-auto w-full px-3 sm:px-4;
-}
-
-/* Animation Utilities */
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-.animate-spin-slow {
-  animation: spin 3s linear infinite;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* Responsive Image Fix */
-img, video {
-  max-width: 100%;
-  height: auto;
 }

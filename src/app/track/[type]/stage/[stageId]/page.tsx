@@ -40,6 +40,14 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     }
   }, [progressData, stageId]);
 
+  const calculateBonus = () => {
+    const now = new Date();
+    const hour = now.getHours();
+    // يبدأ وضع التبكير من الساعة 5 صباحاً. النقاط تتناقص كلما تأخر الوقت حتى الساعة 8 مساءً (20)
+    if (hour < 5) return 75; // الحد الأقصى قبل الفجر
+    return Math.max(0, (20 - hour) * 5); 
+  };
+
   const handleComplete = useCallback(async () => {
     if (!user || !database || isUpdating || completed) return;
 
@@ -60,10 +68,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
-      const hour = now.getHours();
       const basePoints = 100;
-      const earlyBonus = Math.max(0, (20 - hour) * 5); 
-      const pointsEarned = basePoints + earlyBonus;
+      const pointsEarned = basePoints + calculateBonus();
 
       completedStages.push(stageId);
       const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
@@ -88,7 +94,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[todayStr] || 0) + pointsEarned;
 
-      // Logic: Award a new badge if it's the first time completing any stage
       const currentBadges = userData.badges || [];
       if (!currentBadges.includes('الخطوة الأولى 🐱')) {
         currentBadges.push('الخطوة الأولى 🐱');
@@ -202,7 +207,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                         <span>النقاط الأساسية</span>
                       </div>
                       <div className="flex justify-between font-bold text-sm text-accent">
-                        <span>+{(20 - new Date().getHours()) * 5}</span>
+                        <span>+{calculateBonus()}</span>
                         <span>بونص التبكير</span>
                       </div>
                     </div>

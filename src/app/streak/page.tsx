@@ -20,7 +20,12 @@ export default function StreakPage() {
 
   const activeDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
-    return Object.keys(userData.dailyPoints).map(dateStr => new Date(dateStr));
+    // تحويل مفاتيح التواريخ (ISO Strings) إلى كائنات Date
+    return Object.keys(userData.dailyPoints).map(dateStr => {
+      // إصلاح فروق التوقيت عبر التأكد من أن التاريخ يتم تفسيره محلياً
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    });
   }, [userData]);
   
   const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA'), []);
@@ -72,9 +77,9 @@ export default function StreakPage() {
                     head_row: "flex justify-center",
                     head_cell: "text-muted-foreground rounded-md w-9 font-bold text-[0.8rem]",
                     row: "flex w-full mt-2 justify-center",
-                    cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-selected)]:bg-green-500/20 rounded-xl",
-                    day: "h-9 w-9 p-0 font-bold aria-selected:opacity-100 hover:bg-secondary/50 rounded-xl transition-all",
-                    day_selected: "bg-green-500 text-white hover:bg-green-600 font-black rounded-xl shadow-md",
+                    cell: "h-9 w-9 text-center text-sm p-0 relative rounded-xl",
+                    day: "h-9 w-9 p-0 font-bold hover:bg-secondary/50 rounded-xl transition-all",
+                    day_selected: "bg-green-500 text-white hover:bg-green-600 font-black rounded-xl shadow-md opacity-100",
                     day_today: "border-2 border-primary text-primary font-black rounded-xl",
                   }}
                 />
@@ -96,7 +101,7 @@ export default function StreakPage() {
 
             <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border text-right">
               <h3 className="font-black text-primary mb-4 flex items-center justify-end gap-2">
-                {isDoneToday ? "حالة اليوم" : "حالة اليوم"}
+                حالة اليوم
                 {isDoneToday ? <CheckCircle2 className="text-green-500" /> : <AlertCircle className="text-orange-500" />}
               </h3>
               <p className="text-sm font-bold text-muted-foreground leading-relaxed">

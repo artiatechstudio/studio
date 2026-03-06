@@ -8,6 +8,8 @@ import { Trophy, Medal, Flame, Star, TrendingUp, HeartPulse, Heart } from "lucid
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { playSound } from '@/lib/sounds';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
@@ -74,7 +76,7 @@ export default function LeaderboardPage() {
               <Trophy size={48} />
             </div>
             <div className="text-right">
-              <h1 className="text-4xl md:text-6xl font-black text-primary leading-tight">قائمة العظماء</h1>
+              <h1 className="text-4xl md:text-6xl font-black text-primary leading-tight text-right">قائمة العظماء</h1>
               <p className="text-muted-foreground text-lg md:text-2xl font-bold flex items-center justify-end gap-3 mt-2" dir="rtl">
                 الترتيب بناءً على متوسط إنجازك في آخر 3 أيام
                 <TrendingUp size={24} className="text-accent" />
@@ -114,10 +116,12 @@ export default function LeaderboardPage() {
                        index === 2 ? <Medal className="text-amber-600 w-12 h-12 md:w-16 md:h-16 mx-auto drop-shadow-sm" /> : 
                        <span className="opacity-50">#{index + 1}</span>}
                     </div>
-                    <Avatar className="h-16 w-16 md:h-24 md:w-24 border-[4px] md:border-[6px] border-card shadow-xl flex items-center justify-center bg-white shrink-0">
-                      <span className="text-4xl md:text-6xl">{user.avatar || "🐱"}</span>
-                    </Avatar>
-                    <div className="text-right overflow-hidden">
+                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')}>
+                      <Avatar className="h-16 w-16 md:h-24 md:w-24 border-[4px] md:border-[6px] border-card shadow-xl flex items-center justify-center bg-white shrink-0 hover:scale-110 transition-transform">
+                        <span className="text-4xl md:text-6xl">{user.avatar || "🐱"}</span>
+                      </Avatar>
+                    </Link>
+                    <div className="text-right overflow-hidden flex-1">
                       <h3 className="font-black text-primary text-xl md:text-3xl truncate">{user.name}</h3>
                       <div className="flex flex-wrap items-center justify-end gap-4 mt-3">
                         <span className="flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full text-[10px] font-black text-red-600 border border-red-100">

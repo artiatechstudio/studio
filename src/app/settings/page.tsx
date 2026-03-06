@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation';
 import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Phone, Mail, Globe, Instagram, Facebook, Youtube, PenLine } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 
-const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", " Octopus", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
+const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -72,7 +72,7 @@ export default function SettingsPage() {
         height: parseInt(height) || 0,
         weight: parseInt(weight) || 0,
         avatar,
-        bio: bio.slice(0, 30) // التأكد من عدم تجاوز 30 حرفاً
+        bio: bio.slice(0, 30)
       });
       toast({ title: "تم التحديث!", description: "تم حفظ بياناتك الشخصية بنجاح." });
     } catch (e) {
@@ -135,7 +135,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex items-center gap-4">
@@ -165,7 +165,7 @@ export default function SettingsPage() {
                 <SelectContent>
                   <div className="grid grid-cols-4 gap-2 p-2">
                     {AVATAR_EMOJIS.map(emoji => (
-                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center">
+                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center p-2">
                         {emoji}
                       </SelectItem>
                     ))}
@@ -175,7 +175,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label className="flex items-center gap-2"><PenLine size={16} /> نبذة قصيرة (بايو - بحد أقصى 30 حرفاً)</Label>
+              <Label className="flex items-center gap-2"><PenLine size={16} /> نبذة قصيرة (بحد أقصى 30 حرفاً)</Label>
               <Input 
                 value={bio} 
                 maxLength={30}
@@ -224,7 +224,68 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* ... بقية المحتوى (تواصل معنا، مواقعنا، حذف الحساب) يبقى كما هو ... */}
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
+          <CardHeader className="bg-primary/5 p-8 border-b border-border text-right">
+            <CardTitle className="text-xl font-black text-primary flex items-center justify-end gap-3">
+              تخصيص الواجهة <Sun />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={cn("p-2 rounded-lg", isDark ? "bg-primary text-white" : "bg-yellow-100 text-yellow-600")}>
+                {isDark ? <Moon size={24} /> : <Sun size={24} />}
+              </div>
+              <div>
+                <p className="font-black text-primary">الوضع الليلي</p>
+                <p className="text-xs text-muted-foreground font-bold">تغيير مظهر التطبيق لراحة عينيك</p>
+              </div>
+            </div>
+            <Switch checked={isDark} onCheckedChange={toggleTheme} />
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border">
+            <h3 className="text-xl font-black text-primary mb-6 text-right">تواصل معنا</h3>
+            <div className="space-y-4">
+              {contactLinks.map((link) => (
+                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors">
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white", link.color)}>
+                    <link.icon size={20} />
+                  </div>
+                  <span className="font-black text-primary">{link.name}</span>
+                </a>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border">
+            <h3 className="text-xl font-black text-primary mb-6 text-right">مواقعنا</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {socialLinks.map((link) => (
+                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors">
+                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white", link.color)}>
+                    <link.icon size={20} />
+                  </div>
+                  <span className="text-xs font-black text-primary">{link.name}</span>
+                </a>
+              ))}
+            </div>
+          </Card>
+        </div>
+
+        <div className="pt-10 flex flex-col gap-4">
+          <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
+            <LogOut className="ml-2" /> تسجيل الخروج
+          </Button>
+          <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black hover:bg-destructive/10">
+            <Trash2 className="ml-2" /> حذف الحساب نهائياً
+          </Button>
+        </div>
+
+        <footer className="text-center pt-10 opacity-30 font-black text-primary text-xs">
+          Careingo v2.0 - Developed by Artiatech Studio 2026
+        </footer>
       </div>
     </div>
   );

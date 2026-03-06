@@ -23,7 +23,6 @@ export default function ChatListPage() {
   const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
   const { data: chatsData } = useDatabase(chatsRef);
 
-  // البحث عن الأشخاص الذين تواصل معهم المستخدم مسبقاً
   const recentChatUsers = useMemo(() => {
     if (!usersData || !chatsData || !user) return [];
     
@@ -72,7 +71,6 @@ export default function ChatListPage() {
               />
             </div>
 
-            {/* عرض نتائج البحث */}
             {searchTerm.trim() && (
               <div className="space-y-3">
                 <p className="text-xs font-black text-muted-foreground px-2">نتائج البحث</p>
@@ -84,7 +82,6 @@ export default function ChatListPage() {
               </div>
             )}
 
-            {/* عرض الدردشات الأخيرة */}
             {!searchTerm.trim() && recentChatUsers.length > 0 && (
               <div className="space-y-3">
                 <p className="text-xs font-black text-muted-foreground px-2 flex items-center gap-2">
@@ -117,21 +114,21 @@ export default function ChatListPage() {
 
 function UserChatListItem({ user }: { user: any }) {
   return (
-    <Link href={`/chat/${user.id}`} onClick={() => playSound('click')}>
-      <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border shadow-sm">
-            {user.avatar || "🐱"}
-          </div>
-          <div className="text-right">
-            <p className="font-black text-primary">{user.name}</p>
-            <p className="text-[10px] text-muted-foreground font-bold truncate max-w-[150px]">
-              {user.bio || "انقر لبدء الدردشة"}
-            </p>
-          </div>
+    <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
+      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border shadow-sm hover:scale-110 transition-transform">
+          {user.avatar || "🐱"}
+        </div>
+      </Link>
+      <Link href={`/chat/${user.id}`} onClick={() => playSound('click')} className="flex-1 flex items-center justify-between mr-4">
+        <div className="text-right">
+          <p className="font-black text-primary">{user.name}</p>
+          <p className="text-[10px] text-muted-foreground font-bold truncate max-w-[150px]">
+            {user.bio || "عضو في كارينجو 🌱"}
+          </p>
         </div>
         <ArrowLeft className="text-primary opacity-30 rotate-180" />
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }

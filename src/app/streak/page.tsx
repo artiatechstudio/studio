@@ -53,7 +53,7 @@ export default function StreakPage() {
             <Flame size={40} fill="currentColor" />
           </div>
           <div className="text-right">
-            <h1 className="text-4xl font-black text-primary">سجل الحماسة</h1>
+            <h1 className="text-4xl font-black text-primary text-right">سجل الحماسة</h1>
             <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية الموثقة 🔥</p>
           </div>
         </header>
@@ -70,7 +70,7 @@ export default function StreakPage() {
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
-                  className="rounded-3xl border shadow-inner p-4 bg-secondary/10 flex items-center justify-center"
+                  className="rounded-3xl border shadow-inner p-4 bg-secondary/10 flex items-center justify-center mx-auto"
                   modifiers={{
                     completed: completedDates
                   }}

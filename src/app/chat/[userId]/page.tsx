@@ -89,12 +89,14 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col" dir="rtl">
       <NavSidebar />
-      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-[calc(100vh-100px)] md:h-auto md:pb-20">
+      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-[calc(100vh-100px)] md:h-auto md:pb-24">
         <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-2">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border shrink-0">
-              {otherUserData?.avatar || "🐱"}
-            </div>
+            <Link href={`/user/${otherId}`} onClick={() => playSound('click')} className="shrink-0">
+              <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border hover:scale-110 transition-transform">
+                {otherUserData?.avatar || "🐱"}
+              </div>
+            </Link>
             <div className="text-right">
               <h2 className="font-black text-primary leading-none">{otherUserData?.name || "تحميل..."}</h2>
               <p className="text-[10px] text-muted-foreground font-bold mt-1 truncate max-w-[120px]">
@@ -120,7 +122,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
         <Card className="flex-1 rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2 flex flex-col min-h-0 relative">
           <div 
             ref={scrollRef}
-            className="flex-1 p-6 space-y-4 overflow-y-auto bg-secondary/5 scroll-smooth pb-32"
+            className="flex-1 p-6 space-y-4 overflow-y-auto bg-secondary/5 scroll-smooth pb-40 md:pb-32"
           >
             {messages.length === 0 ? (
               <div className="text-center py-20 opacity-30 font-bold">ابدأ المحادثة الآن! 🐱💬</div>
@@ -139,7 +141,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             })}
           </div>
 
-          <form onSubmit={handleSendMessage} className="absolute bottom-[90px] md:bottom-4 left-4 right-4 p-2 bg-card/90 backdrop-blur-md border border-border rounded-2xl flex gap-2 z-10 shadow-2xl">
+          <form onSubmit={handleSendMessage} className="absolute bottom-[110px] md:bottom-4 left-4 right-4 p-2 bg-card/90 backdrop-blur-md border border-border rounded-2xl flex gap-2 z-10 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 
               className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right"

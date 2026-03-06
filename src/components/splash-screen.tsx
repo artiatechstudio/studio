@@ -9,8 +9,10 @@ import React, { useState, useEffect } from 'react';
  */
 export function SplashScreen() {
   const [isVisible, setIsVisible] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     // نتحقق مما إذا كان قد تم عرض السبلاش في هذه الجلسة
     const hasSeenSplash = sessionStorage.getItem('splash_shown');
     
@@ -19,12 +21,12 @@ export function SplashScreen() {
       const timer = setTimeout(() => {
         setIsVisible(false);
         sessionStorage.setItem('splash_shown', 'true');
-      }, 4000); // عرض الفيديو لمدة 4 ثوانٍ
+      }, 4000); 
       return () => clearTimeout(timer);
     }
   }, []);
 
-  if (!isVisible) return null;
+  if (!isMounted || !isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-primary flex items-center justify-center overflow-hidden">

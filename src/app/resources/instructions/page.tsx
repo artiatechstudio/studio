@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle, Heart, Trash2 } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle, Heart, Trash2, Map, Search } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -60,22 +60,34 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* تحديثات الدردشة والحماسة */}
+          {/* التحديثات الجديدة */}
           <div className="space-y-6 text-right">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <MessageSquare className="text-primary" /> <h2>الميزات الجديدة والتفاعل</h2>
+              <Map className="text-primary" /> <h2>الميزات الجديدة والتفاعل</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="p-6 rounded-3xl border border-border bg-card">
-                <h4 className="font-black text-primary flex items-center gap-2 mb-3">سجل الحماسة (Streak)</h4>
+                <h4 className="font-black text-primary flex items-center gap-2 mb-3">سجل الحماسة المتطور</h4>
                 <p className="text-sm font-bold text-muted-foreground">
-                  يمكنك الوصول لشاشة الحماسة بسرعة عبر النقر على <Flame className="inline text-orange-500" size={16}/> "أيقونة النار" الموجودة في الشاشة الرئيسية. التقويم يوثق أيام إنجازك الحقيقية بعلامات <Flame className="inline text-orange-500" size={12}/> تدل على نجاحك.
+                  تتبع إنجازاتك عبر تقويم الحماسة. كل يوم تنجز فيه مهمة سيظهر لك إيموجي النار 🔥. يمكنك الوصول لهذا السجل عبر أيقونة النار في الصفحة الرئيسية.
                 </p>
               </Card>
               <Card className="p-6 rounded-3xl border border-border bg-card">
-                <h4 className="font-black text-primary flex items-center gap-2 mb-3">الدردشة والملف الشخصي</h4>
+                <h4 className="font-black text-primary flex items-center gap-2 mb-3">نظام الدردشة والإعجابات</h4>
                 <p className="text-sm font-bold text-muted-foreground">
-                  يمكنك الآن إضافة "بايو" قصير لملفك. كما يمكنك <Heart className="inline text-red-500" size={14}/> "الإعجاب" بملفات الآخرين و <Trash2 className="inline text-muted-foreground" size={14}/> "حذف سجل الدردشة" لتوفير المساحة في حسابك.
+                  ابحث عن أصدقائك عبر <Search className="inline" size={14}/> "البحث"، وابدأ محادثة فورية. يمكنك التعبير عن تقديرك عبر زر <Heart className="inline text-red-500" size={14}/> "الإعجاب" بملفاتهم الشخصية.
+                </p>
+              </Card>
+              <Card className="p-6 rounded-3xl border border-border bg-card">
+                <h4 className="font-black text-primary flex items-center gap-2 mb-3">الملف الشخصي العام</h4>
+                <p className="text-sm font-bold text-muted-foreground">
+                  عند الضغط على أفاتار أي مستخدم، ستشاهد معلوماته العامة (الاسم، البايو، الحماسة، الـ BMI، والأوسمة). بياناتك الخاصة تبقى محمية ومخفية.
+                </p>
+              </Card>
+              <Card className="p-6 rounded-3xl border border-border bg-card">
+                <h4 className="font-black text-primary flex items-center gap-2 mb-3">رقم العضوية الفريد</h4>
+                <p className="text-sm font-bold text-muted-foreground">
+                  كل مستخدم في كارينجو يحصل على رقم عضوية يعكس ترتيب انضمامه للمجتمع. يمكنك العثور على رقمك في شاشة الحماسة والملف الشخصي.
                 </p>
               </Card>
             </div>

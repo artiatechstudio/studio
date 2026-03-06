@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CalendarDays, CheckCircle2, AlertCircle, UserCheck } from 'lucide-react';
+import { Flame, CalendarDays, CheckCircle2, AlertCircle, UserCheck, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -49,7 +49,7 @@ export default function StreakPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background pb-40 md:pr-72" dir="rtl">
       <NavSidebar />
       <div className="app-container py-10 md:py-16 space-y-12">
         <header className="flex flex-col md:flex-row items-center justify-between gap-6 bg-card p-10 rounded-[3rem] shadow-2xl border border-border mx-2 relative overflow-hidden">
@@ -84,20 +84,35 @@ export default function StreakPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 md:p-10">
-              <div className="rtl-calendar-clean flex justify-center">
+              <div className="rtl-calendar-clean">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
                   showOutsideDays={false}
-                  className="rounded-[2.5rem] border shadow-inner p-4 md:p-12 bg-secondary/5 w-full max-w-none"
+                  hideHead={true}
+                  className="rounded-[2.5rem] border shadow-inner p-6 md:p-12 bg-secondary/5 w-full"
                   modifiers={{
                     completed: completedDates
                   }}
                   modifiersStyles={{
                     completed: { 
                       color: 'transparent',
-                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23f97316\'%3E%3Cpath d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-3.5-3.5 1.41-1.41L11 13.67l4.59-4.59L17 10.5 11 16.5z\'/%3E%3C/svg%3E") no-repeat center',
+                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23f97316\'%3E%3Cpath d=\'M12 21c-4.97 0-9-4.03-9-9s4.03-9 9-9 9 4.03 9 9-4.03 9-9 9zm0-16c-3.86 0-7 3.14-7 7s3.14 7 7 7 7-3.14 7-7-3.14-7-7-7zm0 13a6 6 0 110-12 6 6 0 010 12z\'/%3E%3Cpath d=\'M12 18l-1.41-1.41L13.17 14H8v-2h5.17l-2.58-2.59L12 8l4 4-4 4z\'/%3E%3C/svg%3E") no-repeat center',
                       backgroundSize: '24px',
+                    }
+                  }}
+                  components={{
+                    Day: ({ date, ...props }) => {
+                      const isCompleted = completedDates.some(d => d.toDateString() === date.toDateString());
+                      return (
+                        <div {...props} className={cn("relative flex items-center justify-center", props.className)}>
+                          {isCompleted ? (
+                            <div className="text-2xl animate-pulse">🔥</div>
+                          ) : (
+                            date.getDate()
+                          )}
+                        </div>
+                      )
                     }
                   }}
                 />
@@ -137,9 +152,9 @@ export default function StreakPage() {
               </div>
               <div className="space-y-6">
                 <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-border/50 text-center">
-                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">ترتيب انضمامك لأسرة كارينجو</p>
-                   <p className="font-black text-primary text-3xl">العضو رقم {userData?.registrationRank || '--'}</p>
-                   <p className="text-[10px] text-accent font-black mt-2">من المؤسسين الأوائل لمجتمع النمو 🌱</p>
+                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">أنت عضو مميز لدينا</p>
+                   <p className="font-black text-primary text-3xl">المشترك رقم {userData?.registrationRank || '--'}</p>
+                   <p className="text-[10px] text-accent font-black mt-2">نفخر بوجودك ضمن أوائل مجتمع كارينجو 🌱</p>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
                    <p className="font-black text-primary text-xl">{completedDates.length}</p>

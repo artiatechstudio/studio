@@ -56,12 +56,12 @@
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     font-family: 'Cairo', sans-serif;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     line-height: 1.6;
   }
 }
 
-/* RTL Calendar - Simple & Clean without headers */
+/* RTL Calendar Clean */
 .rtl-calendar-clean {
   direction: rtl !important;
   width: 100% !important;
@@ -69,38 +69,19 @@
   justify-content: center !important;
 }
 
-.rtl-calendar-clean .rdp-head {
-  display: none !important; /* إزالة أسماء الأيام تماماً */
-}
-
-.rtl-calendar-clean .rdp {
-  --rdp-cell-size: 48px;
-  width: 100% !important;
-  max-width: 100% !important;
-  margin: 0 auto !important;
-}
-
-.rtl-calendar-clean .rdp-table {
-  width: 100% !important;
-  max-width: 100% !important;
-}
-
-.rtl-calendar-clean .rdp-row {
-  display: flex !important;
-  justify-content: space-around !important;
-}
-
-.rtl-calendar-clean .rdp-cell {
-  width: var(--rdp-cell-size) !important;
+.rtl-calendar-clean .rdp-month_caption {
   display: flex !important;
   justify-content: center !important;
+  margin-bottom: 1.5rem !important;
+  font-weight: 900 !important;
+  font-size: 1.3rem !important;
 }
 
 .rtl-calendar-clean .rdp-day {
-  width: var(--rdp-cell-size) !important;
-  height: var(--rdp-cell-size) !important;
+  width: 50px !important;
+  height: 50px !important;
   font-weight: 900 !important;
-  font-size: 1.1rem !important;
+  font-size: 1.2rem !important;
 }
 
 /* Scrollbar Styling */

@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { BadgeCheck, Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2 } from 'lucide-react';
+import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -40,7 +40,7 @@ export default function ProfilePage() {
     });
     
     const rank = sortedUsers.findIndex(u => u.id === user.uid) + 1;
-    return { rank, total: sortedUsers.length };
+    return { rank: rank > 0 ? rank : 1, total: sortedUsers.length };
   }, [allUsersData, user]);
 
   const handleLogout = async () => {
@@ -84,9 +84,6 @@ export default function ProfilePage() {
             <Avatar className="w-32 h-32 md:w-40 md:h-40 border-8 border-secondary shadow-xl bg-white flex items-center justify-center">
               <span className="text-7xl md:text-8xl">{userData.avatar || "🐱"}</span>
             </Avatar>
-            <div className="absolute -bottom-2 -right-2 bg-accent text-white p-3 rounded-2xl shadow-lg border-4 border-card">
-              <BadgeCheck size={24} fill="currentColor" />
-            </div>
           </div>
           
           <div className="flex-1 text-center md:text-right space-y-3">
@@ -178,7 +175,7 @@ export default function ProfilePage() {
                  </div>
                </DialogContent>
              </Dialog>
-          </Card>
+          </div>
         </div>
       </div>
     </div>

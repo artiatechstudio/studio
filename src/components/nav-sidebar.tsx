@@ -93,14 +93,14 @@ export function NavSidebar() {
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-24 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[3rem]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-28 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[3rem]">
         {mobileNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => playSound('click')}
             className={cn(
-              "flex flex-col items-center justify-center transition-all flex-1 h-full",
+              "flex flex-col items-center justify-center transition-all flex-1 h-full px-1",
               item.isCenter ? "relative -top-4" : "pt-2",
               pathname === item.href ? "text-primary" : "text-muted-foreground opacity-60"
             )}
@@ -108,15 +108,15 @@ export function NavSidebar() {
             <div className={cn(
               "transition-all",
               item.isCenter 
-                ? "w-16 h-16 bg-primary text-white rounded-3xl shadow-xl flex items-center justify-center border-4 border-card scale-110" 
-                : "p-2 rounded-2xl",
+                ? "w-16 h-16 bg-primary text-white rounded-3xl shadow-xl flex items-center justify-center border-4 border-card scale-110 mb-1" 
+                : "p-2 rounded-2xl mb-1",
               pathname === item.href && !item.isCenter ? "bg-primary/10" : ""
             )}>
               <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[2.5px]")} />
             </div>
             <span className={cn(
-              "text-[10px] font-black mt-1",
-              item.isCenter ? "mt-2 text-primary" : ""
+              "text-[11px] font-black whitespace-nowrap",
+              item.isCenter ? "text-primary mt-1" : ""
             )}>
               {item.label}
             </span>

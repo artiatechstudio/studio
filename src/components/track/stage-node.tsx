@@ -4,6 +4,7 @@
 import React from 'react';
 import { Lock, Lightbulb, CheckCircle2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { playSound } from '@/lib/sounds';
 import Link from 'next/link';
 
 interface StageNodeProps {
@@ -16,11 +17,8 @@ interface StageNodeProps {
 export function StageNode({ id, status, trackType, offset }: StageNodeProps) {
   const Icon = status === 'completed' ? CheckCircle2 : status === 'open' ? Lightbulb : Lock;
   
-  const playClickSound = () => {
-    if (status !== 'locked') {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3');
-      audio.play().catch(() => {});
-    }
+  const handleOnClick = () => {
+    playSound('click');
   };
 
   return (
@@ -30,7 +28,7 @@ export function StageNode({ id, status, trackType, offset }: StageNodeProps) {
     >
       <Link 
         href={status === 'locked' ? '#' : `/track/${trackType}/stage/${id}`}
-        onClick={playClickSound}
+        onClick={handleOnClick}
         className={cn(
           "w-20 h-20 rounded-[2rem] flex items-center justify-center transition-all duration-300 shadow-xl relative",
           status === 'completed' && "bg-accent text-white hover:scale-110 shadow-accent/20",

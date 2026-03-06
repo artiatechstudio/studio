@@ -40,9 +40,9 @@ export default function LoginPage() {
         toast({ 
           variant: "destructive", 
           title: "لم يتم تفعيل البريد", 
-          description: "يرجى تفعيل حسابك من خلال الرابط المرسل لبريدك الإلكتروني." 
+          description: "يرجى تفعيل حسابك من خلال الرابط المرسل لبريدك الإلكتروني (تفقد مجلد Spam)." 
         });
-        // خيار لإعادة إرسال الرابط إذا رغب المستخدم
+        // لا نسمح بالبقاء مسجلاً إذا لم يفعل البريد لضمان الصرامة
         await signOut(auth);
       } else {
         playSound('login');
@@ -57,17 +57,17 @@ export default function LoginPage() {
   };
 
   const handleResendVerification = async () => {
-    if (!email) {
-      toast({ variant: "destructive", title: "تنبيه", description: "يرجى إدخال البريد الإلكتروني أولاً." });
+    if (!email || !password) {
+      toast({ variant: "destructive", title: "تنبيه", description: "يرجى إدخال البريد وكلمة المرور أولاً لطلب رابط جديد." });
       return;
     }
     setLoading(true);
     try {
-      // محاولة تسجيل دخول صامت لإرسال الرابط ثم الخروج
+      // نحتاج لتسجيل الدخول مؤقتاً لإرسال الرابط
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await sendEmailVerification(userCredential.user);
       await signOut(auth);
-      toast({ title: "تم إعادة الإرسال", description: "تفقد بريدك الإلكتروني الآن." });
+      toast({ title: "تم إعادة الإرسال", description: "تفقد بريدك الإلكتروني الآن (بما في ذلك مجلد Spam)." });
     } catch (e: any) {
       toast({ variant: "destructive", title: "خطأ", description: "تأكد من بياناتك قبل إعادة طلب الرابط." });
     } finally {
@@ -128,7 +128,7 @@ export default function LoginPage() {
           </form>
 
           <button onClick={handleResendVerification} className="w-full text-xs font-black text-primary/60 hover:text-primary transition-colors underline">
-            لم يصلك رابط التفعيل؟ أعد الإرسال
+            لم يصلك رابط التفعيل؟ أعد الإرسال (يتطلب البريد وكلمة المرور)
           </button>
 
           <div className="relative">

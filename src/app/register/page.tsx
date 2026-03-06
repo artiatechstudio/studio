@@ -78,12 +78,12 @@ export default function RegisterPage() {
 
       toast({ 
         title: "تم إرسال رابط التحقق!", 
-        description: "يرجى مراجعة بريدك الإلكتروني لتفعيل الحساب قبل الدخول." 
+        description: "يرجى مراجعة بريدك الإلكتروني (وتفقد مجلد Spam) لتفعيل الحساب قبل الدخول." 
       });
       
       router.push('/login');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "فشل التسجيل", description: error.message });
+      toast({ variant: "destructive", title: "فشل التسجيل", description: "تأكد من صحة البريد أو قوة كلمة المرور." });
     } finally {
       setLoading(false);
     }

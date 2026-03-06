@@ -164,7 +164,7 @@ export default function ProfilePage() {
                  <div className="flex flex-col items-center gap-6 mt-4">
                    <div className="bg-white p-6 rounded-[2rem] shadow-inner border-4 border-accent">
                       <Image 
-                        src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://www.artiatechstudio.com.ly/2026/02/nova-care.html" 
+                        src="/qr.png" 
                         alt="QR Code" 
                         width={250} 
                         height={250} 

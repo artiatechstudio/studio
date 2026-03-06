@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -90,10 +91,13 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-secondary/30 p-6" dir="rtl">
       <Card className="w-full max-w-md border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border">
-        <CardHeader className="bg-primary text-white p-10 text-center">
-          <div className="w-20 h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 text-5xl">🐱</div>
-          <CardTitle className="text-4xl font-black">كارينجو</CardTitle>
-          <p className="opacity-80 font-bold mt-2 text-lg">رفيقك اليومي للنمو</p>
+        <CardHeader className="bg-primary text-white p-10 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
+          <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 p-2 shadow-2xl relative z-10">
+            <Image src="/logo.png" alt="Careingo Logo" width={80} height={80} className="object-contain" />
+          </div>
+          <CardTitle className="text-4xl font-black relative z-10">كارينجو</CardTitle>
+          <p className="opacity-80 font-bold mt-2 text-lg relative z-10">رفيقك اليومي للنمو</p>
         </CardHeader>
         <CardContent className="p-10 space-y-8">
           <form onSubmit={handleLogin} className="space-y-6 text-right">

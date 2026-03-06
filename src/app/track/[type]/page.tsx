@@ -12,6 +12,7 @@ import { Mascot } from '@/components/mascot';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 export default function TrackPathPage({ params }: { params: Promise<{ type: string }> }) {
   const resolvedParams = use(params);
@@ -65,11 +66,11 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
     <div className="min-h-screen bg-background relative overflow-hidden pb-32" dir="rtl">
       <NavSidebar />
       
+      {/* Background Decor */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl -z-10 -translate-y-1/2 translate-x-1/2" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-3xl -z-10 translate-y-1/2 -translate-x-1/2" />
-
+      
       <div className="max-w-3xl mx-auto p-6 md:p-12 relative">
-        <div className="flex items-center justify-between mb-12">
+        <div className="flex items-center justify-between mb-8">
           <Link href="/">
             <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
               <ArrowLeft size={18} className="rotate-180" />
@@ -83,6 +84,24 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
           <Button onClick={showInfo} variant="outline" size="icon" className="rounded-full border-primary text-primary">
             <Info size={18} />
           </Button>
+        </div>
+
+        {/* Track Hero Image */}
+        <div className="relative w-full h-48 rounded-[2.5rem] overflow-hidden mb-12 shadow-xl border-4 border-white">
+          <Image 
+            src={`/tracks/${resolvedParams.type.toLowerCase()}.jpg`} 
+            alt={typeKey}
+            fill
+            className="object-cover"
+            onError={(e) => {
+              (e.target as any).src = 'https://picsum.photos/seed/track/800/400';
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-primary/60 to-transparent" />
+          <div className="absolute bottom-6 right-8 text-white">
+             <p className="text-xs font-black uppercase tracking-widest opacity-80">أنت الآن في المرحلة</p>
+             <p className="text-4xl font-black">{progress.currentStage || 1} من 30</p>
+          </div>
         </div>
 
         <div className="mb-20">

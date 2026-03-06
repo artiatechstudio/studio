@@ -3,11 +3,16 @@ import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
+import { SplashScreen } from '@/components/splash-screen';
 
 export const metadata: Metadata = {
   title: 'كارينجو | رفيقك اليومي للنمو',
   description: 'منصة مستوحاة من دولينجو للتطوير في اللياقة، التغذية، السلوك، والدراسة.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -37,9 +42,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet" />
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {
@@ -56,6 +58,7 @@ export default function RootLayout({
         }} />
       </head>
       <body className="font-body antialiased min-h-screen bg-background text-right transition-colors duration-300" suppressHydrationWarning>
+        <SplashScreen />
         <FirebaseClientProvider>
           <div className="flex flex-col min-h-screen">
             <main className="flex-1">

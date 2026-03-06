@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle, Heart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -69,13 +69,13 @@ export default function InstructionsPage() {
               <Card className="p-6 rounded-3xl border border-border bg-card">
                 <h4 className="font-black text-primary flex items-center gap-2 mb-3">سجل الحماسة (Streak)</h4>
                 <p className="text-sm font-bold text-muted-foreground">
-                  يمكنك الوصول لشاشة الحماسة بسرعة عبر النقر على <Flame className="inline text-orange-500" size={16}/> "أيقونة النار" الموجودة في الشاشة الرئيسية. التقويم يوثق أيام إنجازك الحقيقية بعلامات ملونة.
+                  يمكنك الوصول لشاشة الحماسة بسرعة عبر النقر على <Flame className="inline text-orange-500" size={16}/> "أيقونة النار" الموجودة في الشاشة الرئيسية. التقويم يوثق أيام إنجازك الحقيقية بعلامات <Flame className="inline text-orange-500" size={12}/> تدل على نجاحك.
                 </p>
               </Card>
               <Card className="p-6 rounded-3xl border border-border bg-card">
                 <h4 className="font-black text-primary flex items-center gap-2 mb-3">الدردشة والملف الشخصي</h4>
                 <p className="text-sm font-bold text-muted-foreground">
-                  يمكنك الآن إضافة "بايو" (نبذة قصيرة) من 30 حرفاً لملفك الشخصي. كما يحفظ النظام الدردشات التي قمت بها مسبقاً ليسهل عليك العودة إليها من قائمة الدردشة.
+                  يمكنك الآن إضافة "بايو" قصير لملفك. كما يمكنك <Heart className="inline text-red-500" size={14}/> "الإعجاب" بملفات الآخرين و <Trash2 className="inline text-muted-foreground" size={14}/> "حذف سجل الدردشة" لتوفير المساحة في حسابك.
                 </p>
               </Card>
             </div>

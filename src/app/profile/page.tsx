@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2 } from 'lucide-react';
+import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -89,6 +89,9 @@ export default function ProfilePage() {
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
               <span className="bg-primary/10 px-4 py-1 rounded-full text-xs font-black text-primary border border-primary/20">
                 العضو رقم {membershipInfo.rank} من {membershipInfo.total}
+              </span>
+              <span className="bg-red-50 px-4 py-1 rounded-full text-xs font-black text-red-600 border border-red-100 flex items-center gap-1">
+                 {userData.likesCount || 0} إعجاب <Heart size={14} fill="currentColor" />
               </span>
             </div>
             <p className="text-muted-foreground font-bold text-lg italic">{getRankName(userData.points)}</p>

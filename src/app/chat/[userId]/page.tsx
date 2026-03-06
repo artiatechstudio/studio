@@ -4,14 +4,15 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction } from 'firebase/database';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft } from 'lucide-react';
+import { Send, ArrowLeft, Trash2, Heart } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { toast } from '@/hooks/use-toast';
 
 export default function ChatRoomPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId: otherId } = use(params);
@@ -53,6 +54,33 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setMsgText('');
   };
 
+  const handleDeleteChat = () => {
+    if (!window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة؟ لا يمكن التراجع عن ذلك.")) return;
+    playSound('click');
+    set(messagesRef, null).then(() => {
+      toast({ title: "تم حذف السجل" });
+    });
+  };
+
+  const handleLikeProfile = () => {
+    if (!user || !otherId) return;
+    playSound('success');
+    
+    const otherUserLikesRef = ref(database, `users/${otherId}/likesCount`);
+    const likedByRef = ref(database, `users/${otherId}/likedBy/${user.uid}`);
+    
+    runTransaction(likedByRef, (current) => {
+      if (current === true) {
+        toast({ title: "لقد أعجبت بهذا الملف مسبقاً!" });
+        return;
+      }
+      
+      runTransaction(otherUserLikesRef, (count) => (count || 0) + 1);
+      toast({ title: "تم إرسال إعجاب! ❤️" });
+      return true;
+    });
+  };
+
   const messages = useMemo(() => {
     if (!messagesData) return [];
     return Object.values(messagesData).sort((a: any, b: any) => a.timestamp - b.timestamp);
@@ -61,32 +89,42 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col" dir="rtl">
       <NavSidebar />
-      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-[calc(100vh-80px)] md:h-auto md:pb-20">
+      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-[calc(100vh-100px)] md:h-auto md:pb-20">
         <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-2">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border">
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border shrink-0">
               {otherUserData?.avatar || "🐱"}
             </div>
             <div className="text-right">
               <h2 className="font-black text-primary leading-none">{otherUserData?.name || "تحميل..."}</h2>
-              <p className="text-[10px] text-muted-foreground font-bold mt-1 truncate max-w-[150px]">
+              <p className="text-[10px] text-muted-foreground font-bold mt-1 truncate max-w-[120px]">
                 {otherUserData?.bio || "عضو طموح في كارينجو"}
               </p>
             </div>
           </div>
-          <Link href="/chat">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="rotate-180" />
+          <div className="flex items-center gap-1">
+            <Button onClick={handleLikeProfile} variant="ghost" size="icon" className="rounded-full text-red-500 hover:bg-red-50">
+              <Heart size={20} fill={otherUserData?.likedBy?.[user?.uid || ''] ? "currentColor" : "none"} />
             </Button>
-          </Link>
+            <Button onClick={handleDeleteChat} variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-destructive/5">
+              <Trash2 size={20} />
+            </Button>
+            <Link href="/chat">
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <ArrowLeft className="rotate-180" />
+              </Button>
+            </Link>
+          </div>
         </header>
 
         <Card className="flex-1 rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2 flex flex-col min-h-0 relative">
           <div 
             ref={scrollRef}
-            className="flex-1 p-6 space-y-4 overflow-y-auto bg-secondary/5 scroll-smooth pb-24"
+            className="flex-1 p-6 space-y-4 overflow-y-auto bg-secondary/5 scroll-smooth pb-32"
           >
-            {messages.map((m: any, idx) => {
+            {messages.length === 0 ? (
+              <div className="text-center py-20 opacity-30 font-bold">ابدأ المحادثة الآن! 🐱💬</div>
+            ) : messages.map((m: any, idx) => {
               const isMine = m.senderId === user?.uid;
               return (
                 <div key={idx} className={cn("flex", isMine ? "justify-end" : "justify-start")}>
@@ -101,7 +139,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             })}
           </div>
 
-          <form onSubmit={handleSendMessage} className="absolute bottom-4 left-4 right-4 p-2 bg-card/90 backdrop-blur-md border border-border rounded-2xl flex gap-2 z-10 shadow-2xl">
+          <form onSubmit={handleSendMessage} className="absolute bottom-[90px] md:bottom-4 left-4 right-4 p-2 bg-card/90 backdrop-blur-md border border-border rounded-2xl flex gap-2 z-10 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 
               className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right"

@@ -18,7 +18,6 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
-  // استخراج تواريخ الإنجاز الحقيقية من قاعدة البيانات
   const completedDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
     return Object.keys(userData.dailyPoints).map(dateStr => {
@@ -55,7 +54,7 @@ export default function StreakPage() {
           </div>
           <div className="text-right">
             <h1 className="text-4xl font-black text-primary">سجل الحماسة</h1>
-            <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية الموثقة</p>
+            <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية الموثقة 🔥</p>
           </div>
         </header>
 
@@ -71,16 +70,15 @@ export default function StreakPage() {
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
-                  className="rounded-3xl border shadow-inner p-4 bg-secondary/10"
+                  className="rounded-3xl border shadow-inner p-4 bg-secondary/10 flex items-center justify-center"
                   modifiers={{
                     completed: completedDates
                   }}
                   modifiersStyles={{
                     completed: { 
-                      backgroundColor: 'hsl(var(--primary))', 
-                      color: 'white',
-                      fontWeight: 'bold',
-                      borderRadius: '12px'
+                      color: 'transparent',
+                      background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23f97316\'%3E%3Cpath d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-3.5-3.5 1.41-1.41L11 13.67l4.59-4.59L17 10.5 11 16.5z\'/%3E%3C/svg%3E") no-repeat center',
+                      backgroundSize: '32px',
                     }
                   }}
                 />

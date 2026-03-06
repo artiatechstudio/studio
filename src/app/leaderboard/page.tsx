@@ -1,9 +1,10 @@
+
 "use client"
 
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Avatar } from "@/components/ui/avatar";
-import { Trophy, Medal, Flame, Star, TrendingUp, HeartPulse } from "lucide-react";
+import { Trophy, Medal, Flame, Star, TrendingUp, HeartPulse, Heart } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
@@ -119,6 +120,9 @@ export default function LeaderboardPage() {
                     <div className="text-right overflow-hidden">
                       <h3 className="font-black text-primary text-xl md:text-3xl truncate">{user.name}</h3>
                       <div className="flex flex-wrap items-center justify-end gap-4 mt-3">
+                        <span className="flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full text-[10px] font-black text-red-600 border border-red-100">
+                          {user.likesCount || 0} <Heart size={14} fill="currentColor" />
+                        </span>
                         <span className="flex items-center gap-1.5 bg-orange-50 px-3 py-1 rounded-full text-sm font-black text-orange-600 border border-orange-100">
                           {user.streak || 0} يوم <Flame size={18} className="text-orange-500" fill="currentColor" />
                         </span>

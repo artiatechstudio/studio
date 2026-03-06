@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Avatar } from "@/components/ui/avatar";
-import { Trophy, Medal, Flame, Star, TrendingUp } from "lucide-react";
+import { Trophy, Medal, Flame, Star, TrendingUp, HeartPulse } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 
@@ -34,7 +34,28 @@ export default function LeaderboardPage() {
         const scores = dates.map(date => dailyPoints[date] || 0);
         const sum = scores.reduce((a, b) => a + b, 0);
         const avgScore = Math.round(sum / 3);
-        return { ...user, avgScore };
+
+        // BMI Calculation for leaderboard
+        let bmiStatus = "غير محدد";
+        let bmiColor = "text-gray-400";
+        if (user.weight && user.height) {
+          const bmi = user.weight / ((user.height / 100) * (user.height / 100));
+          if (bmi >= 18.5 && bmi < 25) {
+            bmiStatus = "مثالي 🟢";
+            bmiColor = "text-green-500";
+          } else if (bmi >= 25 && bmi < 30) {
+            bmiStatus = "زائد 🟡";
+            bmiColor = "text-orange-500";
+          } else if (bmi >= 30) {
+            bmiStatus = "سمنة 🔴";
+            bmiColor = "text-red-500";
+          } else {
+            bmiStatus = "ناقص 🔵";
+            bmiColor = "text-blue-500";
+          }
+        }
+
+        return { ...user, avgScore, bmiStatus, bmiColor };
       })
       .filter((user: any) => (user.points || 0) > 0)
       .sort((a: any, b: any) => b.avgScore - a.avgScore);
@@ -95,8 +116,9 @@ export default function LeaderboardPage() {
                     </Avatar>
                     <div className="text-right">
                       <h3 className="font-black text-primary text-base md:text-xl">{user.name}</h3>
-                      <div className="flex items-center justify-end gap-2 text-xs md:text-sm text-muted-foreground font-bold">
+                      <div className="flex items-center justify-end gap-3 text-xs md:text-sm text-muted-foreground font-bold">
                         <span className="flex items-center gap-1">{user.streak || 0} يوم <Flame size={14} className="text-orange-500" fill="currentColor" /></span>
+                        <span className={`flex items-center gap-1 ${user.bmiColor}`}><HeartPulse size={14} /> {user.bmiStatus}</span>
                       </div>
                     </div>
                   </div>

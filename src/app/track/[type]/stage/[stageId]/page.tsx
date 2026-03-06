@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { use, useState, useEffect, useCallback, useRef } from 'react';
@@ -29,7 +28,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const [isUpdating, setIsUpdating] = useState(false);
   const [onCooldown, setOnCooldown] = useState(false);
 
-  // Timer states
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -50,7 +48,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       if (hasCompletedToday && !isDone && stageId > 1) {
         setOnCooldown(true);
       }
-      
       setLoading(false);
     } else {
       setLoading(false);
@@ -66,24 +63,20 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       setTimerActive(false);
       if (timerRef.current) clearInterval(timerRef.current);
     }
-
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
   const startChallenge = () => {
     playSound('click');
     setTimerActive(true);
     setTimeLeft((challenge?.time || 5) * 60);
-    toast({ title: "بدأ التحدي!", description: "ركز الآن على تنفيذ المهمة المطلوبة." });
+    toast({ title: "بدأ التحدي!" });
   };
 
   const cancelChallenge = () => {
     playSound('click');
     setTimerActive(false);
     setTimeLeft(0);
-    toast({ variant: "destructive", title: "تم إلغاء المهمة", description: "لا بأس، يمكنك المحاولة مرة أخرى لاحقاً." });
   };
 
   const calculateBonus = () => {
@@ -96,24 +89,17 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   const handleComplete = useCallback(async () => {
     if (!user || !database || isUpdating || completed || onCooldown) return;
-
     setIsUpdating(true);
     playSound('click');
     
     try {
       const currentProgress = progressData || { currentStage: 1, completedStages: [] };
       const completedStages = [...(currentProgress.completedStages || [])];
-      
-      const now = new Date();
-      const todayStr = now.toLocaleDateString('en-CA');
-      const yesterday = new Date(now);
-      yesterday.setDate(yesterday.getDate() - 1);
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
-      const basePoints = 100;
-      const bonus = calculateBonus();
-      const pointsEarned = basePoints + bonus;
-
+      const pointsEarned = 100 + calculateBonus();
       completedStages.push(stageId);
       const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
 
@@ -122,44 +108,16 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const userData = userSnap.val();
 
       let newStreak = userData.streak || 0;
-      const lastActiveDate = userData.lastActiveDate;
-
-      if (!lastActiveDate) {
-        newStreak = 1;
-      } else if (lastActiveDate !== todayStr) {
-        if (lastActiveDate === yesterdayStr) {
-          newStreak += 1;
-        } else {
-          newStreak = 1;
-        }
+      if (!userData.lastActiveDate) newStreak = 1;
+      else if (userData.lastActiveDate !== todayStr) {
+        newStreak = userData.lastActiveDate === yesterdayStr ? newStreak + 1 : 1;
       }
-
-      // نظام الأوسمة الديناميكي
-      const currentBadges = userData.badges || [];
-      const newBadges = [...currentBadges];
-
-      if (!currentBadges.includes("أول إنجاز 🏅")) {
-        newBadges.push("أول إنجاز 🏅");
-      }
-      if (newStreak === 3 && !currentBadges.includes("ثلاثية الحماسة 🔥")) {
-        newBadges.push("ثلاثية الحماسة 🔥");
-      }
-      if (newStreak === 7 && !currentBadges.includes("بطل الأسبوع 👑")) {
-        newBadges.push("بطل الأسبوع 👑");
-      }
-      if (completedStages.length >= 10 && !currentBadges.includes(`خبير ${trackKey} 🎓`)) {
-        newBadges.push(`خبير ${trackKey} 🎓`);
-      }
-
-      const currentDailyPoints = userData.dailyPoints || {};
-      const todayPoints = (currentDailyPoints[todayStr] || 0) + pointsEarned;
 
       await update(userRef, {
         points: (userData.points || 0) + pointsEarned,
         streak: newStreak,
         lastActiveDate: todayStr,
-        badges: newBadges,
-        [`dailyPoints/${todayStr}`]: todayPoints,
+        [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsEarned,
         [`trackProgress/${trackKey}`]: {
           completedStages,
           currentStage: nextStage,
@@ -170,12 +128,9 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       setCompleted(true);
       setTimerActive(false);
       playSound('success');
-      toast({
-        title: "تم الإنجاز! 🎉",
-        description: `أحسنت! حصلت على ${pointsEarned} نقطة وحافظت على نموك.`,
-      });
+      toast({ title: "تم الإنجاز! 🎉", description: `حصلت على ${pointsEarned} نقطة.` });
     } catch (e) {
-      toast({ variant: "destructive", title: "خطأ", description: "فشل في حفظ التقدم." });
+      toast({ variant: "destructive", title: "خطأ في الحفظ" });
     } finally {
       setIsUpdating(false);
     }
@@ -189,152 +144,116 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   if (onCooldown) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6 text-center" dir="rtl">
-        <div className="max-w-md space-y-8">
-          <div className="w-24 h-24 bg-orange-100 text-orange-600 rounded-[2rem] flex items-center justify-center mx-auto shadow-xl animate-float">
-            <Timer size={56} />
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center" dir="rtl">
+        <div className="max-w-xs space-y-6">
+          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg animate-float">
+            <Timer size={36} />
           </div>
-          <div className="space-y-4">
-            <h1 className="text-4xl font-black text-primary italic">حان وقت الراحة!</h1>
-            <p className="text-xl font-bold text-muted-foreground leading-relaxed">لقد أكملت مرحلة في هذا المسار اليوم. لضمان نمو عاداتك بشكل صحي، نفتح لك المرحلة التالية غداً عند منتصف الليل.</p>
-          </div>
-          <div className="bg-secondary/20 p-6 rounded-[2.5rem] border border-border">
-            <Mascot customMessage="النمو الحقيقي ليس بالسرعة، بل بالاستمرار اليومي. أراك غداً! 🐱🌙" />
-          </div>
-          <Button onClick={() => router.back()} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl">العودة للخلف</Button>
+          <h1 className="text-xl font-black text-primary">وقت الاستراحة!</h1>
+          <p className="text-sm font-bold text-muted-foreground">أكملت مرحلة في هذا المسار اليوم. نراك غداً عند منتصف الليل!</p>
+          <Mascot customMessage="النمو الحقيقي بالاستمرار اليومي. 🐱🌙" />
+          <Button onClick={() => router.back()} size="lg" className="w-full rounded-xl font-black">العودة</Button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background md:pr-64" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">
       <NavSidebar />
-      {completed && (
-        <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center overflow-hidden">
-           {/* Celebration Effect */}
-           <div className="absolute inset-0 bg-primary/5 animate-pulse" />
-           <div className="flex gap-4">
-              {[...Array(20)].map((_, i) => (
-                <Star key={i} className="text-yellow-500 animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
-              ))}
-           </div>
-        </div>
-      )}
-      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
+      <div className="app-container py-4 space-y-4">
         <div className="flex justify-end">
           <Link href={`/track/${resolvedParams.type}`} onClick={() => playSound('click')}>
-            <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
-              العودة للمسار
-              <ArrowLeft size={18} />
+            <Button variant="ghost" size="sm" className="rounded-full gap-1 text-primary font-bold">
+              رجوع للمسار
+              <ArrowLeft size={14} />
             </Button>
           </Link>
         </div>
 
         {loading ? (
-          <div className="flex flex-col items-center justify-center p-20 gap-6">
-             <div className="text-9xl animate-bounce">🐱</div>
-             <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
-             <p className="text-primary font-black text-2xl animate-pulse">كاري يفتح لك المهمة...</p>
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+             <p className="text-primary font-black text-sm">جاري التحميل...</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-8 order-2 lg:order-1">
-              <header className="text-right">
-                <div className="flex items-center justify-end gap-3 mb-4">
-                  <div className="px-4 py-1.5 bg-primary/10 text-primary rounded-full text-xs font-black uppercase border border-primary/20">{trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</div>
-                  <div className="px-4 py-1.5 bg-accent/10 text-accent rounded-full text-xs font-black uppercase border border-accent/20">اليوم {stageId}</div>
+          <div className="grid grid-cols-1 gap-4">
+            <header className="text-right space-y-1">
+              <div className="flex items-center justify-end gap-2 mb-1">
+                <div className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[8px] font-black uppercase">اليوم {stageId}</div>
+              </div>
+              <h1 className="text-xl font-black text-primary leading-tight">{challenge.title}</h1>
+            </header>
+
+            <Card className="rounded-[1.5rem] overflow-hidden bg-card border border-border text-right shadow-lg">
+              <CardHeader className="bg-primary text-white p-4">
+                <div className="flex items-center justify-between flex-row-reverse">
+                  <CardTitle className="text-sm font-bold">مهمة اليوم</CardTitle>
+                  <div className="flex gap-2 text-[10px] font-black opacity-90">
+                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full"><Clock size={10} /> {challenge.time}د</span>
+                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full"><Zap size={10} /> {challenge.difficulty}</span>
+                  </div>
                 </div>
-                <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">{challenge.title}</h1>
-              </header>
-
-              <Card className="border-none shadow-2xl rounded-[3rem] overflow-hidden bg-card border border-border text-right group">
-                <CardHeader className="bg-primary text-white p-8 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-16 translate-x-16 group-hover:scale-110 transition-transform" />
-                  <div className="flex items-center justify-between flex-row-reverse relative z-10">
-                    <CardTitle className="text-2xl font-bold">مهمة اليوم</CardTitle>
-                    <div className="flex gap-4 text-sm font-black opacity-90">
-                      <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full"><Clock size={16} /> {challenge.time}د</div>
-                      <div className="flex items-center gap-1.5 bg-white/20 px-3 py-1 rounded-full"><Zap size={16} /> {challenge.difficulty}</div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="p-10 space-y-10">
-                  <div className="text-xl leading-relaxed text-muted-foreground whitespace-pre-wrap font-medium">
-                    {challenge.description}
-                  </div>
-                  
-                  {!completed ? (
-                    <div className="space-y-6">
-                      {!timerActive ? (
-                        <Button 
-                          onClick={startChallenge}
-                          className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black shadow-xl transition-all hover:scale-[1.02]"
-                        >
-                          <Play className="ml-2" /> ابدأ التحدي الآن 🐱
-                        </Button>
-                      ) : (
-                        <div className="space-y-6">
-                          <div className="bg-primary/5 p-8 rounded-[2.5rem] border-2 border-primary/20 text-center space-y-4">
-                            <p className="text-sm font-black text-primary uppercase tracking-widest">الوقت المتبقي</p>
-                            <p className="text-6xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <Button 
-                              onClick={handleComplete}
-                              disabled={isUpdating}
-                              className="h-16 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-black shadow-xl"
-                            >
-                              <FastForward className="ml-2" /> أنهيت مبكراً 🔥
-                            </Button>
-                            <Button 
-                              onClick={cancelChallenge}
-                              variant="outline"
-                              className="h-16 rounded-2xl border-2 border-destructive text-destructive hover:bg-destructive/5 font-black text-lg"
-                            >
-                              <XCircle className="ml-2" /> لم أنهِ المهمة
-                            </Button>
-                          </div>
+              </CardHeader>
+              <CardContent className="p-5 space-y-6">
+                <div className="text-sm leading-relaxed text-muted-foreground whitespace-pre-wrap font-bold">
+                  {challenge.description}
+                </div>
+                
+                {!completed ? (
+                  <div className="space-y-4">
+                    {!timerActive ? (
+                      <Button onClick={startChallenge} className="w-full h-14 rounded-xl bg-primary text-base font-black shadow-lg">
+                        <Play className="ml-2" size={18} /> ابدأ التحدي 🐱
+                      </Button>
+                    ) : (
+                      <div className="space-y-4">
+                        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 text-center">
+                          <p className="text-[10px] font-black text-primary uppercase">الوقت المتبقي</p>
+                          <p className="text-4xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="bg-green-500/5 border-4 border-green-500/20 p-12 rounded-[3rem] flex flex-col items-center gap-6 text-center shadow-inner">
-                      <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center text-white shadow-xl animate-float">
-                        <CheckCircle size={56} />
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button onClick={handleComplete} disabled={isUpdating} className="h-12 rounded-xl bg-accent text-xs font-black">
+                            أنهيت مبكراً 🔥
+                          </Button>
+                          <Button onClick={cancelChallenge} variant="outline" className="h-12 rounded-xl border-destructive text-destructive text-xs font-black">
+                            إلغاء المهمة
+                          </Button>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-4xl font-black text-green-700 dark:text-green-400 italic">مذهل يا بطل!</h3>
-                        <p className="text-green-600 dark:text-green-300 font-bold text-lg mt-2">لقد أكملت مهمتك بنجاح وحافظت على حماسك.</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="space-y-6 order-1 lg:order-2">
-              <div className="sticky top-12 space-y-6">
-                <Mascot messageOnly />
-                <Card className="border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-card border border-border text-right hover:shadow-primary/10 transition-shadow">
-                  <div className="p-8 space-y-6">
-                    <h3 className="text-xl font-black text-primary flex items-center justify-end gap-3">
-                      مكافأة الإنجاز
-                      <Trophy size={24} className="text-yellow-500" />
-                    </h3>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center bg-secondary/30 p-4 rounded-2xl">
-                        <span className="font-black text-primary text-xl">100</span>
-                        <span className="font-bold text-muted-foreground">النقاط الأساسية</span>
-                      </div>
-                      <div className="flex justify-between items-center bg-accent/10 p-4 rounded-2xl border border-accent/20">
-                        <span className="font-black text-accent text-xl">+{calculateBonus()}</span>
-                        <span className="font-bold text-accent flex items-center gap-2">بونص التبكير <Timer size={16} /></span>
-                      </div>
-                    </div>
+                    )}
                   </div>
-                </Card>
+                ) : (
+                  <div className="bg-green-500/5 border border-green-500/20 p-6 rounded-2xl flex flex-col items-center gap-3 text-center">
+                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white shadow-md">
+                      <CheckCircle size={28} />
+                    </div>
+                    <h3 className="text-lg font-black text-green-700">مذهل يا بطل!</h3>
+                    <p className="text-green-600 font-bold text-xs">لقد حافظت على حماسك اليوم.</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+              <Card className="rounded-[1.5rem] bg-card p-4 border border-border shadow-md">
+                <h3 className="text-xs font-black text-primary flex items-center justify-end gap-2 mb-3">
+                  مكافأة الإنجاز
+                  <Trophy size={14} className="text-yellow-500" />
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="bg-secondary/30 p-2 rounded-xl text-center">
+                    <span className="font-black text-primary text-base">100</span>
+                    <p className="text-[8px] font-bold text-muted-foreground">نقطة أساسية</p>
+                  </div>
+                  <div className="bg-accent/10 p-2 rounded-xl text-center border border-accent/10">
+                    <span className="font-black text-accent text-base">+{calculateBonus()}</span>
+                    <p className="text-[8px] font-bold text-accent">بونص تبكير</p>
+                  </div>
+                </div>
+              </Card>
+              <div className="transform scale-90 origin-right">
+                <Mascot messageOnly />
               </div>
             </div>
           </div>

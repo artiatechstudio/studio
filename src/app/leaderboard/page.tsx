@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useMemo } from 'react';
@@ -67,78 +66,78 @@ export default function LeaderboardPage() {
   }, [rawData]);
 
   return (
-    <div className="min-h-screen bg-background md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-10 md:py-16 space-y-10 pb-36">
-        <header className="space-y-6 mx-2">
-          <div className="flex items-center gap-8">
-            <div className="w-20 h-20 bg-yellow-100 dark:bg-yellow-900/30 rounded-[2rem] flex items-center justify-center text-yellow-600 shadow-2xl border-[6px] border-white dark:border-slate-800">
-              <Trophy size={48} />
+      <div className="app-container py-6 space-y-6">
+        <header className="space-y-2 mx-1">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-2xl flex items-center justify-center text-yellow-600 shadow-lg border-2 border-white dark:border-slate-800">
+              <Trophy size={28} />
             </div>
             <div className="text-right">
-              <h1 className="text-4xl md:text-6xl font-black text-primary leading-tight text-right">قائمة العظماء</h1>
-              <p className="text-muted-foreground text-lg md:text-2xl font-bold flex items-center justify-end gap-3 mt-2" dir="rtl">
-                الترتيب بناءً على متوسط إنجازك في آخر 3 أيام
-                <TrendingUp size={24} className="text-accent" />
+              <h1 className="text-2xl font-black text-primary leading-tight">قائمة العظماء</h1>
+              <p className="text-muted-foreground text-xs font-bold flex items-center justify-end gap-2 mt-1">
+                متوسط إنجاز آخر 3 أيام
+                <TrendingUp size={14} className="text-accent" />
               </p>
             </div>
           </div>
         </header>
 
         {isLoading ? (
-          <div className="text-center p-24">
-             <div className="w-20 h-20 border-[6px] border-primary border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-             <p className="font-black text-primary text-2xl animate-pulse">جاري تحديث القائمة...</p>
+          <div className="text-center p-12">
+             <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+             <p className="font-black text-primary text-sm animate-pulse">جاري تحديث القائمة...</p>
           </div>
         ) : (
-          <div className="bg-card rounded-[3rem] shadow-2xl overflow-hidden border border-border mx-2">
-            <div className="p-8 border-b border-border bg-secondary/10 text-right">
-              <h2 className="text-2xl font-black text-primary">المتصدرون حالياً</h2>
+          <div className="bg-card rounded-[2rem] shadow-xl overflow-hidden border border-border mx-1">
+            <div className="p-4 border-b border-border bg-secondary/5 text-right">
+              <h2 className="text-sm font-black text-primary">المتصدرون حالياً</h2>
             </div>
             <div className="divide-y divide-border">
               {leaders.length > 0 ? leaders.map((user: any, index: number) => (
                 <div 
                   key={user.id} 
-                  className={`p-6 md:p-10 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.03]' : ''}`}
+                  className={`p-3 md:p-5 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
                 >
-                  <div className="text-right bg-primary/5 px-6 py-4 md:px-8 md:py-5 rounded-3xl order-last md:order-first shadow-inner min-w-[120px]">
-                    <div className="flex items-center gap-2 justify-center">
-                      <Star size={20} className="text-yellow-500" fill="currentColor" />
-                      <p className="font-black text-primary text-2xl md:text-3xl">{user.avgScore}</p>
+                  <div className="text-right bg-primary/5 px-3 py-2 rounded-xl order-last shrink-0 min-w-[70px]">
+                    <div className="flex items-center gap-1 justify-center">
+                      <Star size={12} className="text-yellow-500" fill="currentColor" />
+                      <p className="font-black text-primary text-lg">{user.avgScore}</p>
                     </div>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase text-center mt-2 tracking-widest">نقطة / يوم</p>
+                    <p className="text-[8px] font-black text-muted-foreground uppercase text-center tracking-tighter">نقطة/يوم</p>
                   </div>
 
-                  <div className="flex items-center gap-6 md:gap-10 flex-row-reverse flex-1 ml-4 overflow-hidden">
-                    <div className="w-12 md:w-16 text-center font-black text-2xl md:text-4xl text-primary shrink-0">
-                      {index === 0 ? <Medal className="text-yellow-500 w-12 h-12 md:w-16 md:h-16 mx-auto drop-shadow-lg" /> : 
-                       index === 1 ? <Medal className="text-slate-400 w-12 h-12 md:w-16 md:h-16 mx-auto drop-shadow-md" /> : 
-                       index === 2 ? <Medal className="text-amber-600 w-12 h-12 md:w-16 md:h-16 mx-auto drop-shadow-sm" /> : 
-                       <span className="opacity-50">#{index + 1}</span>}
+                  <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
+                    <div className="w-8 text-center font-black text-lg text-primary shrink-0">
+                      {index === 0 ? <Medal className="text-yellow-500 w-8 h-8 mx-auto" /> : 
+                       index === 1 ? <Medal className="text-slate-400 w-8 h-8 mx-auto" /> : 
+                       index === 2 ? <Medal className="text-amber-600 w-8 h-8 mx-auto" /> : 
+                       <span className="opacity-40 text-xs">#{index + 1}</span>}
                     </div>
-                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')}>
-                      <Avatar className="h-16 w-16 md:h-24 md:w-24 border-[4px] md:border-[6px] border-card shadow-xl flex items-center justify-center bg-white shrink-0 hover:scale-110 transition-transform">
-                        <span className="text-4xl md:text-6xl">{user.avatar || "🐱"}</span>
+                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+                      <Avatar className="h-10 w-10 md:h-12 md:w-12 border-2 border-card shadow-md flex items-center justify-center bg-white hover:scale-105 transition-transform">
+                        <span className="text-xl md:text-2xl">{user.avatar || "🐱"}</span>
                       </Avatar>
                     </Link>
-                    <div className="text-right overflow-hidden flex-1">
-                      <h3 className="font-black text-primary text-xl md:text-3xl truncate">{user.name}</h3>
-                      <div className="flex flex-wrap items-center justify-end gap-4 mt-3">
-                        <span className="flex items-center gap-1 bg-red-50 px-3 py-1 rounded-full text-[10px] font-black text-red-600 border border-red-100">
-                          {user.likesCount || 0} <Heart size={14} fill="currentColor" />
+                    <div className="text-right overflow-hidden flex-1 px-1">
+                      <h3 className="font-black text-primary text-xs md:text-base truncate">{user.name}</h3>
+                      <div className="flex flex-wrap items-center justify-end gap-2 mt-1">
+                        <span className="flex items-center gap-0.5 bg-red-50 px-1.5 py-0.5 rounded-full text-[8px] font-black text-red-600 border border-red-100">
+                          {user.likesCount || 0} <Heart size={10} fill="currentColor" />
                         </span>
-                        <span className="flex items-center gap-1.5 bg-orange-50 px-3 py-1 rounded-full text-sm font-black text-orange-600 border border-orange-100">
-                          {user.streak || 0} يوم <Flame size={18} className="text-orange-500" fill="currentColor" />
+                        <span className="flex items-center gap-0.5 bg-orange-50 px-1.5 py-0.5 rounded-full text-[8px] font-black text-orange-600 border border-orange-100">
+                          {user.streak || 0}ي <Flame size={10} className="text-orange-500" fill="currentColor" />
                         </span>
-                        <span className={cn("flex items-center gap-1.5 bg-secondary px-3 py-1 rounded-full text-sm font-black shadow-sm", user.bmiColor)}>
-                          <HeartPulse size={18} /> {user.bmiValue} ({user.bmiStatus})
+                        <span className={cn("flex items-center gap-0.5 bg-secondary px-1.5 py-0.5 rounded-full text-[8px] font-black", user.bmiColor)}>
+                          {user.bmiValue}
                         </span>
                       </div>
                     </div>
                   </div>
                 </div>
               )) : (
-                <div className="p-32 text-center text-muted-foreground font-black text-2xl italic">لا يوجد متسابقون نشطون حالياً.</div>
+                <div className="p-16 text-center text-muted-foreground font-black text-sm italic">لا يوجد متسابقون نشطون حالياً.</div>
               )}
             </div>
           </div>

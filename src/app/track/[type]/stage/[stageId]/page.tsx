@@ -5,7 +5,7 @@ import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, AlertTriangle, Play, XCircle, FastForward } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Play, XCircle, FastForward, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -31,7 +31,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   // Timer states
   const [timerActive, setTimerActive] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(0); // in seconds
+  const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
@@ -57,7 +57,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     }
   }, [progressData, stageId]);
 
-  // Handle countdown
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -135,6 +134,23 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         }
       }
 
+      // نظام الأوسمة الديناميكي
+      const currentBadges = userData.badges || [];
+      const newBadges = [...currentBadges];
+
+      if (!currentBadges.includes("أول إنجاز 🏅")) {
+        newBadges.push("أول إنجاز 🏅");
+      }
+      if (newStreak === 3 && !currentBadges.includes("ثلاثية الحماسة 🔥")) {
+        newBadges.push("ثلاثية الحماسة 🔥");
+      }
+      if (newStreak === 7 && !currentBadges.includes("بطل الأسبوع 👑")) {
+        newBadges.push("بطل الأسبوع 👑");
+      }
+      if (completedStages.length >= 10 && !currentBadges.includes(`خبير ${trackKey} 🎓`)) {
+        newBadges.push(`خبير ${trackKey} 🎓`);
+      }
+
       const currentDailyPoints = userData.dailyPoints || {};
       const todayPoints = (currentDailyPoints[todayStr] || 0) + pointsEarned;
 
@@ -142,6 +158,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         points: (userData.points || 0) + pointsEarned,
         streak: newStreak,
         lastActiveDate: todayStr,
+        badges: newBadges,
         [`dailyPoints/${todayStr}`]: todayPoints,
         [`trackProgress/${trackKey}`]: {
           completedStages,
@@ -193,12 +210,23 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   return (
     <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
+      {completed && (
+        <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center overflow-hidden">
+           {/* Celebration Effect */}
+           <div className="absolute inset-0 bg-primary/5 animate-pulse" />
+           <div className="flex gap-4">
+              {[...Array(20)].map((_, i) => (
+                <Star key={i} className="text-yellow-500 animate-bounce" style={{ animationDelay: `${i * 0.1}s` }} />
+              ))}
+           </div>
+        </div>
+      )}
       <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-8 pb-32">
         <div className="flex justify-end">
           <Link href={`/track/${resolvedParams.type}`} onClick={() => playSound('click')}>
             <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
               العودة للمسار
-              <ArrowLeft size={18} className="rotate-0" />
+              <ArrowLeft size={18} />
             </Button>
           </Link>
         </div>
@@ -305,9 +333,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                         <span className="font-bold text-accent flex items-center gap-2">بونص التبكير <Timer size={16} /></span>
                       </div>
                     </div>
-                    <p className="text-[10px] text-muted-foreground font-bold text-center italic">
-                       * بونص التبكير يبدأ في 5 صباحاً ويتناقص تدريجياً.
-                    </p>
                   </div>
                 </Card>
               </div>

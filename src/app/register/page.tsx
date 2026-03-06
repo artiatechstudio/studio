@@ -3,8 +3,8 @@
 
 import React, { useState } from 'react';
 import { useAuth, useFirebase } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { ref, set } from 'firebase/database';
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
+import { ref, set, get, child } from 'firebase/database';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { UserPlus, ArrowLeft } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { playSound } from '@/lib/sounds';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲"];
 
@@ -29,15 +30,30 @@ export default function RegisterPage() {
   const [height, setHeight] = useState('');
   const [weight, setWeight] = useState('');
   const [avatar, setAvatar] = useState('🐱');
+  const [loading, setLoading] = useState(false);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || loading) return;
     
+    setLoading(true);
+    playSound('click');
+
     try {
+      // 1. إنشاء الحساب
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
+      // 2. إرسال رابط التحقق من البريد (مجاني)
+      await sendEmailVerification(user);
+
+      // 3. جلب عدد المستخدمين الحاليين لتحديد رقم العضوية
+      const dbRef = ref(database);
+      const snapshot = await get(child(dbRef, 'users'));
+      const totalUsers = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
+      const membershipRank = totalUsers + 1;
+
+      // 4. حفظ البيانات في RTDB
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,
         name,
@@ -49,6 +65,7 @@ export default function RegisterPage() {
         avatar,
         points: 0,
         streak: 0,
+        registrationRank: membershipRank,
         registrationDate: new Date().toISOString(),
         badges: ['عضو جديد 🐱'],
         trackProgress: {
@@ -59,16 +76,22 @@ export default function RegisterPage() {
         }
       });
 
-      toast({ title: "أهلاً بك في كارينجو!", description: "تم إنشاء حسابك بنجاح." });
-      router.push('/');
+      toast({ 
+        title: "تم إرسال رابط التحقق!", 
+        description: "يرجى مراجعة بريدك الإلكتروني لتفعيل الحساب قبل الدخول." 
+      });
+      
+      router.push('/login');
     } catch (error: any) {
       toast({ variant: "destructive", title: "فشل التسجيل", description: error.message });
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4 md:p-10">
-      <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-card">
+    <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4 md:p-10" dir="rtl">
+      <Card className="w-full max-w-2xl border-none shadow-2xl rounded-[2.5rem] overflow-hidden bg-card border border-border">
         <CardHeader className="bg-accent text-white p-8 text-center relative">
           <Link href="/login" className="absolute left-6 top-8 text-white/80 hover:text-white">
             <ArrowLeft size={24} />
@@ -78,12 +101,12 @@ export default function RegisterPage() {
           <p className="opacity-80 font-medium mt-2">رحلة النمو تبدأ هنا</p>
         </CardHeader>
         <CardContent className="p-8 space-y-6">
-          <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right" dir="rtl">
+          <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
             <div className="space-y-2 col-span-1 md:col-span-2">
               <Label>الاسم الكامل</Label>
               <Input 
                 placeholder="أدخل اسمك" 
-                className="h-12 rounded-xl bg-secondary/50 border-none"
+                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required 
@@ -113,7 +136,7 @@ export default function RegisterPage() {
               <Input 
                 type="email" 
                 placeholder="email@example.com" 
-                className="h-12 rounded-xl bg-secondary/50 border-none"
+                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required 
@@ -125,7 +148,7 @@ export default function RegisterPage() {
               <Input 
                 type="password" 
                 placeholder="••••••••" 
-                className="h-12 rounded-xl bg-secondary/50 border-none"
+                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required 
@@ -137,7 +160,7 @@ export default function RegisterPage() {
               <Input 
                 type="number" 
                 placeholder="25" 
-                className="h-12 rounded-xl bg-secondary/50 border-none"
+                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
                 value={age}
                 onChange={(e) => setAge(e.target.value)}
                 required 
@@ -162,7 +185,7 @@ export default function RegisterPage() {
               <Input 
                 type="number" 
                 placeholder="170" 
-                className="h-12 rounded-xl bg-secondary/50 border-none"
+                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
                 value={height}
                 onChange={(e) => setHeight(e.target.value)}
                 required 
@@ -174,15 +197,15 @@ export default function RegisterPage() {
               <Input 
                 type="number" 
                 placeholder="70" 
-                className="h-12 rounded-xl bg-secondary/50 border-none"
+                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
                 value={weight}
                 onChange={(e) => setWeight(e.target.value)}
                 required 
               />
             </div>
 
-            <Button type="submit" className="w-full col-span-1 md:col-span-2 h-14 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-black shadow-lg shadow-accent/20 mt-4">
-              إتمام التسجيل والبدء 🐱
+            <Button type="submit" disabled={loading} className="w-full col-span-1 md:col-span-2 h-14 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-black shadow-lg shadow-accent/20 mt-4">
+              {loading ? "جاري إنشاء الحساب..." : "إتمام التسجيل والبدء 🐱"}
             </Button>
           </form>
 

@@ -7,13 +7,14 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Flame, Star, Activity, HeartPulse } from 'lucide-react';
+import { Flame, Star, Activity, HeartPulse, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { playSound } from '@/lib/sounds';
+import { toast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -28,6 +29,27 @@ export default function Home() {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
+
+  // نظام التذكير الداخلي (In-App Reminder)
+  useEffect(() => {
+    if (userData) {
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const lastActiveDate = userData.lastActiveDate;
+      
+      // إذا كان الوقت بعد السابعة مساءً ولم يكمل مهمة اليوم
+      const hour = new Date().getHours();
+      if (lastActiveDate !== todayStr && hour >= 19) {
+        setTimeout(() => {
+          toast({
+            variant: "destructive",
+            title: "كاري يناديك! 🐱",
+            description: "لقد اقترب اليوم من النهاية ولم تنجز أي مهمة. أسرع للحفاظ على حماستك!",
+          });
+          playSound('click');
+        }, 3000);
+      }
+    }
+  }, [userData]);
 
   const bmiInfo = useMemo(() => {
     if (!userData || !userData.weight || !userData.height) return null;
@@ -59,9 +81,25 @@ export default function Home() {
 
   if (!user) return null;
 
+  // التحقق من تفعيل البريد
+  if (!user.emailVerified) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 text-center" dir="rtl">
+        <div className="max-w-md space-y-6">
+          <div className="w-24 h-24 bg-red-100 text-red-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl">
+            <AlertTriangle size={56} />
+          </div>
+          <h1 className="text-3xl font-black text-primary italic">بريدك غير مفعل!</h1>
+          <p className="text-muted-foreground font-bold text-lg">يرجى الضغط على الرابط المرسل لبريدك الإلكتروني لتتمكن من استخدام التطبيق.</p>
+          <Button onClick={() => router.replace('/login')} className="w-full h-14 rounded-2xl bg-accent text-xl font-black shadow-lg">العودة لتسجيل الدخول</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!isDataLoading && !userData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-6 text-center">
+      <div className="min-h-screen flex items-center justify-center bg-background p-6 text-center" dir="rtl">
         <div className="max-w-md space-y-6">
           <div className="text-8xl animate-bounce">🐱</div>
           <h1 className="text-3xl font-black text-primary">أهلاً بك! يبدو أنك جديد هنا</h1>

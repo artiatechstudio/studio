@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, sendEmailVerification, signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isUserLoading && user) {
+    // إذا كان المستخدم مسجلاً ومفعلاً بريده، يتم توجيهه للرئيسية
+    if (!isUserLoading && user && user.emailVerified) {
       router.replace('/');
     }
   }, [user, isUserLoading, router]);
@@ -32,12 +33,43 @@ export default function LoginPage() {
     setLoading(true);
     playSound('click');
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      playSound('login');
-      toast({ title: "أهلاً بعودتك!", description: "جاري تحميل بياناتك..." });
-      router.push('/');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      if (!user.emailVerified) {
+        toast({ 
+          variant: "destructive", 
+          title: "لم يتم تفعيل البريد", 
+          description: "يرجى تفعيل حسابك من خلال الرابط المرسل لبريدك الإلكتروني." 
+        });
+        // خيار لإعادة إرسال الرابط إذا رغب المستخدم
+        await signOut(auth);
+      } else {
+        playSound('login');
+        toast({ title: "أهلاً بعودتك!", description: "جاري تحميل بياناتك..." });
+        router.push('/');
+      }
     } catch (error: any) {
       toast({ variant: "destructive", title: "فشل الدخول", description: "تأكد من البريد الإلكتروني وكلمة المرور." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!email) {
+      toast({ variant: "destructive", title: "تنبيه", description: "يرجى إدخال البريد الإلكتروني أولاً." });
+      return;
+    }
+    setLoading(true);
+    try {
+      // محاولة تسجيل دخول صامت لإرسال الرابط ثم الخروج
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(userCredential.user);
+      await signOut(auth);
+      toast({ title: "تم إعادة الإرسال", description: "تفقد بريدك الإلكتروني الآن." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "خطأ", description: "تأكد من بياناتك قبل إعادة طلب الرابط." });
     } finally {
       setLoading(false);
     }
@@ -94,6 +126,10 @@ export default function LoginPage() {
               {loading ? "جاري الدخول..." : "تسجيل الدخول"}
             </Button>
           </form>
+
+          <button onClick={handleResendVerification} className="w-full text-xs font-black text-primary/60 hover:text-primary transition-colors underline">
+            لم يصلك رابط التفعيل؟ أعد الإرسال
+          </button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center"><span className="w-full border-t border-border" /></div>

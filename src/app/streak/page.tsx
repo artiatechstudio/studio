@@ -6,7 +6,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CalendarDays, CheckCircle2, AlertCircle, Trophy, TrendingUp, Star } from 'lucide-react';
+import { Flame, CalendarDays, CheckCircle2, AlertCircle, Trophy, TrendingUp, Star, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -79,12 +79,12 @@ export default function StreakPage() {
                 خارطة الإنجاز <CalendarDays className="text-primary" />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-10">
-              <div className="rtl-calendar flex justify-center">
+            <CardContent className="p-6 md:p-10">
+              <div className="rtl-calendar">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
-                  className="rounded-[2.5rem] border shadow-inner p-8 bg-secondary/5"
+                  className="rounded-[2.5rem] border shadow-inner p-4 md:p-8 bg-secondary/5 w-full"
                   modifiers={{
                     completed: completedDates
                   }}
@@ -97,9 +97,9 @@ export default function StreakPage() {
                   }}
                 />
               </div>
-              <div className="mt-8 flex items-center justify-center gap-4 text-xs font-black text-muted-foreground">
-                 <div className="flex items-center gap-2"><div className="w-3 h-3 bg-orange-500 rounded-full" /> يوم منجز</div>
-                 <div className="flex items-center gap-2"><div className="w-3 h-3 bg-secondary rounded-full" /> يوم لم يكتمل</div>
+              <div className="mt-8 flex items-center justify-center gap-6 text-[10px] font-black text-muted-foreground bg-white/50 p-4 rounded-2xl border border-border">
+                 <div className="flex items-center gap-2"><div className="w-4 h-4 bg-orange-500 rounded-lg shadow-sm" /> يوم منجز 🔥</div>
+                 <div className="flex items-center gap-2"><div className="w-4 h-4 bg-secondary rounded-lg border border-border" /> يوم لم يكتمل</div>
               </div>
             </CardContent>
           </Card>
@@ -127,17 +127,18 @@ export default function StreakPage() {
 
             <Card className="border-none shadow-xl rounded-[3rem] bg-primary/5 p-10 border border-primary/10 text-right">
               <div className="flex items-center justify-end gap-3 text-primary mb-6">
-                <h3 className="font-black text-xl">إحصائيات ذكية</h3>
-                <TrendingUp size={24} />
+                <h3 className="font-black text-xl">هويتك في كارينجو</h3>
+                <UserCheck size={24} />
               </div>
               <div className="space-y-6">
+                <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-border/50 text-center">
+                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">ترتيب انضمامك للمجتمع</p>
+                   <p className="font-black text-primary text-3xl">أنت العضو رقم {userData?.registrationRank || '--'}</p>
+                   <p className="text-[10px] text-accent font-black mt-2">من أوائل الداعمين للنمو 🌱</p>
+                </div>
                 <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
                    <p className="font-black text-primary text-xl">{completedDates.length}</p>
                    <p className="font-bold text-muted-foreground">أيام الإنجاز الكلية</p>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
-                   <p className="font-black text-primary text-xl">{userData?.registrationRank || '--'}</p>
-                   <p className="font-bold text-muted-foreground">رقم العضوية</p>
                 </div>
               </div>
             </Card>

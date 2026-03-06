@@ -11,7 +11,6 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
-import { Heart } from 'lucide-react';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -109,7 +108,7 @@ export default function LoginPage() {
       </Card>
       
       <div className="mt-8 flex items-center gap-2 text-primary/40 font-black text-sm">
-         <Heart size={14} fill="currentColor" /> Powered by Artiatech Studio
+         Powered by Artiatech Studio
       </div>
     </div>
   );

@@ -20,15 +20,23 @@ export default function StreakPage() {
 
   const activeDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
-    // تحويل مفاتيح التواريخ (ISO Strings) إلى كائنات Date
+    // تحويل مفاتيح التواريخ (YYYY-MM-DD) إلى كائنات Date بشكل صحيح
     return Object.keys(userData.dailyPoints).map(dateStr => {
-      // إصلاح فروق التوقيت عبر التأكد من أن التاريخ يتم تفسيره محلياً
       const [year, month, day] = dateStr.split('-').map(Number);
+      // استخدام توقيت محلي لضمان الظهور الصحيح في التقويم
       return new Date(year, month - 1, day);
     });
   }, [userData]);
   
-  const todayStr = useMemo(() => new Date().toLocaleDateString('en-CA'), []);
+  // الحصول على تاريخ اليوم بالتوقيت المحلي لضمان الدقة
+  const todayStr = useMemo(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
   const isDoneToday = useMemo(() => !!userData?.dailyPoints?.[todayStr], [userData, todayStr]);
 
   if (isUserLoading || isLoading) {

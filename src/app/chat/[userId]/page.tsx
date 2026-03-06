@@ -1,6 +1,7 @@
+
 "use client"
 
-import React, { useState, useEffect, useRef, use } from 'react';
+import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, push, serverTimestamp, query, limitToLast } from 'firebase/database';
@@ -42,7 +43,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     if (!msgText.trim() || !user) return;
 
     playSound('click');
-    const newMsgRef = push(messagesRef);
     const msg = {
       senderId: user.uid,
       text: msgText.trim(),

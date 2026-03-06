@@ -123,17 +123,17 @@ export default function Home() {
       <div className="max-w-5xl mx-auto p-4 md:p-10 space-y-6">
         
         <header className="flex items-center justify-between bg-card p-4 rounded-[2rem] shadow-lg border border-border sticky top-4 z-30">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white text-xl">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white text-xl shrink-0">
               {profile.avatar || "🐱"}
             </div>
-            <div className="hidden sm:block">
-              <p className="text-xs font-black text-muted-foreground">أهلاً بك</p>
-              <p className="text-sm font-black text-primary">{profile.name}</p>
+            <div className="flex flex-col text-right">
+              <p className="text-[10px] font-black text-muted-foreground leading-none mb-0.5">أهلاً بك</p>
+              <p className="text-sm font-black text-primary leading-none truncate max-w-[120px] sm:max-w-none">{profile.name}</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <Link href="/streak" onClick={() => playSound('click')}>
               <div className="flex items-center gap-1.5 bg-orange-100 dark:bg-orange-900/30 px-3 py-1.5 rounded-full border border-orange-200 dark:border-orange-800 transition-transform active:scale-95">
                 <Flame size={16} className="text-orange-600" fill="currentColor" />

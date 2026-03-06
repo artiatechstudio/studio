@@ -38,8 +38,11 @@ export default function LeaderboardPage() {
         // BMI Calculation for leaderboard
         let bmiStatus = "غير محدد";
         let bmiColor = "text-gray-400";
+        let bmiValue = "--";
+        
         if (user.weight && user.height) {
           const bmi = user.weight / ((user.height / 100) * (user.height / 100));
+          bmiValue = bmi.toFixed(1);
           if (bmi >= 18.5 && bmi < 25) {
             bmiStatus = "مثالي 🟢";
             bmiColor = "text-green-500";
@@ -55,7 +58,7 @@ export default function LeaderboardPage() {
           }
         }
 
-        return { ...user, avgScore, bmiStatus, bmiColor };
+        return { ...user, avgScore, bmiStatus, bmiColor, bmiValue };
       })
       .filter((user: any) => (user.points || 0) > 0)
       .sort((a: any, b: any) => b.avgScore - a.avgScore);
@@ -117,8 +120,12 @@ export default function LeaderboardPage() {
                     <div className="text-right">
                       <h3 className="font-black text-primary text-base md:text-xl">{user.name}</h3>
                       <div className="flex items-center justify-end gap-3 text-xs md:text-sm text-muted-foreground font-bold">
-                        <span className="flex items-center gap-1">{user.streak || 0} يوم <Flame size={14} className="text-orange-500" fill="currentColor" /></span>
-                        <span className={`flex items-center gap-1 ${user.bmiColor}`}><HeartPulse size={14} /> {user.bmiStatus}</span>
+                        <span className="flex items-center gap-1">
+                          {user.streak || 0} يوم <Flame size={14} className="text-orange-500" fill="currentColor" />
+                        </span>
+                        <span className={`flex items-center gap-1 ${user.bmiColor}`}>
+                          <HeartPulse size={14} /> {user.bmiValue} ({user.bmiStatus})
+                        </span>
                       </div>
                     </div>
                   </div>

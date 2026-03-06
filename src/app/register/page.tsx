@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -40,13 +39,25 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!name.trim() || loading) return;
     
+    const h = parseInt(height);
+    const w = parseInt(weight);
+    const a = parseInt(age);
+
+    if (h < 50 || h > 250 || w < 10 || w > 500 || a < 5 || a > 100) {
+      toast({ 
+        variant: "destructive", 
+        title: "بيانات غير منطقية", 
+        description: "يرجى إدخال طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
+      });
+      return;
+    }
+
     setLoading(true);
     playSound('click');
 
     try {
       const dbRef = ref(database);
       
-      // التحقق من تكرار اسم المستخدم
       const usersSnapshot = await get(child(dbRef, 'users'));
       const allUsers = usersSnapshot.exists() ? Object.values(usersSnapshot.val()) : [];
       const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === name.trim().toLowerCase());
@@ -68,10 +79,10 @@ export default function RegisterPage() {
         id: user.uid,
         name: name.trim(),
         email,
-        age: parseInt(age),
+        age: a,
         gender,
-        height: parseInt(height),
-        weight: parseInt(weight),
+        height: h,
+        weight: w,
         avatar,
         bio: "عضو جديد طموح 🌱",
         points: 0,

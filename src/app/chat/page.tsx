@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo } from 'react';
@@ -8,7 +7,7 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, MessageCircle, ArrowLeft, Clock } from 'lucide-react';
+import { Search, MessageCircle, ArrowLeft, Clock, Sparkles } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import Link from 'next/link';
 
@@ -61,6 +60,25 @@ export default function ChatListPage() {
             <CardTitle className="text-xl font-black text-primary">ابدأ محادثة جديدة</CardTitle>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
+            
+            {/* AI Character Entry */}
+            <Link href="/chat/ai" onClick={() => playSound('click')} className="block">
+              <div className="flex items-center justify-between p-6 rounded-[2rem] bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-[1.02] transition-transform">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-3xl shadow-inner border border-white/30">
+                    🐱
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-lg">كارينجو المساعد الذكي</p>
+                    <p className="text-[10px] font-bold opacity-80 flex items-center gap-1">
+                      <Sparkles size={10} /> مدعوم بالذكاء الاصطناعي
+                    </p>
+                  </div>
+                </div>
+                <ArrowLeft className="rotate-180 opacity-50" />
+              </div>
+            </Link>
+
             <div className="relative">
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 

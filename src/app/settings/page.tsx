@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -63,15 +62,29 @@ export default function SettingsPage() {
 
   const handleUpdateProfile = async () => {
     if (!user) return;
+    
+    const h = parseInt(height);
+    const w = parseInt(weight);
+    const a = parseInt(age);
+
+    if (h < 50 || h > 250 || w < 10 || w > 500 || a < 5 || a > 100) {
+      toast({ 
+        variant: "destructive", 
+        title: "بيانات غير منطقية", 
+        description: "يرجى إدخال طول ووزن وعمر حقيقيين." 
+      });
+      return;
+    }
+
     setSaving(true);
     playSound('click');
     try {
       await update(ref(database, `users/${user.uid}`), {
         name,
-        age: parseInt(age) || 0,
+        age: a,
         gender,
-        height: parseInt(height) || 0,
-        weight: parseInt(weight) || 0,
+        height: h,
+        weight: w,
         avatar,
         bio: bio.slice(0, 30)
       });

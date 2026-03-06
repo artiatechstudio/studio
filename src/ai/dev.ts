@@ -3,3 +3,4 @@ config();
 
 import '@/ai/flows/daily-challenge-generation.ts';
 import '@/ai/flows/ai-helper-contextual-response.ts';
+import '@/ai/flows/ai-chat-flow.ts';

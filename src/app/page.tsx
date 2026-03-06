@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useEffect, useMemo } from 'react';
@@ -29,24 +30,6 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (userData) {
-      const todayStr = new Date().toLocaleDateString('en-CA');
-      const lastActiveDate = userData.lastActiveDate;
-      const hour = new Date().getHours();
-      if (lastActiveDate !== todayStr && hour >= 19) {
-        setTimeout(() => {
-          toast({
-            variant: "destructive",
-            title: "كاري يناديك! 🐱",
-            description: "لقد اقترب اليوم من النهاية ولم تنجز أي مهمة. أسرع للحفاظ على حماستك!",
-          });
-          playSound('click');
-        }, 3000);
-      }
-    }
-  }, [userData]);
-
   const bmiInfo = useMemo(() => {
     if (!userData || !userData.weight || !userData.height) return null;
     const heightInMeters = userData.height / 100;
@@ -76,21 +59,6 @@ export default function Home() {
   }
 
   if (!user) return null;
-
-  if (!user.emailVerified) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-8 text-center" dir="rtl">
-        <div className="max-w-md space-y-8">
-          <div className="w-28 h-28 bg-red-100 text-red-600 rounded-[3rem] flex items-center justify-center mx-auto shadow-2xl">
-            <AlertTriangle size={64} />
-          </div>
-          <h1 className="text-4xl font-black text-primary italic">بريدك غير مفعل!</h1>
-          <p className="text-muted-foreground font-bold text-xl leading-relaxed">يرجى الضغط على الرابط المرسل لبريدك الإلكتروني لتتمكن من استخدام التطبيق.</p>
-          <Button onClick={() => router.replace('/login')} className="w-full h-16 rounded-2xl bg-accent text-2xl font-black shadow-xl">العودة لتسجيل الدخول</Button>
-        </div>
-      </div>
-    );
-  }
 
   const profile = userData || {};
   const totalStages = 120;
@@ -128,38 +96,42 @@ export default function Home() {
         </header>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mx-2">
-          <Card className="p-6 rounded-[2.5rem] shadow-xl border border-border flex items-center gap-5 bg-card hover:scale-[1.02] transition-transform">
-            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-green-600 shrink-0 shadow-inner">
-              <HeartPulse size={40} />
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-xs font-black text-muted-foreground uppercase mb-1">مؤشر الجسم (BMI)</p>
-              <div className="flex items-center gap-3">
-                <span className="text-3xl font-black text-primary">{bmiInfo?.value || '--'}</span>
-                <span className={cn("text-sm font-black px-3 py-1 rounded-full bg-secondary shadow-sm", bmiInfo?.color)}>
-                  {bmiInfo?.status || '--'}
-                </span>
+          <Link href="/profile" className="block">
+            <Card className="p-6 rounded-[2.5rem] shadow-xl border border-border flex items-center gap-5 bg-card hover:scale-[1.02] transition-transform h-full">
+              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-2xl flex items-center justify-center text-green-600 shrink-0 shadow-inner">
+                <HeartPulse size={40} />
               </div>
-            </div>
-          </Card>
-
-          <Card className="p-6 rounded-[2.5rem] shadow-xl border border-border flex items-center gap-5 bg-card hover:scale-[1.02] transition-transform">
-            <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent shrink-0 shadow-inner">
-              <Activity size={40} />
-            </div>
-            <div className="flex-1 overflow-hidden">
-              <p className="text-xs font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
-              <div className="flex items-center gap-4">
-                <span className="text-3xl font-black text-primary">{progressPercent}%</span>
-                <div className="flex-1 bg-secondary h-3 rounded-full overflow-hidden hidden sm:block shadow-inner">
-                  <div className="bg-accent h-full transition-all duration-1000 shadow-[0_0_10px_rgba(var(--accent),0.5)]" style={{ width: `${progressPercent}%` }} />
+              <div className="overflow-hidden">
+                <p className="text-xs font-black text-muted-foreground uppercase mb-1">مؤشر الجسم (BMI)</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl font-black text-primary">{bmiInfo?.value || '--'}</span>
+                  <span className={cn("text-sm font-black px-3 py-1 rounded-full bg-secondary shadow-sm", bmiInfo?.color)}>
+                    {bmiInfo?.status || '--'}
+                  </span>
                 </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </Link>
+
+          <Link href="/streak" className="block">
+            <Card className="p-6 rounded-[2.5rem] shadow-xl border border-border flex items-center gap-5 bg-card hover:scale-[1.02] transition-transform h-full">
+              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent shrink-0 shadow-inner">
+                <Activity size={40} />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <p className="text-xs font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
+                <div className="flex items-center gap-4">
+                  <span className="text-3xl font-black text-primary">{progressPercent}%</span>
+                  <div className="flex-1 bg-secondary h-3 rounded-full overflow-hidden hidden sm:block shadow-inner">
+                    <div className="bg-accent h-full transition-all duration-1000 shadow-[0_0_10px_rgba(var(--accent),0.5)]" style={{ width: `${progressPercent}%` }} />
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Link>
         </div>
 
-        <section className="bg-primary/5 rounded-[3rem] p-6 border border-primary/10 mx-2 shadow-inner">
+        <section className="bg-primary/5 rounded-[3rem] p-6 border border-primary/10 mx-2 shadow-inner cursor-pointer" onClick={() => router.push('/streak')}>
           <Mascot />
         </section>
 

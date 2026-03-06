@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -82,27 +83,23 @@ export default function ResourcesPage() {
             <h2 className="text-2xl font-black">الخصوصية والسياسات</h2>
           </div>
           
-          <div className="bg-orange-50 border-r-4 border-orange-500 p-6 rounded-2xl mb-6">
-            <h4 className="font-black text-orange-700 text-lg mb-2">تنبيه هام حول الدردشة:</h4>
-            <p className="text-sm font-bold text-orange-900/80 leading-relaxed">
-              نحيطكم علماً بأن الرسائل المتداولة في نظام الدردشة داخل التطبيق **غير مشفرة** طرف-إلى-طرف. يمكن لإدارة "استوديو ارتياتك" (Artiatech Studio) الاطلاع على محتوى المحادثات لأغراض الرقابة، تحسين الخدمة، والتأكد من عدم مخالفة شروط المجتمع. يرجى توخي الحذر وعدم مشاركة أي معلومات حساسة، أرقام سرية، أو بيانات بنكية عبر الدردشة.
-            </p>
-          </div>
-
           <Accordion type="single" collapsible className="w-full">
+            <AccordionItem value="privacy">
+              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية والدردشة</AccordionTrigger>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
+                <p>نحن في ارتياتك نلتزم بحماية بياناتك الشخصية الأساسية (الاسم، العمر، الطول، الوزن). يتم استخدام هذه البيانات فقط لحساب مؤشراتك الصحية الشخصية ووضعك في قائمة المتصدرين.</p>
+                <div className="p-3 bg-secondary/10 rounded-xl border-r-2 border-primary/20 text-xs opacity-70">
+                   تنبيه: محادثاتك غير مشفرة وقد تطلع عليها الإدارة لأغراض التحسين والرقابة؛ لذا يرجى تجنب مشاركة أسرارك المالية أو الشخصية الحساسة.
+                </div>
+                <p>نحن لا نبيع بياناتك لأطراف خارجية. ومع ذلك، فإن ميزات التفاعل الاجتماعي تخضع للرقابة لضمان بيئة آمنة للجميع.</p>
+              </AccordionContent>
+            </AccordionItem>
             <AccordionItem value="faq">
               <AccordionTrigger className="text-right font-black text-lg">الأسئلة الشائعة</AccordionTrigger>
               <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
                 <p className="mb-2">● كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
                 <p className="mb-2">● هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت من الرئيسية.</p>
                 <p>● كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز (نظام بونص التبكير) وصعوبة المهمة الأساسية.</p>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="privacy">
-              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية المعمقة</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
-                <p>نحن في ارتياتك نلتزم بحماية بياناتك الشخصية الأساسية (الاسم، العمر، الطول، الوزن). يتم استخدام هذه البيانات فقط لحساب مؤشراتك الصحية الشخصية ووضعك في قائمة المتصدرين.</p>
-                <p>نحن لا نبيع بياناتك لأطراف خارجية. ومع ذلك، وكما ذُكر أعلاه، فإن ميزات التفاعل الاجتماعي مثل الدردشة تخضع للرقابة لضمان بيئة آمنة للجميع.</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

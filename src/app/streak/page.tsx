@@ -18,11 +18,9 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
-  // تحسين منطق جلب التواريخ لتمييز الأيام في التقويم
   const activeDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
     return Object.keys(userData.dailyPoints).map(dateStr => {
-      // dateStr is expected to be YYYY-MM-DD
       const [year, month, day] = dateStr.split('-').map(Number);
       return new Date(year, month - 1, day);
     });
@@ -73,22 +71,6 @@ export default function StreakPage() {
                   mode="multiple"
                   selected={activeDates}
                   className="rounded-3xl border shadow-inner p-4 bg-secondary/10"
-                  classNames={{
-                    months: "flex flex-col space-y-4",
-                    month: "space-y-4",
-                    caption: "flex justify-center pt-1 relative items-center mb-4",
-                    caption_label: "text-sm font-black text-primary",
-                    nav: "space-x-1 flex items-center",
-                    nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 text-primary",
-                    table: "w-full border-collapse space-y-1",
-                    head_row: "flex justify-center",
-                    head_cell: "text-muted-foreground rounded-md w-9 font-bold text-[0.8rem]",
-                    row: "flex w-full mt-2 justify-center",
-                    cell: "h-9 w-9 text-center text-sm p-0 relative rounded-xl",
-                    day: "h-9 w-9 p-0 font-bold hover:bg-secondary/50 rounded-xl transition-all",
-                    day_selected: "bg-green-500 text-white hover:bg-green-600 font-black rounded-xl shadow-md opacity-100",
-                    day_today: "border-2 border-primary text-primary font-black rounded-xl",
-                  }}
                 />
               </div>
             </CardContent>

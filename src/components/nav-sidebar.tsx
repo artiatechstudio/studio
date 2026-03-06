@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from 'next/link';
@@ -22,7 +23,7 @@ const mobileNavItems = [
   { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
-  { label: 'الموارد', icon: BookMarked, href: '/resources' },
+  { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'أنت', icon: User, href: '/profile' },
 ];
 

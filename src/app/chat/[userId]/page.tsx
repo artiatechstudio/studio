@@ -5,10 +5,10 @@ import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, push, serverTimestamp, query, limitToLast } from 'firebase/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { Send, ArrowLeft } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -61,7 +61,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col" dir="rtl">
       <NavSidebar />
-      <div className="flex-1 app-container py-6 flex flex-col gap-4 overflow-hidden h-screen md:h-auto md:pb-32">
+      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-screen md:h-auto md:pb-20">
         <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-2">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border">
@@ -69,7 +69,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             </div>
             <div className="text-right">
               <h2 className="font-black text-primary leading-none">{otherUserData?.name || "تحميل..."}</h2>
-              <p className="text-[10px] text-green-500 font-bold mt-1">نشط الآن</p>
+              <p className="text-[10px] text-muted-foreground font-bold mt-1">عضو في مجتمع كارينجو</p>
             </div>
           </div>
           <Link href="/chat">
@@ -79,15 +79,10 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           </Link>
         </header>
 
-        <Card className="flex-1 rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2 flex flex-col min-h-0">
-          <div className="bg-orange-50 p-2 text-[10px] font-bold text-orange-700 flex items-center justify-center gap-2 border-b border-orange-100">
-            <ShieldAlert size={12} />
-            تنبيه: المحادثات غير مشفرة ويمكن للاستوديو الاطلاع عليها
-          </div>
-          
+        <Card className="flex-1 rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2 flex flex-col min-h-0 relative">
           <div 
             ref={scrollRef}
-            className="flex-1 p-6 space-y-4 overflow-y-auto bg-secondary/5 scroll-smooth"
+            className="flex-1 p-6 space-y-4 overflow-y-auto bg-secondary/5 scroll-smooth pb-24"
           >
             {messages.map((m: any, idx) => {
               const isMine = m.senderId === user?.uid;
@@ -104,17 +99,17 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             })}
           </div>
 
-          <form onSubmit={handleSendMessage} className="p-6 bg-card border-t border-border flex gap-3">
+          <form onSubmit={handleSendMessage} className="absolute bottom-0 left-0 right-0 p-4 bg-card/80 backdrop-blur-md border-t border-border flex gap-2 z-10">
             <Input 
               placeholder="اكتب رسالتك..." 
-              className="h-14 rounded-2xl bg-secondary/50 border-none font-bold text-right"
+              className="h-12 rounded-2xl bg-secondary/50 border-none font-bold text-right"
               value={msgText}
               onChange={(e) => setMsgText(e.target.value)}
             />
             <Button 
               type="submit" 
               size="icon" 
-              className="h-14 w-14 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 shrink-0"
+              className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
             >
               <Send className="rotate-180" />
             </Button>

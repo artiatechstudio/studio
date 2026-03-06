@@ -61,7 +61,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col" dir="rtl">
       <NavSidebar />
-      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-screen md:h-auto md:pb-20">
+      <div className="flex-1 app-container py-4 flex flex-col gap-4 overflow-hidden h-[calc(100vh-80px)] md:h-auto md:pb-20">
         <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-2">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border">
@@ -69,12 +69,14 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             </div>
             <div className="text-right">
               <h2 className="font-black text-primary leading-none">{otherUserData?.name || "تحميل..."}</h2>
-              <p className="text-[10px] text-muted-foreground font-bold mt-1">عضو في مجتمع كارينجو</p>
+              <p className="text-[10px] text-muted-foreground font-bold mt-1 truncate max-w-[150px]">
+                {otherUserData?.bio || "عضو طموح في كارينجو"}
+              </p>
             </div>
           </div>
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft />
+              <ArrowLeft className="rotate-180" />
             </Button>
           </Link>
         </header>
@@ -99,17 +101,17 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             })}
           </div>
 
-          <form onSubmit={handleSendMessage} className="absolute bottom-0 left-0 right-0 p-4 bg-card/80 backdrop-blur-md border-t border-border flex gap-2 z-10">
+          <form onSubmit={handleSendMessage} className="absolute bottom-4 left-4 right-4 p-2 bg-card/90 backdrop-blur-md border border-border rounded-2xl flex gap-2 z-10 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 
-              className="h-12 rounded-2xl bg-secondary/50 border-none font-bold text-right"
+              className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right"
               value={msgText}
               onChange={(e) => setMsgText(e.target.value)}
             />
             <Button 
               type="submit" 
               size="icon" 
-              className="h-12 w-12 rounded-2xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
+              className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
             >
               <Send className="rotate-180" />
             </Button>

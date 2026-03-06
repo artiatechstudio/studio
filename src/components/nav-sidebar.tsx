@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -23,7 +23,7 @@ const mobileNavItems = [
   { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
-  { label: 'الحماسة', icon: Flame, href: '/streak' },
+  { label: 'الموارد', icon: BookOpen, href: '/resources' },
   { label: 'أنت', icon: User, href: '/profile' },
 ];
 
@@ -96,7 +96,7 @@ export function NavSidebar() {
       </aside>
 
       {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-end h-24 pb-4 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[3rem]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[2.5rem]">
         {mobileNavItems.map((item) => (
           <Link
             key={item.href}
@@ -104,22 +104,21 @@ export function NavSidebar() {
             onClick={() => playSound('click')}
             className={cn(
               "flex flex-col items-center justify-center transition-all flex-1",
-              item.isCenter ? "relative -top-10" : "mb-2",
               pathname === item.href && !item.isCenter ? "text-primary" : "text-muted-foreground"
             )}
           >
             <div className={cn(
-              "transition-all",
+              "transition-all flex items-center justify-center",
               item.isCenter 
-                ? "w-16 h-16 bg-primary text-white rounded-[1.5rem] shadow-2xl flex items-center justify-center border-[4px] border-background scale-110" 
+                ? "w-14 h-14 bg-primary text-white rounded-2xl shadow-lg border-[3px] border-background scale-110" 
                 : "p-2 rounded-xl",
               pathname === item.href && !item.isCenter ? "bg-primary/10" : ""
             )}>
-              <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[3px]")} />
+              <item.icon className={cn(item.isCenter ? "w-7 h-7" : "w-6 h-6", pathname === item.href && "stroke-[3px]")} />
             </div>
             {!item.isCenter && (
               <span className={cn(
-                "text-[10px] font-black mt-1",
+                "text-[9px] font-black mt-1",
                 pathname === item.href ? "text-primary opacity-100" : "opacity-60"
               )}>
                 {item.label}

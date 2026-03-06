@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -17,8 +18,8 @@ import { playSound } from '@/lib/sounds';
 
 const AVATAR_EMOJIS = [
   "🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲",
-  "🐧", "🦉", "🦄", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽",
-  "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔"
+  "🐧", "🦉", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽",
+  "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"
 ];
 
 export default function RegisterPage() {
@@ -43,25 +44,36 @@ export default function RegisterPage() {
     playSound('click');
 
     try {
+      const dbRef = ref(database);
+      
+      // التحقق من تكرار اسم المستخدم
+      const usersSnapshot = await get(child(dbRef, 'users'));
+      const allUsers = usersSnapshot.exists() ? Object.values(usersSnapshot.val()) : [];
+      const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === name.trim().toLowerCase());
+
+      if (nameExists) {
+        toast({ variant: "destructive", title: "اسم المستخدم مأخوذ", description: "يرجى اختيار اسم آخر فريد." });
+        setLoading(false);
+        return;
+      }
+
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
       await sendEmailVerification(user);
 
-      const dbRef = ref(database);
-      const snapshot = await get(child(dbRef, 'users'));
-      const totalUsers = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
-      const membershipRank = totalUsers + 1;
+      const membershipRank = allUsers.length + 1;
 
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,
-        name,
+        name: name.trim(),
         email,
         age: parseInt(age),
         gender,
         height: parseInt(height),
         weight: parseInt(weight),
         avatar,
+        bio: "عضو جديد طموح 🌱",
         points: 0,
         streak: 0,
         registrationRank: membershipRank,
@@ -102,7 +114,7 @@ export default function RegisterPage() {
         <CardContent className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
           <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
             <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label>الاسم الكامل</Label>
+              <Label>الاسم الكامل (سيستخدم كاسم مستخدم فريد)</Label>
               <Input 
                 placeholder="أدخل اسمك" 
                 className="h-12 rounded-xl bg-secondary/50 border-none font-bold"

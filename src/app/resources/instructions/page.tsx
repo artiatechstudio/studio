@@ -1,9 +1,10 @@
+
 "use client"
 
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Flame, Timer, Star, HeartPulse, Timer as TimerIcon } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -54,33 +55,30 @@ export default function InstructionsPage() {
                     <h4 className="font-black text-accent text-lg mb-2">التناقص التدريجي</h4>
                     <p className="text-xs font-bold text-muted-foreground">بعد الثامنة، يبدأ البونص بالتناقص بمعدل 5 نقاط لكل ساعة تأخير. الهدف هو تشجيعك على عدم التسويف.</p>
                   </div>
-                  <div className="bg-orange-50 p-6 rounded-3xl border border-orange-100">
-                    <h4 className="font-black text-orange-600 text-lg mb-2">8:00 مساءً وما بعدها</h4>
-                    <p className="text-xs font-bold text-muted-foreground">ينتهي البونص تماماً. ستحصل على النقاط الأساسية فقط، لأننا نشجعك في هذا الوقت على الاسترخاء والنوم المبكر.</p>
-                  </div>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* نظام النقاط */}
+          {/* تحديثات الدردشة والحماسة */}
           <div className="space-y-6 text-right">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Trophy className="text-yellow-500" /> <h2>نظام النقاط الأساسي</h2>
+              <MessageSquare className="text-primary" /> <h2>الميزات الجديدة والتفاعل</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-xl border border-border bg-card">
-              <p className="font-bold leading-relaxed text-muted-foreground mb-6">بجانب البونص، هناك نقاط ثابتة تحصل عليها مقابل كل جهد تبذله:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="flex items-center gap-4 bg-secondary/20 p-4 rounded-2xl">
-                   <Star className="text-yellow-500 fill-yellow-500 shrink-0" size={24} />
-                   <p className="font-black text-sm">100 نقطة ثابتة لكل مهمة مكتملة في أي مسار.</p>
-                </div>
-                <div className="flex items-center gap-4 bg-secondary/20 p-4 rounded-2xl">
-                   <Flame className="text-orange-500 fill-orange-500 shrink-0" size={24} />
-                   <p className="font-black text-sm">عداد الحماسة: يمنحك هيبة أكبر في لوحة المتصدرين.</p>
-                </div>
-              </div>
-            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card className="p-6 rounded-3xl border border-border bg-card">
+                <h4 className="font-black text-primary flex items-center gap-2 mb-3">سجل الحماسة (Streak)</h4>
+                <p className="text-sm font-bold text-muted-foreground">
+                  يمكنك الوصول لشاشة الحماسة بسرعة عبر النقر على <Flame className="inline text-orange-500" size={16}/> "أيقونة النار" الموجودة في الشاشة الرئيسية. التقويم يوثق أيام إنجازك الحقيقية بعلامات ملونة.
+                </p>
+              </Card>
+              <Card className="p-6 rounded-3xl border border-border bg-card">
+                <h4 className="font-black text-primary flex items-center gap-2 mb-3">الدردشة والملف الشخصي</h4>
+                <p className="text-sm font-bold text-muted-foreground">
+                  يمكنك الآن إضافة "بايو" (نبذة قصيرة) من 30 حرفاً لملفك الشخصي. كما يحفظ النظام الدردشات التي قمت بها مسبقاً ليسهل عليك العودة إليها من قائمة الدردشة.
+                </p>
+              </Card>
+            </div>
           </div>
         </section>
 

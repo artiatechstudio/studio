@@ -18,7 +18,8 @@ export default function StreakPage() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
-  const activeDates = useMemo(() => {
+  // استخراج تواريخ الإنجاز الحقيقية من قاعدة البيانات
+  const completedDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
     return Object.keys(userData.dailyPoints).map(dateStr => {
       const [year, month, day] = dateStr.split('-').map(Number);
@@ -53,8 +54,8 @@ export default function StreakPage() {
             <Flame size={40} fill="currentColor" />
           </div>
           <div className="text-right">
-            <h1 className="text-4xl font-black text-primary text-right">سجل الحماسة</h1>
-            <p className="text-muted-foreground font-bold text-right">تتبع استمراريتك وإنجازاتك اليومية</p>
+            <h1 className="text-4xl font-black text-primary">سجل الحماسة</h1>
+            <p className="text-muted-foreground font-bold">تتبع استمراريتك وإنجازاتك اليومية الموثقة</p>
           </div>
         </header>
 
@@ -69,8 +70,19 @@ export default function StreakPage() {
               <div className="flex justify-center w-full rtl-calendar">
                 <Calendar
                   mode="multiple"
-                  selected={activeDates}
+                  selected={completedDates}
                   className="rounded-3xl border shadow-inner p-4 bg-secondary/10"
+                  modifiers={{
+                    completed: completedDates
+                  }}
+                  modifiersStyles={{
+                    completed: { 
+                      backgroundColor: 'hsl(var(--primary))', 
+                      color: 'white',
+                      fontWeight: 'bold',
+                      borderRadius: '12px'
+                    }
+                  }}
                 />
               </div>
             </CardContent>
@@ -108,20 +120,6 @@ export default function StreakPage() {
             </Card>
           </div>
         </div>
-
-        <section className="bg-secondary/20 rounded-[2.5rem] p-8 border border-border text-right">
-          <h3 className="text-xl font-black text-primary mb-6">كيف تعمل الحماسة؟</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm font-bold text-muted-foreground">
-            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border text-right">
-              <p className="text-primary font-black mb-2">1. الإنجاز اليومي</p>
-              تحصل على نقطة حماسة واحدة عند إكمال أي مهمة في أي مسار خلال اليوم.
-            </div>
-            <div className="bg-card p-6 rounded-2xl shadow-sm border border-border text-right">
-              <p className="text-primary font-black mb-2">2. الاستمرارية</p>
-              يجب أن تنجز مهمة واحدة على الأقل كل يوم لتنمو السلسلة. إذا فاتك يوم، سيعود العداد للصفر.
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

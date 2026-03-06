@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
@@ -23,8 +23,25 @@ export default function ProfilePage() {
   const router = useRouter();
   const [showQr, setShowQr] = useState(false);
   
+  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
+  const { data: allUsersData, isLoading: isAllUsersLoading } = useDatabase(allUsersRef);
+  
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: profile, isLoading } = useDatabase(profileRef);
+
+  const membershipInfo = useMemo(() => {
+    if (!allUsersData || !user) return { rank: 0, total: 0 };
+    
+    const usersArray = Object.values(allUsersData) as any[];
+    const sortedUsers = usersArray.sort((a, b) => {
+      const dateA = new Date(a.registrationDate || 0).getTime();
+      const dateB = new Date(b.registrationDate || 0).getTime();
+      return dateA - dateB;
+    });
+    
+    const rank = sortedUsers.findIndex(u => u.id === user.uid) + 1;
+    return { rank, total: sortedUsers.length };
+  }, [allUsersData, user]);
 
   const handleLogout = async () => {
     playSound('click');
@@ -38,7 +55,7 @@ export default function ProfilePage() {
     setShowQr(true);
   };
 
-  if (isUserLoading || isLoading) {
+  if (isUserLoading || isLoading || isAllUsersLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
@@ -49,8 +66,6 @@ export default function ProfilePage() {
   }
 
   const userData = profile || {};
-  // استخدام المعرف من نظام المصادقة مباشرة لضمان الدقة
-  const membershipId = user?.uid?.substring(0, 6).toUpperCase() || "------";
 
   const getRankName = (points: number = 0) => {
     if (points >= 10000) return "أسطورة كاري 👑";
@@ -77,7 +92,9 @@ export default function ProfilePage() {
           <div className="flex-1 text-center md:text-right space-y-3">
             <div className="flex flex-col md:flex-row items-center gap-3">
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name}</h1>
-              <span className="bg-secondary px-4 py-1 rounded-full text-xs font-black text-muted-foreground">العضو رقم {membershipId}</span>
+              <span className="bg-primary/10 px-4 py-1 rounded-full text-xs font-black text-primary border border-primary/20">
+                العضو رقم {membershipInfo.rank} من {membershipInfo.total}
+              </span>
             </div>
             <p className="text-muted-foreground font-bold text-lg italic">{getRankName(userData.points)}</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-4">

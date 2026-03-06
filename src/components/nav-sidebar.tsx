@@ -101,7 +101,7 @@ export function NavSidebar() {
             onClick={() => playSound('click')}
             className={cn(
               "flex flex-col items-center justify-center transition-all flex-1 h-full",
-              item.isCenter ? "relative -top-6" : "pt-2",
+              item.isCenter ? "relative -top-4" : "pt-2",
               pathname === item.href ? "text-primary" : "text-muted-foreground opacity-60"
             )}
           >
@@ -114,8 +114,12 @@ export function NavSidebar() {
             )}>
               <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[2.5px]")} />
             </div>
-            {!item.isCenter && <span className="text-[10px] font-black mt-1">{item.label}</span>}
-            {item.isCenter && <span className="text-[11px] font-black absolute -bottom-8 whitespace-nowrap">{item.label}</span>}
+            <span className={cn(
+              "text-[10px] font-black mt-1",
+              item.isCenter ? "mt-2 text-primary" : ""
+            )}>
+              {item.label}
+            </span>
           </Link>
         ))}
       </nav>

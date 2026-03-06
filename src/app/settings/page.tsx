@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -18,7 +17,7 @@ import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Phone, Mai
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
-const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
+const AVATAR_EMOJIS = ["🐱", "🐶", "🐶", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -152,29 +151,29 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-6 md:p-12 space-y-10">
-        <header className="flex items-center gap-4">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl">
+      <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-10">
+        <header className="flex items-center gap-4 text-right">
+          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0">
             <Settings size={32} />
           </div>
-          <div className="text-right">
-            <h1 className="text-3xl font-black text-primary">الإعدادات</h1>
-            <p className="text-muted-foreground font-bold">إدارة ملفك الشخصي وتجربة التطبيق</p>
+          <div>
+            <h1 className="text-2xl font-black text-primary">الإعدادات</h1>
+            <p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي وتجربة التطبيق</p>
           </div>
         </header>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
-          <CardHeader className="bg-primary/5 p-8 border-b border-border text-right">
-            <CardTitle className="text-xl font-black text-primary flex items-center justify-end gap-3">
-              تعديل المعلومات الشخصية <UserIcon />
+          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
+            <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">
+              تعديل المعلومات الشخصية <UserIcon size={20} />
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 col-span-1 md:col-span-2 flex flex-col items-center gap-4 mb-4">
                <Label className="text-center">اختر رفيقك (الأفاتار)</Label>
-               <div className="text-7xl bg-secondary/50 p-6 rounded-[2rem] shadow-inner mb-2">{avatar}</div>
+               <div className="text-6xl bg-secondary/50 p-6 rounded-[2rem] shadow-inner mb-2">{avatar}</div>
                <Select onValueChange={(val) => { playSound('click'); setAvatar(val); }} value={avatar}>
-                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold w-48 text-xl">
+                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold w-40 text-xl">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -240,56 +239,56 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
-          <CardHeader className="bg-primary/5 p-8 border-b border-border text-right">
-            <CardTitle className="text-xl font-black text-primary flex items-center justify-end gap-3">
-              تخصيص الواجهة <Sun />
+          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
+            <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">
+              تخصيص الواجهة <Sun size={20} />
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 flex items-center justify-between">
+          <CardContent className="p-6 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className={cn("p-2 rounded-lg", isDark ? "bg-primary text-white" : "bg-yellow-100 text-yellow-600")}>
                 {isDark ? <Moon size={24} /> : <Sun size={24} />}
               </div>
-              <div>
-                <p className="font-black text-primary">الوضع الليلي</p>
-                <p className="text-xs text-muted-foreground font-bold">تغيير مظهر التطبيق لراحة عينيك</p>
+              <div className="text-right">
+                <p className="font-black text-primary text-sm">الوضع الليلي</p>
+                <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق لراحة عينيك</p>
               </div>
             </div>
             <Switch checked={isDark} onCheckedChange={toggleTheme} />
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border">
-            <h3 className="text-xl font-black text-primary mb-6 text-right">تواصل معنا</h3>
-            <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-6 border border-border">
+            <h3 className="text-lg font-black text-primary mb-4 text-right">تواصل معنا</h3>
+            <div className="space-y-3">
               {contactLinks.map((link) => (
-                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors">
+                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white", link.color)}>
                     <link.icon size={20} />
                   </div>
-                  <span className="font-black text-primary">{link.name}</span>
+                  <span className="font-black text-primary text-sm">{link.name}</span>
                 </a>
               ))}
             </div>
           </Card>
 
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border">
-            <h3 className="text-xl font-black text-primary mb-6 text-right">مواقعنا</h3>
-            <div className="grid grid-cols-2 gap-4">
+          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-6 border border-border">
+            <h3 className="text-lg font-black text-primary mb-4 text-right">مواقعنا</h3>
+            <div className="grid grid-cols-2 gap-3">
               {socialLinks.map((link) => (
-                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 p-4 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors">
+                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 p-3 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors text-center">
                   <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white", link.color)}>
                     <link.icon size={20} />
                   </div>
-                  <span className="text-xs font-black text-primary">{link.name}</span>
+                  <span className="text-[10px] font-black text-primary">{link.name}</span>
                 </a>
               ))}
             </div>
           </Card>
         </div>
 
-        <div className="pt-10 flex flex-col gap-4">
+        <div className="pt-6 flex flex-col gap-3">
           <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
             <LogOut className="ml-2" /> تسجيل الخروج
           </Button>

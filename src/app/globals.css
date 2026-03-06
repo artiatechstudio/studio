@@ -55,9 +55,8 @@
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     font-family: 'Cairo', sans-serif;
-    /* ضبط الحجم الأساسي ليكون أكثر ملاءمة للشاشات الصغيرة */
-    font-size: 1rem; 
-    line-height: 1.5;
+    font-size: 0.95rem; 
+    line-height: 1.4;
   }
 }
 
@@ -75,7 +74,6 @@
 
 .rtl-calendar-clean .rdp-table {
   width: 100% !important;
-  max-width: none !important;
 }
 
 .rtl-calendar-clean .rdp-cell {
@@ -87,15 +85,20 @@
 
 .rtl-calendar-clean .rdp-day {
   width: 100% !important;
-  max-width: 45px;
+  max-width: 40px;
   aspect-ratio: 1/1 !important;
   height: auto !important;
   font-weight: 900 !important;
-  font-size: 1rem !important;
+  font-size: 0.9rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   border-radius: 0.75rem !important;
+}
+
+/* Hide Head Days Row */
+.rtl-calendar-clean .rdp-head {
+  display: none !important;
 }
 
 .rtl-calendar-clean .rdp-month_caption {
@@ -103,24 +106,13 @@
   justify-content: center !important;
   margin-bottom: 1rem !important;
   font-weight: 900 !important;
-  font-size: 1.1rem !important;
+  font-size: 1rem !important;
   color: hsl(var(--primary));
-}
-
-/* Scrollbar Styling */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  @apply bg-background;
-}
-::-webkit-scrollbar-thumb {
-  @apply bg-muted rounded-full;
 }
 
 /* Container Constraint */
 .app-container {
-  @apply max-w-5xl mx-auto w-full px-4 sm:px-6;
+  @apply max-w-4xl mx-auto w-full px-4 sm:px-6;
 }
 
 /* Animation Utilities */
@@ -142,7 +134,7 @@
   to { transform: rotate(360deg); }
 }
 
-/* Fix for large images/elements */
+/* Responsive Image Fix */
 img, video {
   max-width: 100%;
   height: auto;

@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -13,7 +12,7 @@ export default function InstructionsPage() {
   return (
     <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-8 pb-32 overflow-x-hidden">
+      <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-8 pb-32 overflow-x-hidden text-right">
         <div className="flex justify-start">
           <Link href="/resources" onClick={() => playSound('click')}>
             <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
@@ -23,7 +22,7 @@ export default function InstructionsPage() {
           </Link>
         </div>
 
-        <header className="space-y-4 text-right">
+        <header className="space-y-4">
           <div className="flex items-center justify-start gap-4 md:gap-6">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 text-primary rounded-[2rem] flex items-center justify-center shadow-xl border border-primary/20">
               <Info size={40} />
@@ -37,7 +36,7 @@ export default function InstructionsPage() {
 
         <section className="space-y-12">
           {/* نظام النقاط والبونص */}
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-orange-600">
               <Star className="text-yellow-500" fill="currentColor" /> <h2>نظام النقاط وبونص التبكير</h2>
             </div>
@@ -59,7 +58,7 @@ export default function InstructionsPage() {
           </div>
 
           {/* نظام المسارات والقفل */}
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
               <Lock className="text-primary" /> <h2>قانون الـ 24 ساعة</h2>
             </div>
@@ -69,15 +68,15 @@ export default function InstructionsPage() {
               </p>
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm">1</div>
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm shrink-0">1</div>
                   <p className="text-sm font-bold text-muted-foreground">لا يمكنك فتح أكثر من <span className="text-primary font-black">مرحلة واحدة</span> في المسار الواحد خلال اليوم.</p>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm">2</div>
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm shrink-0">2</div>
                   <p className="text-sm font-bold text-muted-foreground">المرحلة القادمة تفتح دائماً عند <span className="text-primary font-black">منتصف الليل (00:00)</span>.</p>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm">3</div>
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm shrink-0">3</div>
                   <p className="text-sm font-bold text-muted-foreground">الاستثناء الوحيد هو <span className="text-primary font-black">المرحلة الأولى</span> من كل مسار، فهي مفتوحة دائماً للمبتدئين.</p>
                 </div>
               </div>
@@ -85,7 +84,7 @@ export default function InstructionsPage() {
           </div>
 
           {/* الذكاء الاصطناعي كاري */}
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
               <Sparkles className="text-accent" /> <h2>المساعد الذكي "كاري" 🐱</h2>
             </div>
@@ -101,7 +100,7 @@ export default function InstructionsPage() {
           </div>
 
           {/* الترتيب والـ BMI */}
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-green-600">
               <Activity className="text-green-600" /> <h2>الصحة والترتيب العالمي</h2>
             </div>
@@ -122,7 +121,7 @@ export default function InstructionsPage() {
           </div>
 
           {/* التفاعل الاجتماعي */}
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-pink-600">
               <Heart className="text-pink-600" fill="currentColor" /> <h2>التواصل مع المجتمع</h2>
             </div>
@@ -148,7 +147,7 @@ export default function InstructionsPage() {
           </div>
 
           {/* رقم العضوية والأوسمة */}
-          <div className="space-y-6 text-right">
+          <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
               <ShieldCheck className="text-blue-600" /> <h2>الهوية والأوسمة</h2>
             </div>

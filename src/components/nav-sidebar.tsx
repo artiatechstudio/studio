@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from 'next/link';
@@ -15,7 +14,7 @@ const sideNavItems = [
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
-  { label: 'أنت', icon: User, href: '/profile' },
+  { label: 'الملف الشخصي', icon: User, href: '/profile' },
 ];
 
 const mobileNavItems = [
@@ -41,82 +40,84 @@ export function NavSidebar() {
 
   return (
     <>
-      <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-64 bg-card border-l border-border z-40 p-6 shadow-2xl">
-        <div className="flex items-center gap-3 mb-12 justify-end" dir="rtl">
-          <div className="w-12 h-12 bg-primary rounded-2xl flex items-center justify-center text-white font-black text-3xl shadow-xl">🐱</div>
-          <span className="text-3xl font-black text-primary tracking-tighter">كارينجو</span>
+      {/* Desktop Sidebar */}
+      <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl">
+        <div className="flex items-center gap-4 mb-14 justify-end" dir="rtl">
+          <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">🐱</div>
+          <span className="text-3xl font-black text-primary tracking-tight">كارينجو</span>
         </div>
 
-        <nav className="flex-1 space-y-3" dir="rtl">
+        <nav className="flex-1 space-y-4" dir="rtl">
           {sideNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               onClick={() => playSound('click')}
               className={cn(
-                "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all duration-300 group",
+                "flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all duration-300 group",
                 pathname === item.href 
-                  ? "bg-primary text-white shadow-xl" 
+                  ? "bg-primary text-white shadow-xl scale-[1.02]" 
                   : "text-muted-foreground hover:bg-secondary hover:text-primary"
               )}
             >
-              <item.icon className={cn("w-6 h-6", pathname === item.href ? "text-white" : "group-hover:scale-110")} />
-              <span className="font-black text-lg">{item.label}</span>
+              <item.icon className={cn("w-7 h-7", pathname === item.href ? "text-white" : "group-hover:scale-110")} />
+              <span className="font-black text-xl">{item.label}</span>
             </Link>
           ))}
         </nav>
 
-        <div className="pt-8 border-t border-secondary mt-auto space-y-3" dir="rtl">
+        <div className="pt-8 border-t border-border mt-auto space-y-4" dir="rtl">
           {user ? (
             <>
               <Link href="/settings" onClick={() => playSound('click')} className={cn(
-                "flex items-center gap-4 px-5 py-4 rounded-2xl transition-all",
+                "flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all",
                 pathname === '/settings' ? "bg-accent text-white shadow-xl" : "text-muted-foreground hover:bg-secondary"
               )}>
-                <Settings className="w-6 h-6" />
-                <span className="font-black text-lg">الإعدادات</span>
+                <Settings className="w-7 h-7" />
+                <span className="font-black text-xl">الإعدادات</span>
               </Link>
               <button 
                 onClick={handleLogout}
-                className="flex items-center gap-4 px-5 py-4 rounded-2xl text-destructive hover:bg-destructive/10 transition-all w-full text-right"
+                className="flex items-center gap-5 px-6 py-4 rounded-[1.5rem] text-destructive hover:bg-destructive/10 transition-all w-full text-right"
               >
-                <LogOut className="w-6 h-6" />
-                <span className="font-black text-lg">خروج</span>
+                <LogOut className="w-7 h-7" />
+                <span className="font-black text-xl">خروج</span>
               </button>
             </>
           ) : (
-            <Link href="/login" onClick={() => playSound('click')} className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-primary text-white shadow-xl">
-              <LogIn className="w-6 h-6" />
-              <span className="font-black text-lg">دخول</span>
+            <Link href="/login" onClick={() => playSound('click')} className="flex items-center gap-5 px-6 py-4 rounded-[1.5rem] bg-primary text-white shadow-xl">
+              <LogIn className="w-7 h-7" />
+              <span className="font-black text-xl">دخول</span>
             </Link>
           )}
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-end h-24 pb-4 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[3rem]">
+      {/* Mobile Navigation */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-end h-28 pb-6 px-4 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[3.5rem]">
         {mobileNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => playSound('click')}
             className={cn(
-              "flex flex-col items-center justify-center transition-all flex-1 px-1",
-              item.isCenter ? "relative -top-10" : "mb-2",
+              "flex flex-col items-center justify-center transition-all flex-1",
+              item.isCenter ? "relative -top-12" : "mb-2",
               pathname === item.href && !item.isCenter ? "text-primary" : "text-muted-foreground"
             )}
           >
             <div className={cn(
               "transition-all",
               item.isCenter 
-                ? "w-16 h-16 bg-primary text-white rounded-3xl shadow-xl flex items-center justify-center border-4 border-card scale-110 mb-1" 
-                : "p-2 rounded-2xl mb-1",
+                ? "w-20 h-20 bg-primary text-white rounded-[2rem] shadow-2xl flex items-center justify-center border-[6px] border-background scale-110" 
+                : "p-3 rounded-2xl",
               pathname === item.href && !item.isCenter ? "bg-primary/10" : ""
             )}>
-              <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[2.5px]")} />
+              <item.icon className={cn(item.isCenter ? "w-10 h-10" : "w-8 h-8", pathname === item.href && "stroke-[3px]")} />
             </div>
             <span className={cn(
-              "text-[10px] font-black whitespace-nowrap",
-              item.isCenter ? "text-primary font-black mt-1" : "opacity-60"
+              "text-xs font-black mt-2",
+              item.isCenter ? "text-primary font-black" : "opacity-70"
             )}>
               {item.label}
             </span>

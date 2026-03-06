@@ -23,7 +23,7 @@
     --border: 240 10% 90%;
     --input: 240 10% 90%;
     --ring: 243 75% 59%;
-    --radius: 1.25rem;
+    --radius: 1.5rem;
   }
   .dark {
     --background: 231 43% 5%;
@@ -53,54 +53,47 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-x-hidden;
+    font-family: 'Cairo', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
 
-/* RTL Calendar & Modern UI Overrides */
+/* RTL Calendar Overrides */
 .rtl-calendar .rdp-month {
   @apply space-y-4 text-right;
 }
 
 .rtl-calendar .rdp-caption_label {
-  @apply font-black text-primary text-lg;
-}
-
-.rtl-calendar .rdp-nav {
-  @apply flex gap-2;
-}
-
-.rtl-calendar .rdp-head_cell {
-  @apply text-center text-muted-foreground font-black p-2;
-}
-
-.rtl-calendar .rdp-cell {
-  @apply text-center p-1;
+  @apply font-black text-primary text-xl;
 }
 
 .rdp-day_selected {
   @apply bg-primary text-white font-black rounded-xl shadow-lg !important;
 }
 
-.rdp-day_today {
-  @apply border-2 border-accent text-accent font-black rounded-xl !important;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-background;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
 }
 
-/* Floating Action Button Styling for Mobile Nav */
-.center-nav-item {
-  @apply relative -top-8 scale-110 shadow-2xl transition-all duration-300;
+/* Container Constraint */
+.app-container {
+  @apply max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8;
 }
 
-.center-nav-item:hover {
-  @apply -top-10 scale-[1.2];
+/* Animation Utilities */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
 }
 
-/* Improved Clarity Utilities */
-.text-balance {
-  text-wrap: balance;
-}
-
-.shadow-soft {
-  shadow-box: 0 10px 30px -10px rgba(0,0,0,0.1);
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
 }

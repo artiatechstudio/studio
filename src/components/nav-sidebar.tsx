@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -11,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 
 const sideNavItems = [
-  { label: 'الرئيسية', icon: LayoutDashboard, href: '/' },
+  { label: 'الرئيسية', icon: Home, href: '/' },
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
@@ -21,7 +21,7 @@ const sideNavItems = [
 const mobileNavItems = [
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
-  { label: 'الرئيسية', icon: LayoutDashboard, href: '/', isCenter: true },
+  { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
   { label: 'أنت', icon: User, href: '/profile' },
 ];

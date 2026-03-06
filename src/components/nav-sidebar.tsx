@@ -5,10 +5,12 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { ref } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
+import { useMemo } from 'react';
 
 const sideNavItems = [
   { label: 'الرئيسية', icon: Home, href: '/' },
@@ -31,7 +33,31 @@ export function NavSidebar() {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useUser();
+  const { database } = useFirebase();
   const auth = useAuth();
+
+  // نظام إشعارات الدردشة البسيط
+  const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
+  const { data: chatsData } = useDatabase(chatsRef);
+
+  const unreadCount = useMemo(() => {
+    if (!chatsData || !user) return 0;
+    
+    let count = 0;
+    Object.keys(chatsData).forEach(chatId => {
+      if (chatId.includes(user.uid)) {
+        const messages: any = Object.values(chatsData[chatId].messages || {});
+        if (messages.length > 0) {
+          const lastMsg = messages[messages.length - 1];
+          // إذا كانت آخر رسالة من شخص آخر ولم أرها (محاكاة بسيطة)
+          if (lastMsg.senderId !== user.uid) {
+            count++;
+          }
+        }
+      }
+    });
+    return count;
+  }, [chatsData, user]);
 
   const handleLogout = async () => {
     playSound('click');
@@ -56,7 +82,7 @@ export function NavSidebar() {
               href={item.href}
               onClick={() => playSound('click')}
               className={cn(
-                "flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all duration-300 group",
+                "flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all duration-300 group relative",
                 pathname === item.href 
                   ? "bg-primary text-white shadow-xl scale-[1.02]" 
                   : "text-muted-foreground hover:bg-secondary hover:text-primary"
@@ -64,6 +90,13 @@ export function NavSidebar() {
             >
               <item.icon className={cn("w-7 h-7", pathname === item.href ? "text-white" : "group-hover:scale-110")} />
               <span className="font-black text-xl">{item.label}</span>
+              
+              {/* Notification Badge for Desktop */}
+              {item.label === 'الدردشة' && unreadCount > 0 && (
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white">
+                  {unreadCount}
+                </span>
+              )}
             </Link>
           ))}
         </nav>
@@ -103,7 +136,7 @@ export function NavSidebar() {
             href={item.href}
             onClick={() => playSound('click')}
             className={cn(
-              "flex flex-col items-center justify-center transition-all flex-1",
+              "flex flex-col items-center justify-center transition-all flex-1 relative",
               pathname === item.href && !item.isCenter ? "text-primary" : "text-muted-foreground"
             )}
           >
@@ -115,6 +148,13 @@ export function NavSidebar() {
               pathname === item.href && !item.isCenter ? "bg-primary/10" : ""
             )}>
               <item.icon className={cn(item.isCenter ? "w-7 h-7" : "w-6 h-6", pathname === item.href && "stroke-[3px]")} />
+              
+              {/* Notification Badge for Mobile */}
+              {item.label === 'الدردشة' && unreadCount > 0 && (
+                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
+                  {unreadCount}
+                </span>
+              )}
             </div>
             {!item.isCenter && (
               <span className={cn(

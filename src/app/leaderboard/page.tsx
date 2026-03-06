@@ -40,17 +40,18 @@ export default function LeaderboardPage() {
 
         let bmiColor = "text-gray-400";
         let bmiValue = "--";
+        let bmiStatus = "غير محدد";
         
         if (user.weight && user.height) {
           const bmi = user.weight / ((user.height / 100) * (user.height / 100));
           bmiValue = bmi.toFixed(1);
-          if (bmi >= 18.5 && bmi < 25) bmiColor = "text-green-500";
-          else if (bmi >= 25 && bmi < 30) bmiColor = "text-orange-500";
-          else if (bmi >= 30) bmiColor = "text-red-500";
-          else bmiColor = "text-blue-500";
+          if (bmi >= 18.5 && bmi < 25) { bmiColor = "text-green-500"; bmiStatus = "مثالي"; }
+          else if (bmi >= 25 && bmi < 30) { bmiColor = "text-orange-500"; bmiStatus = "زيادة"; }
+          else if (bmi >= 30) { bmiColor = "text-red-500"; bmiStatus = "سمنة"; }
+          else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
         }
 
-        return { ...user, avgScore, bmiColor, bmiValue };
+        return { ...user, avgScore, bmiColor, bmiValue, bmiStatus };
       })
       .filter((user: any) => (user.points || 0) > 0)
       .sort((a: any, b: any) => b.avgScore - a.avgScore);
@@ -91,7 +92,8 @@ export default function LeaderboardPage() {
                   key={user.id} 
                   className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
                 >
-                  <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[60px]">
+                  {/* Score Badge */}
+                  <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
                     <div className="flex items-center gap-1 justify-center">
                       <Star size={10} className="text-yellow-500" fill="currentColor" />
                       <p className="font-black text-primary text-sm">{user.avgScore}</p>
@@ -99,6 +101,7 @@ export default function LeaderboardPage() {
                     <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
                   </div>
 
+                  {/* User Info */}
                   <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
                     <div className="w-6 text-center font-black text-sm text-primary shrink-0">
                       {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 
@@ -106,23 +109,27 @@ export default function LeaderboardPage() {
                        index === 2 ? <Medal className="text-amber-600 w-6 h-6 mx-auto" /> : 
                        <span className="opacity-40 text-[10px]">#{index + 1}</span>}
                     </div>
+                    
                     <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                      <Avatar className="h-9 w-9 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform">
-                        <span className="text-lg">{user.avatar || "🐱"}</span>
+                      <Avatar className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform">
+                        <span className="text-xl">{user.avatar || "🐱"}</span>
                       </Avatar>
                     </Link>
+
                     <div className="text-right overflow-hidden flex-1 px-1">
                       <h3 className="font-black text-primary text-[11px] truncate leading-none mb-1">{user.name}</h3>
-                      <div className="flex flex-wrap items-center justify-end gap-1.5">
+                      <div className="flex flex-wrap items-center justify-end gap-1">
                         <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
                           {user.likesCount || 0} <Heart size={8} fill="currentColor" />
                         </span>
                         <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
-                          {user.streak || 0}ي <Flame size={8} className="text-orange-500" fill="currentColor" />
+                          {user.streak || 0}ي <Flame size={8} fill="currentColor" />
                         </span>
-                        <span className={cn("flex items-center gap-0.5 bg-secondary px-1 py-0.5 rounded-full text-[7px] font-black", user.bmiColor)}>
-                          {user.bmiValue}
-                        </span>
+                        {/* BMI Status Re-added here */}
+                        <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
+                           <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
+                           <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>
+                        </div>
                       </div>
                     </div>
                   </div>

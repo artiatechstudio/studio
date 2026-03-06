@@ -10,10 +10,18 @@ import { signOut } from 'firebase/auth';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 
-const navItems = [
+const sideNavItems = [
   { label: 'الرئيسية', icon: LayoutDashboard, href: '/' },
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
+  { label: 'الموارد', icon: BookMarked, href: '/resources' },
+  { label: 'أنت', icon: User, href: '/profile' },
+];
+
+const mobileNavItems = [
+  { label: 'الحماسة', icon: Flame, href: '/streak' },
+  { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
+  { label: 'الرئيسية', icon: LayoutDashboard, href: '/', isCenter: true },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
   { label: 'أنت', icon: User, href: '/profile' },
 ];
@@ -40,7 +48,7 @@ export function NavSidebar() {
         </div>
 
         <nav className="flex-1 space-y-3" dir="rtl">
-          {navItems.map((item) => (
+          {sideNavItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -85,42 +93,31 @@ export function NavSidebar() {
         </div>
       </aside>
 
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.1)] rounded-t-[2.5rem]">
-        {navItems.map((item) => (
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-xl border-t border-border flex justify-around items-center h-24 px-2 z-50 shadow-[0_-10px_30px_rgba(0,0,0,0.1)] rounded-t-[3rem]">
+        {mobileNavItems.map((item) => (
           <Link
             key={item.href}
             href={item.href}
             onClick={() => playSound('click')}
             className={cn(
-              "flex flex-col items-center justify-center gap-1 transition-all flex-1 py-2 h-full",
-              pathname === item.href ? "text-primary scale-110" : "text-muted-foreground opacity-60"
+              "flex flex-col items-center justify-center transition-all flex-1 h-full",
+              item.isCenter ? "relative -top-6" : "pt-2",
+              pathname === item.href ? "text-primary" : "text-muted-foreground opacity-60"
             )}
           >
             <div className={cn(
-              "p-2 rounded-2xl transition-all",
-              pathname === item.href ? "bg-primary/10 shadow-sm" : "bg-transparent"
+              "transition-all",
+              item.isCenter 
+                ? "w-16 h-16 bg-primary text-white rounded-3xl shadow-xl flex items-center justify-center border-4 border-card scale-110" 
+                : "p-2 rounded-2xl",
+              pathname === item.href && !item.isCenter ? "bg-primary/10" : ""
             )}>
-              <item.icon className={cn("w-7 h-7", pathname === item.href && "stroke-[2.5px]")} />
+              <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[2.5px]")} />
             </div>
-            <span className="text-[11px] font-black">{item.label}</span>
+            {!item.isCenter && <span className="text-[10px] font-black mt-1">{item.label}</span>}
+            {item.isCenter && <span className="text-[11px] font-black absolute -bottom-8 whitespace-nowrap">{item.label}</span>}
           </Link>
         ))}
-        <Link
-          href="/settings"
-          onClick={() => playSound('click')}
-          className={cn(
-            "flex flex-col items-center justify-center gap-1 transition-all flex-1 py-2 h-full",
-            pathname === '/settings' ? "text-primary scale-110" : "text-muted-foreground opacity-60"
-          )}
-        >
-          <div className={cn(
-            "p-2 rounded-2xl transition-all",
-            pathname === '/settings' ? "bg-primary/10 shadow-sm" : "bg-transparent"
-          )}>
-            <Settings className="w-7 h-7" />
-          </div>
-          <span className="text-[11px] font-black">الإعدادات</span>
-        </Link>
       </nav>
     </>
   );

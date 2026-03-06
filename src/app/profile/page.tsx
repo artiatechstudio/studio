@@ -8,11 +8,12 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
-import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft } from 'lucide-react';
+import { BadgeCheck, Trophy, Flame, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2 } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
+import { playSound } from '@/lib/sounds';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -23,9 +24,24 @@ export default function ProfilePage() {
   const { data: profile, isLoading } = useDatabase(profileRef);
 
   const handleLogout = async () => {
+    playSound('click');
     await signOut(auth);
     toast({ title: "تم تسجيل الخروج" });
     router.replace('/login');
+  };
+
+  const handleShare = () => {
+    playSound('click');
+    const shareUrl = "https://www.artiatechstudio.com.ly/2026/02/nova-care.html";
+    if (navigator.share) {
+      navigator.share({
+        title: 'كارينجو - رفيقك للنمو',
+        text: 'انضم إلي في رحلة النمو مع تطبيق كارينجو!',
+        url: shareUrl,
+      });
+    } else {
+      window.open(shareUrl, '_blank');
+    }
   };
 
   if (isUserLoading || isLoading) {
@@ -80,7 +96,7 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <Link href="/settings">
+            <Link href="/settings" onClick={() => playSound('click')}>
               <Button variant="outline" className="w-full rounded-2xl border-2 border-primary text-primary font-black px-6 py-4 h-auto hover:bg-primary/5 transition-all">
                 <SettingsIcon className="ml-2" /> الإعدادات
               </Button>
@@ -98,7 +114,7 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3">
                    <Trophy className="text-accent" /> الأوسمة المكتسبة
                 </div>
-                <Link href="/streak">
+                <Link href="/streak" onClick={() => playSound('click')}>
                   <Button variant="link" className="text-accent font-black">سجل الحماسة <ArrowLeft size={16} className="mr-1 rotate-180" /></Button>
                 </Link>
               </CardTitle>
@@ -114,26 +130,18 @@ export default function ProfilePage() {
             </div>
           </Card>
 
-          <Link href="/streak">
-            <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white p-8 flex flex-col items-center justify-center text-center gap-4 relative overflow-hidden group cursor-pointer hover:scale-[1.02] transition-transform h-full">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
-                <Trophy size={80} />
-              </div>
-              <div className="text-6xl animate-bounce">{userData.avatar || "🐱"}</div>
-              <div>
-                <p className="text-4xl font-black">{userData.points || 0}</p>
-                <p className="font-bold opacity-80 uppercase tracking-widest text-[10px] mt-1">إجمالي النقاط</p>
-              </div>
-              <div className="w-full h-px bg-white/20" />
-              <div className="flex items-center gap-3">
-                <Flame size={28} className="text-orange-300" fill="currentColor" />
-                <div>
-                  <p className="text-3xl font-black">{userData.streak || 0} يوم</p>
-                  <p className="font-bold opacity-80 text-[10px] mt-1">سلسلة الحماسة</p>
-                </div>
-              </div>
-            </Card>
-          </Link>
+          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-8 border border-border flex flex-col items-center justify-center text-center gap-6">
+             <div className="w-20 h-20 bg-accent/10 rounded-[1.5rem] flex items-center justify-center text-accent">
+               <QrCode size={48} />
+             </div>
+             <div className="space-y-1">
+               <h3 className="font-black text-primary text-xl">شارك التطبيق</h3>
+               <p className="text-xs text-muted-foreground font-bold">ادعُ أصدقاءك للانضمام ومشاركة الرحلة!</p>
+             </div>
+             <Button onClick={handleShare} className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
+               <Share2 size={18} /> مشاركة الرابط
+             </Button>
+          </Card>
         </div>
       </div>
     </div>

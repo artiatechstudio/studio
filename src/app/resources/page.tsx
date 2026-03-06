@@ -4,20 +4,12 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Shield, Heart, HelpCircle, MessageSquare, Instagram, Facebook, Youtube, Send, Phone, Activity, AlertTriangle, Lightbulb, ChevronLeft } from 'lucide-react';
+import { BookOpen, Shield, Heart, HelpCircle, Activity, AlertTriangle, Lightbulb, ChevronLeft, Scale, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 
 export default function ResourcesPage() {
-  const socialLinks = [
-    { name: 'واتساب', icon: Phone, url: 'https://wa.me/249929196425', color: 'bg-green-500' },
-    { name: 'فيسبوك', icon: Facebook, url: 'https://www.facebook.com/profile.php?id=61584838507463', color: 'bg-blue-600' },
-    { name: 'انستجرام', icon: Instagram, url: 'https://instagram.com/artiatechstudio', color: 'bg-pink-600' },
-    { name: 'يوتيوب', icon: Youtube, url: 'https://youtube.com/@artiatechstudio?si=80mNO6QsIRP7mn5z', color: 'bg-red-600' },
-    { name: 'إيميل', icon: Send, url: 'mailto:artiateech@gmail.com', color: 'bg-primary' },
-  ];
-
   const categories = [
     {
       title: "الموسوعة الصحية",
@@ -45,6 +37,13 @@ export default function ResourcesPage() {
     }
   ];
 
+  const legalLinks = [
+    { title: "الأسئلة الشائعة", icon: HelpCircle, href: "#faq" },
+    { title: "الشروط والأحكام", icon: Scale, href: "#terms" },
+    { title: "سياسة الخصوصية", icon: Shield, href: "#privacy" },
+    { title: "عن كارينجو", icon: Info, href: "#about" },
+  ];
+
   return (
     <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
@@ -56,7 +55,7 @@ export default function ResourcesPage() {
             </div>
             <div>
               <h1 className="text-4xl font-black text-primary">مركز الموارد</h1>
-              <p className="text-muted-foreground font-medium text-lg">اختر القسم الذي تود استكشافه لتعميق معرفتك.</p>
+              <p className="text-muted-foreground font-medium text-lg">استكشف أدلة النمو والتعلم الشاملة.</p>
             </div>
           </div>
         </header>
@@ -82,25 +81,21 @@ export default function ResourcesPage() {
 
         <section className="space-y-8">
           <h2 className="text-2xl font-black text-primary flex items-center gap-3">
-            <MessageSquare className="text-accent" /> تواصل معنا
+             السياسات والمعلومات
           </h2>
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-primary text-white p-8">
-            <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="text-center md:text-right space-y-2">
-                <h3 className="text-2xl font-black">أعطنا رأيك أو اطلب الدعم</h3>
-                <p className="opacity-80 font-bold">فريق Artiatech Studio جاهز لسماع اقتراحاتك لتطوير كارينجو.</p>
-              </div>
-              <div className="flex flex-wrap justify-center gap-4">
-                {socialLinks.map((link) => (
-                  <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                    <Button className={`w-12 h-12 rounded-full p-0 ${link.color} text-white shadow-lg hover:scale-110 transition-transform`}>
-                      <link.icon size={24} />
-                    </Button>
-                  </a>
-                ))}
-              </div>
-            </div>
-          </Card>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {legalLinks.map((link) => (
+              <Button 
+                key={link.title} 
+                variant="outline" 
+                onClick={() => { playSound('click'); toast({ title: link.title, description: "قريباً في التحديث القادم!" }); }}
+                className="h-20 rounded-2xl border-2 border-primary/10 hover:border-primary text-primary font-black text-lg gap-3"
+              >
+                <link.icon size={24} />
+                {link.title}
+              </Button>
+            ))}
+          </div>
         </section>
 
         <div className="text-center py-10 opacity-40 font-black text-primary text-xs">

@@ -96,7 +96,7 @@ export default function ResourcesPage() {
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="about">
-              <AccordionTrigger className="text-right font-black text-lg">عن كارينجو و Artiatech Studio</AccordionTrigger>
+              <AccordionTrigger className="text-right font-black text-lg">عن كارينجو</AccordionTrigger>
               <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
                 كارينجو هو مشروع طموح من تطوير Artiatech Studio، نهدف من خلاله إلى جعل عملية التطوير الذاتي رحلة ممتعة وتفاعلية تشبه الألعاب. نحن نؤمن أن النمو يبدأ بخطوة صغيرة يومية.
               </AccordionContent>

@@ -1,11 +1,10 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض فيديو splash.mp4 عند أول تحميل للتطبيق في الجلسة.
+ * يعرض فيديو splash.mp4 بملء الشاشة عند أول تحميل للتطبيق.
  */
 export function SplashScreen() {
   const [isVisible, setIsVisible] = useState(false);
@@ -21,7 +20,7 @@ export function SplashScreen() {
       const timer = setTimeout(() => {
         setIsVisible(false);
         sessionStorage.setItem('splash_shown', 'true');
-      }, 4000); 
+      }, 8000); // 8 ثواني كما طلبت
       return () => clearTimeout(timer);
     }
   }, []);
@@ -29,17 +28,18 @@ export function SplashScreen() {
   if (!isMounted || !isVisible) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-primary flex items-center justify-center overflow-hidden">
+    <div className="fixed inset-0 z-[9999] bg-black flex items-center justify-center overflow-hidden">
       <video 
         autoPlay 
         muted 
         playsInline 
-        className="w-full h-full object-cover"
+        className="absolute min-w-full min-h-full object-cover"
         onEnded={() => setIsVisible(false)}
       >
         <source src="/splash.mp4" type="video/mp4" />
       </video>
-      <div className="absolute bottom-10 left-0 right-0 text-center text-white/50 font-black text-xs">
+      {/* طبقة اختيارية لإظهار شعار الشركة بهدوء */}
+      <div className="absolute bottom-8 left-0 right-0 text-center text-white/30 font-black text-[10px] tracking-widest uppercase">
         Artiatech Studio 2026
       </div>
     </div>

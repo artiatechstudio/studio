@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -11,6 +11,7 @@ import { playSound } from '@/lib/sounds';
 
 const sideNavItems = [
   { label: 'الرئيسية', icon: Home, href: '/' },
+  { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
@@ -18,7 +19,7 @@ const sideNavItems = [
 ];
 
 const mobileNavItems = [
-  { label: 'الحماسة', icon: Flame, href: '/streak' },
+  { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
@@ -41,13 +42,13 @@ export function NavSidebar() {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl">
-        <div className="flex items-center gap-4 mb-14 justify-end" dir="rtl">
+      <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl overflow-y-auto">
+        <div className="flex items-center gap-4 mb-10 justify-end" dir="rtl">
           <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">🐱</div>
           <span className="text-3xl font-black text-primary tracking-tight">كارينجو</span>
         </div>
 
-        <nav className="flex-1 space-y-4" dir="rtl">
+        <nav className="flex-1 space-y-3" dir="rtl">
           {sideNavItems.map((item) => (
             <Link
               key={item.href}
@@ -94,7 +95,7 @@ export function NavSidebar() {
       </aside>
 
       {/* Mobile Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-end h-28 pb-6 px-4 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[3.5rem]">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-end h-24 pb-4 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[3rem]">
         {mobileNavItems.map((item) => (
           <Link
             key={item.href}
@@ -102,25 +103,27 @@ export function NavSidebar() {
             onClick={() => playSound('click')}
             className={cn(
               "flex flex-col items-center justify-center transition-all flex-1",
-              item.isCenter ? "relative -top-12" : "mb-2",
+              item.isCenter ? "relative -top-10" : "mb-2",
               pathname === item.href && !item.isCenter ? "text-primary" : "text-muted-foreground"
             )}
           >
             <div className={cn(
               "transition-all",
               item.isCenter 
-                ? "w-20 h-20 bg-primary text-white rounded-[2rem] shadow-2xl flex items-center justify-center border-[6px] border-background scale-110" 
-                : "p-3 rounded-2xl",
+                ? "w-16 h-16 bg-primary text-white rounded-[1.5rem] shadow-2xl flex items-center justify-center border-[4px] border-background scale-110" 
+                : "p-2 rounded-xl",
               pathname === item.href && !item.isCenter ? "bg-primary/10" : ""
             )}>
-              <item.icon className={cn(item.isCenter ? "w-10 h-10" : "w-8 h-8", pathname === item.href && "stroke-[3px]")} />
+              <item.icon className={cn(item.isCenter ? "w-8 h-8" : "w-7 h-7", pathname === item.href && "stroke-[3px]")} />
             </div>
-            <span className={cn(
-              "text-xs font-black mt-2",
-              item.isCenter ? "text-primary font-black" : "opacity-70"
-            )}>
-              {item.label}
-            </span>
+            {!item.isCenter && (
+              <span className={cn(
+                "text-[10px] font-black mt-1",
+                pathname === item.href ? "text-primary opacity-100" : "opacity-60"
+              )}>
+                {item.label}
+              </span>
+            )}
           </Link>
         ))}
       </nav>

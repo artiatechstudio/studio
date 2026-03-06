@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState } from 'react';
@@ -16,7 +15,11 @@ import { toast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 
-const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲"];
+const AVATAR_EMOJIS = [
+  "🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲",
+  "🐧", "🦉", "🦄", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽",
+  "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔"
+];
 
 export default function RegisterPage() {
   const { auth, database } = useFirebase();
@@ -40,20 +43,16 @@ export default function RegisterPage() {
     playSound('click');
 
     try {
-      // 1. إنشاء الحساب
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // 2. إرسال رابط التحقق من البريد (مجاني)
       await sendEmailVerification(user);
 
-      // 3. جلب عدد المستخدمين الحاليين لتحديد رقم العضوية
       const dbRef = ref(database);
       const snapshot = await get(child(dbRef, 'users'));
       const totalUsers = snapshot.exists() ? Object.keys(snapshot.val()).length : 0;
       const membershipRank = totalUsers + 1;
 
-      // 4. حفظ البيانات في RTDB
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,
         name,
@@ -78,12 +77,12 @@ export default function RegisterPage() {
 
       toast({ 
         title: "تم إرسال رابط التحقق!", 
-        description: "يرجى مراجعة بريدك الإلكتروني (وتفقد مجلد Spam) لتفعيل الحساب قبل الدخول." 
+        description: "يرجى مراجعة بريدك الإلكتروني لتفعيل الحساب قبل الدخول." 
       });
       
       router.push('/login');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "فشل التسجيل", description: "تأكد من صحة البريد أو قوة كلمة المرور." });
+      toast({ variant: "destructive", title: "فشل التسجيل", description: error.message });
     } finally {
       setLoading(false);
     }
@@ -100,7 +99,7 @@ export default function RegisterPage() {
           <CardTitle className="text-3xl font-black">انضم إلى مجتمع كاري</CardTitle>
           <p className="opacity-80 font-medium mt-2">رحلة النمو تبدأ هنا</p>
         </CardHeader>
-        <CardContent className="p-8 space-y-6">
+        <CardContent className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
           <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
             <div className="space-y-2 col-span-1 md:col-span-2">
               <Label>الاسم الكامل</Label>
@@ -119,10 +118,10 @@ export default function RegisterPage() {
                 <SelectTrigger className="h-12 rounded-xl bg-secondary/50 border-none text-2xl">
                   <SelectValue placeholder="اختر إيموجي" />
                 </SelectTrigger>
-                <SelectContent>
-                  <div className="grid grid-cols-4 gap-2 p-2">
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <div className="grid grid-cols-5 gap-2 p-2">
                     {AVATAR_EMOJIS.map(emoji => (
-                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center">
+                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center p-2">
                         {emoji}
                       </SelectItem>
                     ))}

@@ -1,10 +1,9 @@
-
 "use client"
 
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Heart, Lightbulb, ChevronLeft, AlertTriangle, Info } from 'lucide-react';
+import { BookOpen, Heart, Lightbulb, ChevronLeft, AlertTriangle, Info, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
@@ -28,7 +27,7 @@ export default function ResourcesPage() {
       bgColor: "bg-red-50"
     },
     {
-      title: "دليل السلامة والطوارئ",
+      title: "دليل السلامة",
       description: "تعلم كيف تتعامل مع الإصابات ومتى يجب عليك التوقف فوراً لسلامتك.",
       icon: AlertTriangle,
       href: "/resources/safety",
@@ -36,7 +35,7 @@ export default function ResourcesPage() {
       bgColor: "bg-amber-50"
     },
     {
-      title: "أسرار التحسين الذاتي",
+      title: "أسرار النمو",
       description: "قواعد ذهبية لبناء الانضباط، الاستمرارية، وتطوير العقلية الإيجابية.",
       icon: Lightbulb,
       href: "/resources/growth",
@@ -46,73 +45,70 @@ export default function ResourcesPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background md:pr-64" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-64 pb-32" dir="rtl">
       <NavSidebar />
-      <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-12 pb-32">
-        <header className="space-y-4 text-right">
-          <div className="flex items-center justify-start gap-6">
-            <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl">
-              < BookOpen size={40} />
+      <div className="app-container py-8 md:py-12 space-y-12">
+        <header className="space-y-4 text-right mx-2">
+          <div className="flex items-center justify-start gap-4 md:gap-6">
+            <div className="w-14 h-14 md:w-16 md:h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0">
+              <BookOpen size={32} />
             </div>
             <div>
-              <h1 className="text-4xl font-black text-primary">مركز الموارد</h1>
-              <p className="text-muted-foreground font-medium text-lg">استكشف أدلة النمو والتعليمات الشاملة.</p>
+              <h1 className="text-3xl md:text-4xl font-black text-primary">مركز الموارد</h1>
+              <p className="text-muted-foreground font-medium text-sm md:text-lg">استكشف أدلة النمو والتعليمات الشاملة.</p>
             </div>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <section className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mx-2">
           {categories.map((cat) => (
             <Link key={cat.href} href={cat.href} onClick={() => playSound('click')}>
-              <Card className="h-full border-none shadow-xl rounded-[2.5rem] overflow-hidden hover:scale-[1.03] transition-all cursor-pointer group">
-                <CardContent className="p-8 flex flex-col items-center text-center gap-4">
-                  <div className={`w-16 h-16 ${cat.bgColor} ${cat.color} rounded-[1.5rem] flex items-center justify-center mb-2 group-hover:rotate-6 transition-transform`}>
-                    <cat.icon size={32} />
+              <Card className="h-full border-none shadow-xl rounded-[2rem] overflow-hidden hover:scale-[1.03] transition-all cursor-pointer group">
+                <CardContent className="p-4 md:p-8 flex flex-col items-center text-center gap-2 md:gap-4">
+                  <div className={`w-12 h-12 md:w-16 md:h-16 ${cat.bgColor} ${cat.color} rounded-2xl flex items-center justify-center group-hover:rotate-6 transition-transform`}>
+                    <cat.icon size={24} className="md:w-8 md:h-8" />
                   </div>
-                  <h3 className="text-xl font-black text-primary">{cat.title}</h3>
-                  <p className="text-muted-foreground font-bold text-xs leading-relaxed line-clamp-2">{cat.description}</p>
-                  <div className="mt-2 flex items-center gap-2 text-primary font-black text-sm">
-                    عرض التفاصيل <ChevronLeft size={16} />
-                  </div>
+                  <h3 className="text-sm md:text-xl font-black text-primary">{cat.title}</h3>
+                  <p className="text-muted-foreground font-bold text-[10px] md:text-xs leading-tight line-clamp-2 hidden sm:block">{cat.description}</p>
                 </CardContent>
               </Card>
             </Link>
           ))}
         </section>
 
-        <section className="bg-card p-8 rounded-[2.5rem] shadow-xl border border-border">
-          <h2 className="text-2xl font-black text-primary mb-6 text-right">السياسات والمعلومات</h2>
+        <section className="bg-card p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border mx-2 space-y-8">
+          <div className="flex items-center gap-3 text-primary">
+            <ShieldCheck size={32} />
+            <h2 className="text-2xl font-black">الخصوصية والسياسات</h2>
+          </div>
+          
+          <div className="bg-orange-50 border-r-4 border-orange-500 p-6 rounded-2xl mb-6">
+            <h4 className="font-black text-orange-700 text-lg mb-2">تنبيه هام حول الدردشة:</h4>
+            <p className="text-sm font-bold text-orange-900/80 leading-relaxed">
+              نحيطكم علماً بأن الرسائل المتداولة في نظام الدردشة داخل التطبيق **غير مشفرة** طرف-إلى-طرف. يمكن لإدارة "استوديو ارتياتك" (Artiatech Studio) الاطلاع على محتوى المحادثات لأغراض الرقابة، تحسين الخدمة، والتأكد من عدم مخالفة شروط المجتمع. يرجى توخي الحذر وعدم مشاركة أي معلومات حساسة، أرقام سرية، أو بيانات بنكية عبر الدردشة.
+            </p>
+          </div>
+
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="faq">
               <AccordionTrigger className="text-right font-black text-lg">الأسئلة الشائعة</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
-                <p className="mb-2">1. كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
-                <p className="mb-2">2. هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت.</p>
-                <p>3. كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز وصعوبة المهمة، وتجد تفاصيلها في "دليل التعليمات".</p>
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="terms">
-              <AccordionTrigger className="text-right font-black text-lg">الشروط والأحكام</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
-                استخدام تطبيق كارينجو يعني موافقتك على الالتزام بالقواعد الصحية والأخلاقية للمجتمع. نحن نوفر الأدوات، والمسؤولية الكاملة عن التنفيذ الصحي تقع على عاتق المستخدم.
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
+                <p className="mb-2">● كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
+                <p className="mb-2">● هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت من الرئيسية.</p>
+                <p>● كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز (نظام بونص التبكير) وصعوبة المهمة الأساسية.</p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="privacy">
-              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
-                خصوصيتك مقدسة. بياناتك الصحية والبدنية مشفرة ولا يتم مشاركتها مع أي طرف ثالث. نستخدم البيانات فقط لتحسين تجربتك الشخصية داخل التطبيق.
-              </AccordionContent>
-            </AccordionItem>
-            <AccordionItem value="about">
-              <AccordionTrigger className="text-right font-black text-lg">عن كارينجو</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
-                كارينجو هو مشروع طموح من تطوير Artiatech Studio، نهدف من خلاله إلى جعل عملية التطوير الذاتي رحلة ممتعة وتفاعلية تشبه الألعاب. نحن نؤمن أن النمو يبدأ بخطوة صغيرة يومية.
+              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية المعمقة</AccordionTrigger>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
+                <p>نحن في ارتياتك نلتزم بحماية بياناتك الشخصية الأساسية (الاسم، العمر، الطول، الوزن). يتم استخدام هذه البيانات فقط لحساب مؤشراتك الصحية الشخصية ووضعك في قائمة المتصدرين.</p>
+                <p>نحن لا نبيع بياناتك لأطراف خارجية. ومع ذلك، وكما ذُكر أعلاه، فإن ميزات التفاعل الاجتماعي مثل الدردشة تخضع للرقابة لضمان بيئة آمنة للجميع.</p>
               </AccordionContent>
             </AccordionItem>
           </Accordion>
         </section>
 
-        <footer className="pt-10 opacity-40 font-black text-primary text-xs text-center">
+        <footer className="pt-10 opacity-40 font-black text-primary text-[10px] text-center">
           جميع الحقوق محفوظة © Artiatech Studio 2026
         </footer>
       </div>

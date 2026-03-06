@@ -4,13 +4,21 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Heart, Lightbulb, ChevronLeft, AlertTriangle } from 'lucide-react';
+import { BookOpen, Heart, Lightbulb, ChevronLeft, AlertTriangle, Info } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 
 export default function ResourcesPage() {
   const categories = [
+    {
+      title: "دليل التعليمات",
+      description: "تعرف على آليات حساب النقاط، الحماسة، وكيفية تصدر القائمة.",
+      icon: Info,
+      href: "/resources/instructions",
+      color: "text-purple-600",
+      bgColor: "bg-purple-50"
+    },
     {
       title: "الموسوعة الصحية",
       description: "دليلك الشامل للتغذية، الترطيب، والنوم المثالي لنمو جسدي سليم.",
@@ -41,30 +49,30 @@ export default function ResourcesPage() {
     <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-12 pb-32">
-        <header className="space-y-4">
-          <div className="flex items-center gap-6">
+        <header className="space-y-4 text-right">
+          <div className="flex items-center justify-start gap-6">
             <div className="w-16 h-16 bg-accent rounded-2xl flex items-center justify-center text-white shadow-xl">
               <BookOpen size={40} />
             </div>
             <div>
               <h1 className="text-4xl font-black text-primary">مركز الموارد</h1>
-              <p className="text-muted-foreground font-medium text-lg">استكشف أدلة النمو والتعلم الشاملة.</p>
+              <p className="text-muted-foreground font-medium text-lg">استكشف أدلة النمو والتعليمات الشاملة.</p>
             </div>
           </div>
         </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((cat) => (
             <Link key={cat.href} href={cat.href} onClick={() => playSound('click')}>
               <Card className="h-full border-none shadow-xl rounded-[2.5rem] overflow-hidden hover:scale-[1.03] transition-all cursor-pointer group">
                 <CardContent className="p-8 flex flex-col items-center text-center gap-4">
-                  <div className={`w-20 h-20 ${cat.bgColor} ${cat.color} rounded-[2rem] flex items-center justify-center mb-2 group-hover:rotate-6 transition-transform`}>
-                    <cat.icon size={40} />
+                  <div className={`w-16 h-16 ${cat.bgColor} ${cat.color} rounded-[1.5rem] flex items-center justify-center mb-2 group-hover:rotate-6 transition-transform`}>
+                    <cat.icon size={32} />
                   </div>
-                  <h3 className="text-2xl font-black text-primary">{cat.title}</h3>
-                  <p className="text-muted-foreground font-bold text-sm leading-relaxed">{cat.description}</p>
-                  <div className="mt-4 flex items-center gap-2 text-primary font-black">
-                    عرض التفاصيل <ChevronLeft size={20} />
+                  <h3 className="text-xl font-black text-primary">{cat.title}</h3>
+                  <p className="text-muted-foreground font-bold text-xs leading-relaxed line-clamp-2">{cat.description}</p>
+                  <div className="mt-2 flex items-center gap-2 text-primary font-black text-sm">
+                    عرض التفاصيل <ChevronLeft size={16} />
                   </div>
                 </CardContent>
               </Card>
@@ -73,14 +81,14 @@ export default function ResourcesPage() {
         </section>
 
         <section className="bg-card p-8 rounded-[2.5rem] shadow-xl border border-border">
-          <h2 className="text-2xl font-black text-primary mb-6">السياسات والمعلومات</h2>
+          <h2 className="text-2xl font-black text-primary mb-6 text-right">السياسات والمعلومات</h2>
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="faq">
               <AccordionTrigger className="text-right font-black text-lg">الأسئلة الشائعة</AccordionTrigger>
               <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed">
-                <p>1. كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
-                <p>2. هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت.</p>
-                <p>3. كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز وصعوبة المهمة.</p>
+                <p className="mb-2">1. كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
+                <p className="mb-2">2. هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت.</p>
+                <p>3. كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز وصعوبة المهمة، وتجد تفاصيلها في "دليل التعليمات".</p>
               </AccordionContent>
             </AccordionItem>
             <AccordionItem value="terms">
@@ -104,9 +112,9 @@ export default function ResourcesPage() {
           </Accordion>
         </section>
 
-        <div className="text-center py-10 opacity-40 font-black text-primary text-xs">
+        <footer className="pt-10 opacity-40 font-black text-primary text-xs text-center">
           جميع الحقوق محفوظة © Artiatech Studio 2026
-        </div>
+        </footer>
       </div>
     </div>
   );

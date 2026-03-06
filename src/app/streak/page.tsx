@@ -1,23 +1,31 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CalendarDays, CheckCircle2, AlertCircle, Trophy, TrendingUp, Star, UserCheck } from 'lucide-react';
+import { Flame, CalendarDays, CheckCircle2, AlertCircle, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
+  const [todayStr, setTodayStr] = useState<string>("");
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
+
+  useEffect(() => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    setTodayStr(`${year}-${month}-${day}`);
+  }, []);
 
   const completedDates = useMemo(() => {
     if (!userData?.dailyPoints) return [];
@@ -27,15 +35,10 @@ export default function StreakPage() {
     });
   }, [userData]);
   
-  const todayStr = useMemo(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  }, []);
-
-  const isDoneToday = useMemo(() => !!userData?.dailyPoints?.[todayStr], [userData, todayStr]);
+  const isDoneToday = useMemo(() => {
+    if (!todayStr || !userData?.dailyPoints) return false;
+    return !!userData.dailyPoints[todayStr];
+  }, [userData, todayStr]);
 
   if (isUserLoading || isLoading) {
     return (
@@ -81,11 +84,11 @@ export default function StreakPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 md:p-10">
-              <div className="rtl-calendar flex justify-center">
+              <div className="rtl-calendar-clean flex justify-center">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
-                  showHead={false}
+                  showOutsideDays={false}
                   className="rounded-[2.5rem] border shadow-inner p-4 md:p-12 bg-secondary/5 w-full max-w-none"
                   modifiers={{
                     completed: completedDates
@@ -94,7 +97,7 @@ export default function StreakPage() {
                     completed: { 
                       color: 'transparent',
                       background: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'%23f97316\'%3E%3Cpath d=\'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5l-3.5-3.5 1.41-1.41L11 13.67l4.59-4.59L17 10.5 11 16.5z\'/%3E%3C/svg%3E") no-repeat center',
-                      backgroundSize: '32px',
+                      backgroundSize: '24px',
                     }
                   }}
                 />
@@ -129,14 +132,14 @@ export default function StreakPage() {
 
             <Card className="border-none shadow-xl rounded-[3rem] bg-primary/5 p-10 border border-primary/10 text-right">
               <div className="flex items-center justify-end gap-3 text-primary mb-6">
-                <h3 className="font-black text-xl">هويتك في كارينجو</h3>
+                <h3 className="font-black text-xl">مرتبة العضوية</h3>
                 <UserCheck size={24} />
               </div>
               <div className="space-y-6">
                 <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-border/50 text-center">
-                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">ترتيب انضمامك للمجتمع</p>
-                   <p className="font-black text-primary text-3xl">أنت العضو رقم {userData?.registrationRank || '--'}</p>
-                   <p className="text-[10px] text-accent font-black mt-2">من أوائل الداعمين للنمو 🌱</p>
+                   <p className="text-xs font-black text-muted-foreground uppercase mb-2">ترتيب انضمامك لأسرة كارينجو</p>
+                   <p className="font-black text-primary text-3xl">العضو رقم {userData?.registrationRank || '--'}</p>
+                   <p className="text-[10px] text-accent font-black mt-2">من المؤسسين الأوائل لمجتمع النمو 🌱</p>
                 </div>
                 <div className="flex items-center justify-between p-4 bg-white dark:bg-slate-900 rounded-2xl shadow-sm">
                    <p className="font-black text-primary text-xl">{completedDates.length}</p>

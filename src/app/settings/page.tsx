@@ -137,7 +137,7 @@ export default function SettingsPage() {
   ];
 
   const contactLinks = [
-    { name: 'واتساب', icon: Phone, url: 'https://wa.me/249929196425', color: 'bg-green-500' },
+    { name: 'واتساب', icon: Phone, url: 'https://wa.me/218929196428', color: 'bg-green-500' },
     { name: 'إيميل', icon: Mail, url: 'mailto:artiateech@gmail.com', color: 'bg-primary' },
   ];
 

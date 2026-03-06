@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle, Heart, Trash2, Map, Search } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle, Heart, Zap, Map, Search, Sparkles, Activity, ShieldCheck, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -29,68 +29,139 @@ export default function InstructionsPage() {
               <Info size={40} />
             </div>
             <div>
-              <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">دليل التعليمات</h1>
-              <p className="text-muted-foreground text-base md:text-lg font-bold">كل ما تحتاجه لتكون بطلاً في عالم كارينجو.</p>
+              <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">دليل كارينجو الشامل</h1>
+              <p className="text-muted-foreground text-base md:text-lg font-bold">كل ما تحتاجه لتكون أسطورة في مجتمع النمو الخاص بنا.</p>
             </div>
           </div>
         </header>
 
         <section className="space-y-12">
-          {/* بونص التبكير */}
+          {/* نظام النقاط والبونص */}
           <div className="space-y-6 text-right">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
-              <TimerIcon className="animate-pulse" /> <h2>بونص التبكير (Early Bird)</h2>
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-orange-600">
+              <Star className="text-yellow-500" fill="currentColor" /> <h2>نظام النقاط وبونص التبكير</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] md:rounded-[3rem] shadow-2xl border border-accent/20 bg-card space-y-6 relative overflow-hidden">
-              <div className="space-y-4">
-                <p className="font-bold text-base md:text-lg leading-relaxed">
-                  نحن نؤمن بأن الصباح هو مفتاح الإنتاجية. لذلك، قمنا بتصميم نظام مكافآت يحفزك على البدء مبكراً:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                  <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10">
-                    <h4 className="font-black text-primary text-lg mb-2">5:00 - 8:00 صباحاً</h4>
-                    <p className="text-xs font-bold text-muted-foreground">الفترة الذهبية! تحصل على البونص الكامل (+75 نقطة). هذه الفترة هي الأفضل لتمارين اللياقة والتركيز الذهني.</p>
-                  </div>
-                  <div className="bg-accent/5 p-6 rounded-3xl border border-accent/10">
-                    <h4 className="font-black text-accent text-lg mb-2">التناقص التدريجي</h4>
-                    <p className="text-xs font-bold text-muted-foreground">بعد الثامنة، يبدأ البونص بالتناقص بمعدل 5 نقاط لكل ساعة تأخير. الهدف هو تشجيعك على عدم التسويف.</p>
-                  </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
+              <p className="font-bold text-base md:text-lg leading-relaxed">
+                في كارينجو، نكافئ الانضباط والتبكير. إليك كيف تُحسب نقاطك في كل تحدي:
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10">
+                  <h4 className="font-black text-primary text-lg mb-2 flex items-center gap-2">100 نقطة أساسية <Zap size={16}/></h4>
+                  <p className="text-xs font-bold text-muted-foreground">تحصل عليها بمجرد إكمال أي مهمة في أي مسار بنجاح.</p>
+                </div>
+                <div className="bg-yellow-50 p-6 rounded-3xl border border-yellow-200">
+                  <h4 className="font-black text-yellow-700 text-lg mb-2 flex items-center gap-2">بونص التبكير (+75) <TimerIcon size={16}/></h4>
+                  <p className="text-xs font-bold text-muted-foreground">يبدأ من 5 صباحاً بـ 75 نقطة، ويتناقص 5 نقاط كل ساعة حتى يختفي تماماً الساعة 8 مساءً.</p>
                 </div>
               </div>
             </Card>
           </div>
 
-          {/* التحديثات الجديدة */}
+          {/* نظام المسارات والقفل */}
           <div className="space-y-6 text-right">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Map className="text-primary" /> <h2>الميزات الجديدة والتفاعل</h2>
+              <Lock className="text-primary" /> <h2>قانون الـ 24 ساعة</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
+              <p className="font-bold text-base md:text-lg leading-relaxed">
+                النمو الحقيقي يأتي بالتدريج لا بالسرعة. لذلك نطبق "نظام القفل الذكي":
+              </p>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm">1</div>
+                  <p className="text-sm font-bold text-muted-foreground">لا يمكنك فتح أكثر من <span className="text-primary font-black">مرحلة واحدة</span> في المسار الواحد خلال اليوم.</p>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm">2</div>
+                  <p className="text-sm font-bold text-muted-foreground">المرحلة القادمة تفتح دائماً عند <span className="text-primary font-black">منتصف الليل (00:00)</span>.</p>
+                </div>
+                <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm">3</div>
+                  <p className="text-sm font-bold text-muted-foreground">الاستثناء الوحيد هو <span className="text-primary font-black">المرحلة الأولى</span> من كل مسار، فهي مفتوحة دائماً للمبتدئين.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* الذكاء الاصطناعي كاري */}
+          <div className="space-y-6 text-right">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
+              <Sparkles className="text-accent" /> <h2>المساعد الذكي "كاري" 🐱</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-accent/20 bg-accent/5 space-y-4">
+              <p className="font-bold text-base md:text-lg leading-relaxed text-accent-foreground">
+                كاري ليس مجرد أيقونة، إنه رفيقك المدعوم بأحدث تقنيات الذكاء الاصطناعي (Gemini 1.5):
+              </p>
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10">● <span className="font-black">نصائح فورية:</span> اطلب منه نصيحة في التغذية أو اللياقة في أي وقت.</li>
+                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10">● <span className="font-black">تحفيز دائم:</span> سيقوم كاري بتشجيعك بناءً على مستوى تقدمك الفعلي وسلسلة إنجازك.</li>
+              </ul>
+            </Card>
+          </div>
+
+          {/* الترتيب والـ BMI */}
+          <div className="space-y-6 text-right">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-green-600">
+              <Activity className="text-green-600" /> <h2>الصحة والترتيب العالمي</h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card className="p-6 rounded-3xl border border-border bg-card">
-                <h4 className="font-black text-primary flex items-center gap-2 mb-3">سجل الحماسة المتطور</h4>
+                <h4 className="font-black text-green-700 flex items-center gap-2 mb-3">مؤشر كتلة الجسم (BMI)</h4>
                 <p className="text-sm font-bold text-muted-foreground">
-                  تتبع إنجازاتك عبر تقويم الحماسة. كل يوم تنجز فيه مهمة سيظهر لك إيموجي النار 🔥. يمكنك الوصول لهذا السجل عبر أيقونة النار في الصفحة الرئيسية.
+                  نحسبه تلقائياً بناءً على طولك ووزنك. هذا المؤشر خاص بك ولا يظهر للآخرين في البروفايل العام لضمان خصوصيتك الكاملة.
                 </p>
               </Card>
               <Card className="p-6 rounded-3xl border border-border bg-card">
-                <h4 className="font-black text-primary flex items-center gap-2 mb-3">نظام الدردشة والإعجابات</h4>
+                <h4 className="font-black text-blue-700 flex items-center gap-2 mb-3">لوحة المتصدرين العادلة</h4>
                 <p className="text-sm font-bold text-muted-foreground">
-                  ابحث عن أصدقائك عبر <Search className="inline" size={14}/> "البحث"، وابدأ محادثة فورية. يمكنك التعبير عن تقديرك عبر زر <Heart className="inline text-red-500" size={14}/> "الإعجاب" بملفاتهم الشخصية.
-                </p>
-              </Card>
-              <Card className="p-6 rounded-3xl border border-border bg-card">
-                <h4 className="font-black text-primary flex items-center gap-2 mb-3">الملف الشخصي العام</h4>
-                <p className="text-sm font-bold text-muted-foreground">
-                  عند الضغط على أفاتار أي مستخدم، ستشاهد معلوماته العامة (الاسم، البايو، الحماسة، الـ BMI، والأوسمة). بياناتك الخاصة تبقى محمية ومخفية.
-                </p>
-              </Card>
-              <Card className="p-6 rounded-3xl border border-border bg-card">
-                <h4 className="font-black text-primary flex items-center gap-2 mb-3">رقم العضوية الفريد</h4>
-                <p className="text-sm font-bold text-muted-foreground">
-                  كل مستخدم في كارينجو يحصل على رقم عضوية يعكس ترتيب انضمامه للمجتمع. يمكنك العثور على رقمك في شاشة الحماسة والملف الشخصي.
+                  لا نعتمد فقط على النقاط الإجمالية، بل على <span className="font-black">متوسط إنجاز آخر 3 أيام</span>. هذا يعطي فرصة للمشتركين الجدد للمنافسة!
                 </p>
               </Card>
             </div>
+          </div>
+
+          {/* التفاعل الاجتماعي */}
+          <div className="space-y-6 text-right">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-pink-600">
+              <Heart className="text-pink-600" fill="currentColor" /> <h2>التواصل مع المجتمع</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center space-y-2">
+                  <Search className="mx-auto text-primary" />
+                  <h5 className="font-black text-sm">البحث عن أصدقاء</h5>
+                  <p className="text-[10px] font-bold text-muted-foreground">ابحث عن مستخدمين آخرين بالاسم وشاهد إنجازاتهم العامة.</p>
+                </div>
+                <div className="text-center space-y-2">
+                  <MessageSquare className="mx-auto text-primary" />
+                  <h5 className="font-black text-sm">دردشة فورية</h5>
+                  <p className="text-[10px] font-bold text-muted-foreground">تواصل مع أي عضو في مجتمع كارينجو لتبادل الخبرات.</p>
+                </div>
+                <div className="text-center space-y-2">
+                  <Heart className="mx-auto text-red-500" />
+                  <h5 className="font-black text-sm">الإعجاب بالملف</h5>
+                  <p className="text-[10px] font-bold text-muted-foreground">عبر عن تقديرك لإنجازات الآخرين بضغطة زر واحدة.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* رقم العضوية والأوسمة */}
+          <div className="space-y-6 text-right">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
+              <ShieldCheck className="text-blue-600" /> <h2>الهوية والأوسمة</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
+              <p className="font-bold text-sm md:text-base leading-relaxed">
+                كل مستخدم في كارينجو يحصل على <span className="font-black text-primary">رقم عضوية فخري</span> يعكس ترتيب انضمامه الفعلي للمجتمع. كما يمكنك اكتساب أوسمة آلية عند تحقيق السلاسل (Streaks) أو إكمال عدد معين من التحديات.
+              </p>
+              <div className="flex flex-wrap gap-2 justify-center">
+                <span className="bg-secondary px-4 py-1 rounded-full text-[10px] font-black">أول إنجاز 🏅</span>
+                <span className="bg-secondary px-4 py-1 rounded-full text-[10px] font-black">ثلاثية الحماسة 🔥</span>
+                <span className="bg-secondary px-4 py-1 rounded-full text-[10px] font-black">بطل الأسبوع 👑</span>
+              </div>
+            </Card>
           </div>
         </section>
 

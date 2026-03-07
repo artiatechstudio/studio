@@ -4,10 +4,10 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, remove } from 'firebase/database';
+import { ref, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, Trophy, Zap, Trash2, CheckCheck, Clock, Star } from 'lucide-react';
+import { Bell, Heart, Trophy, Zap, CheckCheck, Clock, Star } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -28,32 +28,24 @@ export default function NotificationsPage() {
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [notificationsData]);
 
-  const handleMarkAllAsRead = async () => {
-    if (!user || !notificationsData) return;
-    playSound('click');
-    const updates: any = {};
-    Object.keys(notificationsData).forEach(id => {
-      updates[`users/${user.uid}/notifications/${id}/isRead`] = true;
-    });
-    try {
-      await update(ref(database), updates);
-      toast({ title: "تم تحديد الكل كمقروء" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل العملية" });
-    }
-  };
-
   const handleClearAll = async () => {
     if (!user || !notificationsRef) return;
-    const confirmed = window.confirm("هل تريد حذف كافة الإشعارات؟ 🐱🗑️");
-    if (!confirmed) return;
-    
     playSound('click');
     try {
       await remove(notificationsRef);
-      toast({ title: "تم مسح كافة الإشعارات" });
-    } catch (error) {
-      toast({ variant: "destructive", title: "فشل الحذف" });
+      toast({ title: "تم مسح كافة الإشعارات بنجاح" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل مسح الإشعارات" });
+    }
+  };
+
+  const handleDeleteOne = async (notifId: string) => {
+    if (!user) return;
+    playSound('click');
+    try {
+      await remove(ref(database, `users/${user.uid}/notifications/${notifId}`));
+    } catch (e) {
+      console.error("Delete failed", e);
     }
   };
 
@@ -78,14 +70,17 @@ export default function NotificationsPage() {
             </div>
             <h1 className="text-3xl font-black text-primary">الإشعارات</h1>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={handleMarkAllAsRead} variant="ghost" size="icon" className="rounded-full hover:bg-accent/10 text-accent" title="تحديد الكل كمقروء">
+          {notifications.length > 0 && (
+            <Button 
+              onClick={handleClearAll} 
+              variant="ghost" 
+              className="rounded-full gap-2 text-accent font-black hover:bg-accent/10 h-12 px-6"
+              title="مسح الكل"
+            >
               <CheckCheck size={20} />
+              <span>مسح الكل</span>
             </Button>
-            <Button onClick={handleClearAll} variant="ghost" size="icon" className="rounded-full hover:bg-destructive/10 text-destructive" title="مسح الكل">
-              <Trash2 size={20} />
-            </Button>
-          </div>
+          )}
         </header>
 
         {isLoading ? (
@@ -103,24 +98,18 @@ export default function NotificationsPage() {
               <Card 
                 key={n.id} 
                 className={cn(
-                  "rounded-3xl border-none shadow-md overflow-hidden transition-all hover:scale-[1.01] cursor-pointer",
-                  n.isRead ? "bg-card opacity-70" : "bg-white border-r-8 border-accent"
+                  "rounded-3xl border-none shadow-md overflow-hidden transition-all hover:scale-[1.01] cursor-pointer bg-white border-r-8 border-accent"
                 )}
-                onClick={async () => {
-                  if (!n.isRead && user) {
-                    await update(ref(database, `users/${user.uid}/notifications/${n.id}`), { isRead: true });
-                  }
-                }}
+                onClick={() => handleDeleteOne(n.id)}
               >
                 <CardContent className="p-5 flex items-start gap-4">
                   <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner",
-                    n.isRead ? "bg-secondary" : "bg-accent/10"
+                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner bg-accent/10"
                   )}>
                     {getIcon(n.type)}
                   </div>
                   <div className="flex-1 space-y-1 text-right">
-                    <p className={cn("font-black text-sm", n.isRead ? "text-muted-foreground" : "text-primary")}>
+                    <p className="font-black text-sm text-primary">
                       {n.title}
                     </p>
                     <p className="text-xs font-bold text-muted-foreground leading-relaxed">
@@ -131,9 +120,7 @@ export default function NotificationsPage() {
                       {n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
                     </div>
                   </div>
-                  {!n.isRead && (
-                    <div className="w-2 h-2 bg-accent rounded-full animate-pulse mt-2" />
-                  )}
+                  <div className="text-[8px] font-black text-accent uppercase opacity-40 self-center">انقر للمسح</div>
                 </CardContent>
               </Card>
             ))}
@@ -143,10 +130,10 @@ export default function NotificationsPage() {
         <section className="bg-primary/5 p-6 rounded-[2.5rem] border border-primary/10 mx-2 space-y-4">
           <div className="flex items-center gap-2 text-primary font-black text-xs">
             < Star size={14} className="text-yellow-500" fill="currentColor" />
-            نصيحة كاري للإشعارات
+            نظام الإشعارات الذكي
           </div>
           <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
-            الإشعارات تساعدك على البقاء متصلاً بالمجتمع. تفقدها يومياً لمعرفة من أعجب بملفك، وتابع إنجازاتك الجديدة! 🐱✨
+            في كارينجو، الإشعارات هي تنبيهات فورية لمتابعة إنجازاتك. بمجرد قراءتك للإشعار أو النقر عليه، يتم مسحه تلقائياً للحفاظ على صندوق وارد نظيف ومنظم دائماً! 🐱✨
           </p>
         </section>
       </div>

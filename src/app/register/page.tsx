@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState } from 'react';
@@ -58,12 +59,15 @@ export default function RegisterPage() {
     try {
       const dbRef = ref(database);
       
+      // فحص فرادة اسم المستخدم ومنع الـ admin
       const usersSnapshot = await get(child(dbRef, 'users'));
       const allUsers = usersSnapshot.exists() ? Object.values(usersSnapshot.val()) : [];
-      const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === name.trim().toLowerCase());
+      const normalizedName = name.trim().toLowerCase();
+      
+      const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === normalizedName);
 
-      if (nameExists) {
-        toast({ variant: "destructive", title: "اسم المستخدم مأخوذ", description: "يرجى اختيار اسم آخر فريد." });
+      if (nameExists || normalizedName === 'admin') {
+        toast({ variant: "destructive", title: "اسم المستخدم مأخوذ", description: "يرجى اختيار اسم آخر فريد وغير محجوز." });
         setLoading(false);
         return;
       }
@@ -87,6 +91,7 @@ export default function RegisterPage() {
         bio: "عضو جديد طموح 🌱",
         points: 0,
         streak: 0,
+        isPremium: 0,
         registrationRank: membershipRank,
         registrationDate: new Date().toISOString(),
         badges: ['عضو جديد 🐱'],

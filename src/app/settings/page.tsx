@@ -119,6 +119,10 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     playSound('click');
+    if (userData?.name === 'admin') {
+      toast({ variant: "destructive", title: "لا يمكن حذف حساب الإدارة!" });
+      return;
+    }
     const confirmed = window.confirm("تحذير نهائي! سيتم حذف كافة بياناتك وتقدمك. هل أنت متأكد؟ 🐱⚠️");
     if (!user || !confirmed) return;
     
@@ -281,63 +285,15 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
-          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
-            <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">
-              تخصيص الواجهة <Sun size={20} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={cn("p-2 rounded-lg", isDark ? "bg-primary text-white" : "bg-yellow-100 text-yellow-600")}>
-                {isDark ? <Moon size={24} /> : <Sun size={24} />}
-              </div>
-              <div className="text-right">
-                <p className="font-black text-primary text-sm">الوضع الليلي</p>
-                <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق لراحة عينيك</p>
-              </div>
-            </div>
-            <Switch checked={isDark} onCheckedChange={toggleTheme} />
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-6 border border-border">
-            <h3 className="text-lg font-black text-primary mb-4 text-right">تواصل معنا</h3>
-            <div className="space-y-3">
-              {contactLinks.map((link) => (
-                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between p-3 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white", link.color)}>
-                    <link.icon size={20} />
-                  </div>
-                  <span className="font-black text-primary text-sm">{link.name}</span>
-                </a>
-              ))}
-            </div>
-          </Card>
-
-          <Card className="border-none shadow-xl rounded-[2.5rem] bg-card p-6 border border-border">
-            <h3 className="text-lg font-black text-primary mb-4 text-right">مواقعنا</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {socialLinks.map((link) => (
-                <a key={link.name} href={link.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-2 p-3 bg-secondary/30 rounded-2xl hover:bg-secondary/50 transition-colors text-center">
-                  <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center text-white", link.color)}>
-                    <link.icon size={20} />
-                  </div>
-                  <span className="text-[10px] font-black text-primary">{link.name}</span>
-                </a>
-              ))}
-            </div>
-          </Card>
-        </div>
-
         <div className="pt-6 flex flex-col gap-3">
           <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
             <LogOut className="ml-2" /> تسجيل الخروج
           </Button>
-          <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black hover:bg-destructive/10">
-            <Trash2 className="ml-2" /> حذف الحساب نهائياً
-          </Button>
+          {userData?.name !== 'admin' && (
+            <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black hover:bg-destructive/10">
+              <Trash2 className="ml-2" /> حذف الحساب نهائياً
+            </Button>
+          )}
         </div>
 
         <footer className="text-center pt-10 opacity-30 font-black text-primary text-xs">

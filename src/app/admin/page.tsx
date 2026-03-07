@@ -8,14 +8,16 @@ import { ref, update, set } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ShieldCheck, Users, Crown, Trash2, Search, Trophy, TrendingUp, AlertTriangle } from 'lucide-react';
+import { ShieldCheck, Users, Crown, Trash2, Search, Trophy, TrendingUp, AlertTriangle, LogOut } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { signOut } from 'firebase/auth';
 
 export default function AdminDashboardPage() {
   const { user } = useUser();
-  const { database } = useFirebase();
+  const { database, auth } = useFirebase();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState('');
 
@@ -56,6 +58,12 @@ export default function AdminDashboardPage() {
     });
   };
 
+  const handleLogout = async () => {
+    playSound('click');
+    await signOut(auth);
+    router.replace('/login');
+  };
+
   if (isLoading || myData?.name !== 'admin') {
     return <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -76,11 +84,21 @@ export default function AdminDashboardPage() {
               <p className="text-xs font-bold text-muted-foreground uppercase">الإدارة والرقابة ⚡</p>
             </div>
           </div>
-          <div className="text-left bg-primary/5 px-4 py-2 rounded-xl border border-primary/10">
-            <p className="text-[10px] font-black text-muted-foreground uppercase">إجمالي الأعضاء</p>
-            <p className="text-xl font-black text-primary">{users.length}</p>
-          </div>
+          <Button onClick={handleLogout} variant="ghost" className="text-destructive font-black">
+            <LogOut className="ml-2" size={18} /> خروج
+          </Button>
         </header>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-2">
+           <Card className="p-6 rounded-[2rem] bg-secondary/20 border-none shadow-inner text-center">
+              <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء</p>
+              <p className="text-4xl font-black text-primary">{users.length}</p>
+           </Card>
+           <Card className="p-6 rounded-[2rem] bg-yellow-50 border-none shadow-inner text-center">
+              <p className="text-[10px] font-black text-yellow-600 uppercase mb-1">المشتركون في بريميوم</p>
+              <p className="text-4xl font-black text-yellow-600">{users.filter((u:any) => u.isPremium === 1).length}</p>
+           </Card>
+        </div>
 
         <div className="mx-2 relative">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
@@ -127,7 +145,7 @@ export default function AdminDashboardPage() {
                     onCheckedChange={() => togglePremium(u.id, u.isPremium || 0)}
                   />
                   {u.premiumUntil && (
-                    <p className="text-[7px] font-bold text-orange-600">تنتهي: {new Date(u.premiumUntil).toLocaleDateString()}</p>
+                    <p className="text-[7px] font-bold text-orange-600">ينتهي: {new Date(u.premiumUntil).toLocaleDateString()}</p>
                   )}
                 </div>
               </CardContent>
@@ -140,7 +158,7 @@ export default function AdminDashboardPage() {
             <AlertTriangle size={14} /> تنبيه الإدارة
           </div>
           <p className="text-[10px] font-bold text-red-900 leading-relaxed">
-            استخدم صلاحياتك بحكمة. تفعيل البريميوم يمنح العضو وصولاً كاملاً للميزات ويزيل الإعلانات. سيتم تعطيل الاشتراك تلقائياً بعد 30 يوماً من تاريخ التفعيل ما لم يتم التجديد.
+            استخدم صلاحياتك بحكمة. تفعيل البريميوم يمنح العضو وصولاً كاملاً للميزات ويزيل الإعلانات. سيتم تعطيل الاشتراك تلقائياً بعد 30 يوماً من تاريخ التفعيل.
           </p>
         </section>
       </div>

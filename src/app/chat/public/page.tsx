@@ -4,11 +4,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, get } from 'firebase/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ref, push, serverTimestamp, set, runTransaction, get, query, limitToLast } from 'firebase/database';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Globe, Send, MessageCircle, Heart, Clock, User as UserIcon, Sparkles } from 'lucide-react';
+import { Send, Heart, Globe, Trash2, Clock, Crown, Sparkles } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -20,40 +20,39 @@ export default function PublicCommunityPage() {
   const { user } = useUser();
   const { database } = useFirebase();
   const [postText, setPostText] = useState('');
-  const [isSending, setIsUpdating] = useState(false);
-
-  const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
-  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
-  const { data: postsData } = useDatabase(postsQuery);
+  const [isSubmitting, setIsUpdating] = useState(false);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
+
+  const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
+  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
+  const { data: postsData, isLoading } = useDatabase(postsQuery);
 
   const isPremium = userData?.isPremium === 1;
 
   const posts = useMemo(() => {
     if (!postsData) return [];
     const now = Date.now();
-    const dayInMs = 24 * 60 * 60 * 1000;
-    
+    const oneDay = 24 * 60 * 60 * 1000;
     return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter(p => (now - (p.timestamp || 0)) < dayInMs)
+      .filter(p => (now - (p.timestamp || 0)) < oneDay) // عرض آخر 24 ساعة فقط
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
-  const todayPostsCount = useMemo(() => {
-    if (!user || !postsData) return 0;
-    const today = new Date().toLocaleDateString('en-CA');
-    return Object.values(postsData).filter((p: any) => p.senderId === user.uid && p.dateStr === today).length;
-  }, [postsData, user]);
-
   const handleSendPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postText.trim() || !user || isSending) return;
+    if (!postText.trim() || !user || isSubmitting) return;
 
-    if (!isPremium && todayPostsCount >= 3) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "المستخدم المجاني يمكنه إرسال 3 منشورات يومياً. اشترك في بريميوم للنشر غير المحدود! 👑" });
+    // فحص الحدود للمستخدمين المجانيين
+    const today = new Date().toLocaleDateString('en-CA');
+    const userPostsTodayRef = ref(database, `users/${user.uid}/dailyPostCount/${today}`);
+    const countSnap = await get(userPostsTodayRef);
+    const count = countSnap.exists() ? countSnap.val() : 0;
+
+    if (!isPremium && count >= 3) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي (3 منشورات)", description: "اشترك في بريميوم للنشر بلا حدود! 👑" });
       return;
     }
 
@@ -62,17 +61,18 @@ export default function PublicCommunityPage() {
 
     try {
       const newPostRef = push(ref(database, 'publicPosts'));
-      await push(postsRef, {
-        id: newPostRef.key,
-        senderId: user.uid,
-        senderName: userData?.name || 'مجهول',
-        senderAvatar: userData?.avatar || '🐱',
-        isPremiumSender: isPremium ? 1 : 0,
+      await set(newPostRef, {
+        userId: user.uid,
+        userName: userData?.name || 'مجهول',
+        userAvatar: userData?.avatar || '🐱',
+        isPremium: isPremium ? 1 : 0,
         text: postText.trim(),
         timestamp: serverTimestamp(),
-        dateStr: new Date().toLocaleDateString('en-CA'),
         likes: 0
       });
+
+      // تحديث عداد المنشورات اليومي
+      await set(userPostsTodayRef, count + 1);
 
       setPostText('');
       toast({ title: "تم النشر بنجاح! 🌍" });
@@ -84,22 +84,19 @@ export default function PublicCommunityPage() {
     }
   };
 
-  const handleLikePost = (postId: string) => {
+  const handleToggleLike = (postId: string) => {
     if (!user) return;
     playSound('click');
     const postLikesRef = ref(database, `publicPosts/${postId}/likes`);
     const likedByRef = ref(database, `publicPosts/${postId}/likedBy/${user.uid}`);
 
-    get(likedByRef).then(snap => {
-      if (snap.exists()) {
-        toast({ title: "لقد أعجبت بهذا المنشور سابقاً" });
+    runTransaction(likedByRef, (isLiked) => {
+      if (isLiked) {
+        runTransaction(postLikesRef, (count) => (count || 1) - 1);
+        return null;
       } else {
-        const currentLikes = posts.find(p => p.id === postId)?.likes || 0;
-        const updates: any = {};
-        updates[`publicPosts/${postId}/likes`] = currentLikes + 1;
-        updates[`publicPosts/${postId}/likedBy/${user.uid}`] = true;
-        require('firebase/database').update(ref(database), updates);
-        playSound('success');
+        runTransaction(postLikesRef, (count) => (count || 0) + 1);
+        return true;
       }
     });
   };
@@ -109,80 +106,91 @@ export default function PublicCommunityPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="flex items-center gap-4 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2 mt-2">
-          <div className="w-14 h-14 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg">
+          <div className="w-14 h-14 bg-accent/10 text-accent rounded-2xl flex items-center justify-center">
             <Globe size={32} />
           </div>
           <div className="text-right">
-            <h1 className="text-3xl font-black text-primary">المجتمع العام</h1>
-            <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
-              <Clock size={10} /> منشورات آخر 24 ساعة تختفي تلقائياً
-            </p>
+            <h1 className="text-2xl font-black text-primary">المجتمع العام</h1>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase">شارك إنجازاتك مع العالم 🌍</p>
           </div>
         </header>
 
-        <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card mx-2">
+        <Card className="rounded-[2rem] p-6 shadow-xl border-none bg-card mx-2">
           <form onSubmit={handleSendPost} className="space-y-4">
             <div className="relative">
               <textarea 
-                placeholder="بماذا تفكر اليوم؟ (حد أقصى 150 حرفاً)" 
-                className="w-full min-h-[100px] p-4 rounded-2xl bg-secondary/50 border-none font-bold text-right text-primary focus:ring-2 focus:ring-primary/20 outline-none resize-none"
-                value={postText}
+                placeholder="بماذا تفكر اليوم؟ (حد أقصى 150 حرفاً)"
+                className="w-full h-32 p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-foreground focus:ring-2 focus:ring-accent outline-none resize-none"
                 maxLength={150}
+                value={postText}
                 onChange={(e) => setPostText(e.target.value)}
               />
-              <div className="absolute bottom-3 left-4 text-[10px] font-black text-muted-foreground">
-                {postText.length} / 150
-              </div>
+              <span className={cn(
+                "absolute bottom-3 left-4 text-[10px] font-black",
+                postText.length >= 140 ? "text-red-500" : "text-muted-foreground"
+              )}>
+                {postText.length}/150
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-[10px] font-black text-muted-foreground px-2">
-                {!isPremium && <span className="text-accent">تبقى لك {Math.max(0, 3 - todayPostsCount)} منشورات اليوم</span>}
-              </div>
-              <Button 
+               {!isPremium && <p className="text-[9px] font-bold text-muted-foreground">متبقي لك اليوم: {Math.max(0, 3 - (userData?.dailyPostCount?.[new Date().toLocaleDateString('en-CA')] || 0))} منشورات</p>}
+               {isPremium && <p className="text-[9px] font-black text-yellow-600 flex items-center gap-1"><Sparkles size={10}/> نشر غير محدود للبريميوم</p>}
+               <Button 
                 type="submit" 
-                disabled={!postText.trim() || isSending}
-                className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 font-black shadow-lg gap-2"
-              >
-                {isSending ? "جاري النشر..." : "انشر للإلهام 🚀"}
-              </Button>
+                disabled={isSubmitting || !postText.trim()}
+                className="rounded-xl bg-accent hover:bg-accent/90 px-8 font-black shadow-lg shadow-accent/20"
+               >
+                نشر <Send size={16} className="mr-2 rotate-180" />
+               </Button>
             </div>
           </form>
         </Card>
 
         <div className="space-y-4 mx-2">
-          {posts.length === 0 ? (
-            <div className="text-center py-20 opacity-20 font-black text-xl">لا يوجد ملهمون حالياً.. كن الأول! 🐱✨</div>
-          ) : posts.map((p) => (
-            <Card key={p.id} className="rounded-[2rem] border-none shadow-md overflow-hidden bg-card transition-all hover:scale-[1.01]">
+          {isLoading ? (
+            <div className="flex justify-center p-10"><div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" /></div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-20 opacity-30 font-black">لا يوجد منشورات حالياً، كن الأول! 🌟</div>
+          ) : posts.map((post) => (
+            <Card key={post.id} className="rounded-[2rem] border-none shadow-md overflow-hidden bg-card transition-all hover:shadow-lg">
               <CardContent className="p-6 space-y-4">
                 <div className="flex items-center justify-between flex-row-reverse">
                   <div className="flex items-center gap-3 flex-row-reverse">
-                    <Link href={`/user/${p.senderId}`} className="shrink-0">
-                      <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl shadow-inner border border-border">
-                        {p.senderAvatar || "🐱"}
+                    <Link href={`/user/${post.userId}`} onClick={() => playSound('click')}>
+                      <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm hover:scale-110 transition-transform">
+                        {post.userAvatar || "🐱"}
                       </div>
                     </Link>
                     <div className="text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        <p className="font-black text-primary text-sm">{p.senderName}</p>
-                        {p.isPremiumSender === 1 && <Sparkles size={12} className="text-yellow-500" fill="currentColor" />}
+                        <p className="font-black text-primary text-sm">{post.userName}</p>
+                        {post.isPremium === 1 && <Crown size={12} className="text-yellow-500" fill="currentColor" />}
                       </div>
-                      <p className="text-[8px] font-bold text-muted-foreground">{p.timestamp ? formatDistanceToNow(p.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}</p>
+                      <p className="text-[8px] text-muted-foreground font-bold flex items-center justify-end gap-1">
+                        <Clock size={8} /> {post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+                      </p>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleLikePost(p.id)}
-                    className="rounded-full gap-2 text-red-500 hover:bg-red-50 bg-red-50/30"
-                  >
-                    <span className="font-black text-xs">{p.likes || 0}</span>
-                    <Heart size={16} className={p.likes > 0 ? "fill-current" : ""} />
-                  </Button>
                 </div>
-                <p className="text-right font-bold text-primary leading-relaxed bg-primary/5 p-4 rounded-2xl border-r-4 border-primary">
-                  {p.text}
+
+                <p className="text-sm font-bold text-foreground leading-relaxed text-right whitespace-pre-wrap">
+                  {post.text}
                 </p>
+
+                <div className="flex items-center gap-4 pt-2 border-t border-border/50">
+                  <button 
+                    onClick={() => handleToggleLike(post.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all text-xs font-black",
+                      post.likedBy?.[user?.uid || ''] 
+                        ? "bg-red-50 text-red-600 border border-red-100" 
+                        : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                    )}
+                  >
+                    <Heart size={14} fill={post.likedBy?.[user?.uid || ''] ? "currentColor" : "none"} />
+                    {post.likes || 0}
+                  </button>
+                </div>
               </CardContent>
             </Card>
           ))}

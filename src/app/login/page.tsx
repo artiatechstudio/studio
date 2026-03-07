@@ -79,7 +79,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-6">
            <div className="text-8xl animate-bounce">🐱</div>
            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-           <p className="text-primary font-black text-xl animate-pulse tracking-widest uppercase">Careingo</p>
+           <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
         </div>
       </div>
     );
@@ -137,8 +137,8 @@ export default function LoginPage() {
             <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-4 text-muted-foreground font-bold">أو</span></div>
           </div>
 
-          <Link href="/register">
-            <Button variant="outline" onClick={() => playSound('click')} className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
+          <Link href="/register" onClick={() => playSound('click')}>
+            <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
               إنشاء حساب جديد
             </Button>
           </Link>

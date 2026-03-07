@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -63,7 +63,7 @@ export default function SettingsPage() {
       toast({ 
         variant: "destructive", 
         title: "بيانات غير منطقية", 
-        description: "يرجى إدخال طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
+        description: "يرجى إدخل طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
       });
       return;
     }
@@ -216,36 +216,31 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        {/* Dialog لطلب البريميوم */}
-        <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
-          <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
-            <DialogHeader className="text-right">
-              <DialogTitle className="text-2xl font-black text-primary">طلب ترقية الحساب</DialogTitle>
-              <DialogDescription className="font-bold text-muted-foreground mt-2">
-                سيتم إرسال طلبك للمطور، وسيصلك إشعار فور الموافقة على اشتراكك.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="py-6 space-y-4">
-              <Label className="text-right block">اختر مدة الاشتراك المطلوبة:</Label>
-              <Select onValueChange={setDuration} defaultValue="1month">
-                <SelectTrigger className="h-14 rounded-xl bg-secondary/50 border-none font-bold">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1month">شهر واحد (تجربة)</SelectItem>
-                  <SelectItem value="2months">شهرين (التزام)</SelectItem>
-                  <SelectItem value="1year">سنة كاملة (أسطورة)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <DialogFooter className="flex-row-reverse gap-2">
-              <Button onClick={handleSendPremiumRequest} className="flex-1 h-12 rounded-xl bg-primary font-black">إرسال الطلب</Button>
-              <Button onClick={() => setIsRequestOpen(false)} variant="ghost" className="flex-1 h-12 rounded-xl font-bold">إلغاء</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* روابط التواصل والدعم */}
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
+          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right">
+            <CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">
+              التواصل والدعم الفني <MessageSquare size={20} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <a href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2 hover:bg-green-100">
+                <Phone size={18} /> واتساب الدعم
+              </Button>
+            </a>
+            <a href="https://careingo.app" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2 hover:bg-blue-100">
+                <Globe size={18} /> الموقع الرسمي
+              </Button>
+            </a>
+            <a href="https://twitter.com/careingo" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2 hover:bg-slate-100">
+                <Twitter size={18} /> منصة X
+              </Button>
+            </a>
+          </CardContent>
+        </Card>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">

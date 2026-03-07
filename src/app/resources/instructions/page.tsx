@@ -1,10 +1,9 @@
-
 "use client"
 
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet, Image as ImageIcon } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -87,7 +86,7 @@ export default function InstructionsPage() {
                   {[
                     { t: "حصانة الحماسة (Streak Freeze)", d: "لن تفقد سجل التزامك أو نقاطك في حالة الغياب المفاجئ.", i: ShieldCheck },
                     { t: "نقاط مضاعفة (2x Points)", d: "احصل على ضعف النقاط في المسار العام (تحديات الأساطير).", i: Trophy },
-                    { t: "دردشة غير محدودة مع كاري", d: "تحدث مع المساعد الذكي في أي وقت دون حدود يومية.", i: Brain },
+                    { t: "رفع صورة شخصية مخصصة", d: "إمكانية رفع صورتك الحقيقية بدلاً من الإيموجي في ملفك.", i: ImageIcon },
                     { t: "تجربة نقية وبدون إعلانات", d: "تصفح التطبيق بسرعة فائقة ودون أي مقاطعة إعلانية.", i: Zap },
                     { t: "التاج الملكي وتوثيق الحساب", d: "ظهور أيقونة التاج بجانب اسمك في كافة القوائم.", i: Crown },
                     { t: "تقارير النمو الأسبوعية", d: "بطاقة إنجازات خاصة نهاية كل أسبوع لمشاركتها.", i: ListChecks }

@@ -1,10 +1,10 @@
-
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
+import { useUser, useFirebase, useDatabase, useMemoFirebase, useStorage } from '@/firebase';
 import { ref, update, remove } from 'firebase/database';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,16 +15,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
 export default function SettingsPage() {
   const { user } = useUser();
-  const { database, auth } = useFirebase();
+  const { database, auth, storage } = useFirebase();
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
@@ -37,6 +39,7 @@ export default function SettingsPage() {
   const [avatar, setAvatar] = useState('🐱');
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -88,6 +91,7 @@ export default function SettingsPage() {
   };
 
   const isAdmin = userData?.name === 'admin';
+  const isPremium = userData?.isPremium === 1 || isAdmin;
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -115,6 +119,43 @@ export default function SettingsPage() {
       toast({ variant: "destructive", title: "خطأ" });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user || !storage) return;
+
+    if (!isPremium) {
+      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "رفع الصور متاح فقط لمشتركي العضوية الملكية." });
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 2 ميجابايت." });
+      return;
+    }
+
+    setIsUploading(true);
+    playSound('click');
+
+    try {
+      const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
+      await uploadBytes(avatarRef, file);
+      const downloadUrl = await getDownloadURL(avatarRef);
+      
+      await update(ref(database, `users/${user.uid}`), {
+        avatar: downloadUrl
+      });
+      
+      setAvatar(downloadUrl);
+      toast({ title: "تم رفع الصورة بنجاح! 📸" });
+      playSound('success');
+    } catch (e) {
+      console.error(e);
+      toast({ variant: "destructive", title: "فشل الرفع" });
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -179,6 +220,7 @@ export default function SettingsPage() {
   if (!mounted || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const requestStatus = userData?.premiumRequest?.status;
+  const isAvatarUrl = avatar && avatar.startsWith('http');
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -220,7 +262,7 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 relative z-10">
-            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "نقاط مضاعفة", i: Trophy }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
+            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "رفع صور شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
               <div key={i} className="flex items-center gap-2 justify-end bg-white/10 p-2 rounded-xl border border-white/20"><span className="text-[10px] font-black">{m.t}</span><m.i size={14} /></div>
             ))}
           </div>
@@ -272,18 +314,84 @@ export default function SettingsPage() {
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تعديل المعلومات الشخصية <UserIcon size={20} /></CardTitle></CardHeader>
-          <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2 col-span-1 md:col-span-2 flex flex-col items-center gap-4 mb-4">
-               <Label>اختر رفيقك</Label><div className="text-6xl bg-secondary/50 p-6 rounded-[2rem] shadow-inner mb-2">{avatar}</div>
-               <Select onValueChange={setAvatar} value={avatar}><SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold w-40 text-xl"><SelectValue /></SelectTrigger><SelectContent><div className="grid grid-cols-4 gap-2 p-2">{AVATAR_EMOJIS.map(emoji => (<SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center p-2">{emoji}</SelectItem>))}</div></SelectContent></Select>
+          <CardContent className="p-6 space-y-8">
+            <div className="flex flex-col items-center gap-6">
+               <div className="relative group">
+                 <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800">
+                   {isAvatarUrl ? (
+                     <Image src={avatar} alt="Avatar" width={160} height={160} className="object-cover w-full h-full" />
+                   ) : (
+                     <span className="text-7xl md:text-8xl">{avatar}</span>
+                   )}
+                   {isUploading && (
+                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                       <Loader2 className="text-white animate-spin" size={32} />
+                     </div>
+                   )}
+                 </div>
+                 <button 
+                   onClick={() => fileInputRef.current?.click()}
+                   className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 hover:scale-110 transition-transform"
+                 >
+                   <Camera size={20} />
+                 </button>
+                 <input 
+                   type="file" 
+                   ref={fileInputRef} 
+                   className="hidden" 
+                   accept="image/*" 
+                   onChange={handleImageUpload}
+                 />
+               </div>
+               
+               {!isPremium && (
+                 <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl text-[10px] font-black border border-orange-100 flex items-center gap-2">
+                   <AlertCircle size={14} /> ميزة رفع الصور متاحة فقط للبريميوم 👑
+                 </div>
+               )}
+
+               <div className="w-full space-y-2">
+                 <Label className="text-right block w-full">أو اختر إيموجي</Label>
+                 <div className="flex flex-wrap justify-center gap-2 p-2 bg-secondary/20 rounded-2xl">
+                   {AVATAR_EMOJIS.slice(0, 15).map(emoji => (
+                     <button 
+                       key={emoji} 
+                       onClick={() => setAvatar(emoji)}
+                       className={cn(
+                         "text-2xl w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white transition-colors",
+                         avatar === emoji && "bg-white shadow-md scale-110 border-2 border-primary/20"
+                       )}
+                     >
+                       {emoji}
+                     </button>
+                   ))}
+                   <Select onValueChange={setAvatar} value={AVATAR_EMOJIS.includes(avatar) ? avatar : ''}>
+                     <SelectTrigger className="w-full mt-2 h-10 rounded-xl bg-white/50 border-none font-bold">
+                       <SelectValue placeholder="المزيد من الإيموجي..." />
+                     </SelectTrigger>
+                     <SelectContent>
+                       <div className="grid grid-cols-5 gap-2 p-2">
+                         {AVATAR_EMOJIS.map(emoji => (
+                           <SelectItem key={emoji} value={emoji} className="text-2xl justify-center">
+                             {emoji}
+                           </SelectItem>
+                         ))}
+                       </div>
+                     </SelectContent>
+                   </Select>
+                 </div>
+               </div>
             </div>
-            <div className="space-y-2 col-span-1 md:col-span-2"><Label className="flex items-center gap-2 justify-end"><PenLine size={16} /> نبذة قصيرة</Label><Input value={bio} maxLength={30} onChange={e => setBio(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
-            <div className="space-y-2 col-span-1 md:col-span-2"><Label className="text-right block w-full">الاسم الكامل {isAdmin && "(لا يمكن تغييره للمدير)"}</Label><Input value={name} onChange={e => setName(e.target.value)} disabled={isAdmin} className={cn("rounded-xl bg-secondary/30 border-none h-12 font-bold text-right", isAdmin && "opacity-50")} /></div>
-            <div className="space-y-2"><Label className="text-right block w-full">العمر</Label><Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
-            <div className="space-y-2"><Label className="text-right block w-full">الجنس</Label><Select onValueChange={setGender} value={gender}><SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><Label className="text-right block w-full">الطول</Label><Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
-            <div className="space-y-2"><Label className="text-right block w-full">الوزن</Label><Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
-            <Button onClick={handleUpdateProfile} disabled={saving} className="col-span-1 md:col-span-2 h-14 rounded-2xl bg-primary text-lg font-black">{saving ? "جاري الحفظ..." : "حفظ التغييرات"}</Button>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2 col-span-1 md:col-span-2"><Label className="flex items-center gap-2 justify-end"><PenLine size={16} /> نبذة قصيرة</Label><Input value={bio} maxLength={30} onChange={e => setBio(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <div className="space-y-2 col-span-1 md:col-span-2"><Label className="text-right block w-full">الاسم الكامل {isAdmin && "(لا يمكن تغييره للمدير)"}</Label><Input value={name} onChange={e => setName(e.target.value)} disabled={isAdmin} className={cn("rounded-xl bg-secondary/30 border-none h-12 font-bold text-right", isAdmin && "opacity-50")} /></div>
+              <div className="space-y-2"><Label className="text-right block w-full">العمر</Label><Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <div className="space-y-2"><Label className="text-right block w-full">الجنس</Label><Select onValueChange={setGender} value={gender}><SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select></div>
+              <div className="space-y-2"><Label className="text-right block w-full">الطول</Label><Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <div className="space-y-2"><Label className="text-right block w-full">الوزن</Label><Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <Button onClick={handleUpdateProfile} disabled={saving} className="col-span-1 md:col-span-2 h-14 rounded-2xl bg-primary text-lg font-black">{saving ? "جاري الحفظ..." : "حفظ التغييرات"}</Button>
+            </div>
           </CardContent>
         </Card>
 

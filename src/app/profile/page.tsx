@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -72,13 +71,19 @@ export default function ProfilePage() {
     return "مبتدئ طموح 🌱";
   };
 
+  const isAvatarUrl = userData?.avatar && userData.avatar.startsWith('http');
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-4 md:p-12 space-y-8">
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-xl border border-border">
-          <Avatar className="w-28 h-24 md:w-36 md:h-32 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0">
-            <span className="text-6xl md:text-7xl">{userData.avatar || "🐱"}</span>
+          <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0 overflow-hidden rounded-[2.5rem]">
+            {isAvatarUrl ? (
+              <Image src={userData.avatar} alt="Profile" width={150} height={150} className="object-cover w-full h-full" />
+            ) : (
+              <span className="text-6xl md:text-7xl">{userData.avatar || "🐱"}</span>
+            )}
           </Avatar>
           
           <div className="flex-1 text-center md:text-right space-y-2">

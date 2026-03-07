@@ -18,7 +18,7 @@ export default function InstructionsPage() {
         { name: "المحارب الأسبوعي", criteria: "إكمال 7 أيام متتالية", icon: "⚔️" },
         { name: "باني العادات", criteria: "إكمال 21 يوماً متتالياً", icon: "🏗️" },
         { name: "أسطورة الشهر", criteria: "إكمال 30 يوماً متتالياً", icon: "🏆" },
-        { name: "الخالد", criteria: "إكمال 60 يوماً متتالياً", icon: "♾️" }
+        { name: "أسطورة الانضباط", criteria: "إكمال 60 يوماً متتالياً", icon: "♾️" }
       ]
     },
     {
@@ -84,7 +84,7 @@ export default function InstructionsPage() {
                 </div>
                 <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-center">
                   <p className="text-2xl font-black text-red-600">100</p>
-                  <p className="text-[10px] font-black uppercase text-red-800">مهمة صعبة</p>
+                  <p className="text-[10px) font-black uppercase text-red-800">مهمة صعبة</p>
                 </div>
               </div>
               

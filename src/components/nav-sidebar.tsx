@@ -12,8 +12,6 @@ import { ref } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 
-const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
-
 export function NavSidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -59,7 +57,7 @@ export function NavSidebar() {
     return Object.values(notificationsData).filter((n: any) => !n.isRead).length;
   }, [notificationsData]);
 
-  const isAdmin = user?.uid === ADMIN_UID;
+  const isAdmin = userData?.name === 'admin';
   const isPremium = userData?.isPremium === 1 || isAdmin;
 
   const handleLogout = async () => {

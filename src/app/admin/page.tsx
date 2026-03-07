@@ -15,8 +15,6 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
 
-const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
-
 export default function AdminDashboardPage() {
   const { user } = useUser();
   const { database, auth } = useFirebase();
@@ -29,18 +27,18 @@ export default function AdminDashboardPage() {
   const currentUserRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: myData } = useDatabase(currentUserRef);
 
-  // حماية المسار بالـ UID
+  // حماية المسار بالاسم
   React.useEffect(() => {
-    if (user && user.uid !== ADMIN_UID && myData && myData.name !== 'admin') {
+    if (myData && myData.name !== 'admin') {
       toast({ variant: "destructive", title: "دخول غير مصرح" });
       router.replace('/');
     }
-  }, [user, myData, router]);
+  }, [myData, router]);
 
   const users = useMemo(() => {
     if (!usersData) return [];
     return Object.values(usersData)
-      .filter((u: any) => u.id !== ADMIN_UID && u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
   }, [usersData, searchTerm]);
 
@@ -66,7 +64,7 @@ export default function AdminDashboardPage() {
     router.replace('/login');
   };
 
-  const isAccessAllowed = user?.uid === ADMIN_UID || myData?.name === 'admin';
+  const isAccessAllowed = myData?.name === 'admin';
 
   if (isLoading || !isAccessAllowed) {
     return <div className="min-h-screen flex items-center justify-center bg-background">

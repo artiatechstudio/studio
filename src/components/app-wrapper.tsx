@@ -6,11 +6,17 @@ import { SplashScreen } from './splash-screen';
 
 /**
  * مكون غلاف التطبيق (App Wrapper)
- * يضمن تشغيل شاشة الترحيب أولاً قبل السماح لأي جزء من التطبيق بالتحميل.
- * هذا يفصل عملية العرض الترحيبي عن تشغيل منطق البرنامج و Firebase.
+ * يضمن تشغيل شاشة الترحيب أولاً ويمنع خطأ Hydration عبر التأكد من Mount.
  */
 export function AppWrapper({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return null;
 
   if (!isReady) {
     return <SplashScreen onComplete={() => setIsReady(true)} />;

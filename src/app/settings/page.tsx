@@ -21,8 +21,6 @@ import { cn } from '@/lib/utils';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
-const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
-
 export default function SettingsPage() {
   const { user } = useUser();
   const { database, auth } = useFirebase();
@@ -89,7 +87,7 @@ export default function SettingsPage() {
     toast({ title: checked ? "تم كتم الأصوات 🔇" : "تم تفعيل الأصوات 🔊" });
   };
 
-  const isAdmin = user?.uid === ADMIN_UID;
+  const isAdmin = userData?.name === 'admin';
 
   const handleUpdateProfile = async () => {
     if (!user) return;

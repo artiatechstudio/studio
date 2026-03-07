@@ -1,17 +1,19 @@
 
 "use client"
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { playSound } from '@/lib/sounds';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * تم رفع الشعار للأعلى قليلاً مع إزالة أي نصوص إضافية لتصميم نظيف واحترافي.
- * يبدأ الصوت الافتتاحي مع ظهور الشعار فوراً.
+ * تم استخدام mounted state لمنع خطأ Hydration في الروابط الخارجية.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
+    setMounted(true);
     // تشغيل الصوت الافتتاحي فوراً
     playSound('startup');
     
@@ -20,6 +22,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     }, 2500);
     return () => clearTimeout(timer);
   }, [onComplete]);
+
+  if (!mounted) return null;
 
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-start overflow-hidden p-0 pt-16 md:pt-24">

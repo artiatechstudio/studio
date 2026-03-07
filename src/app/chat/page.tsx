@@ -17,11 +17,9 @@ export default function ChatListPage() {
   const { database } = useFirebase();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // جلب المستخدمين
   const usersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
   const { data: usersData } = useDatabase(usersRef);
 
-  // جلب الدردشات الخاصة
   const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
   const { data: chatsData } = useDatabase(chatsRef);
 
@@ -51,15 +49,14 @@ export default function ChatListPage() {
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-10 space-y-8">
-        <header className="flex items-center gap-4 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">
+      <div className="app-container py-6 space-y-6">
+        <header className="flex items-center gap-4 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2 mt-2">
           <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
             <MessageCircle size={32} />
           </div>
           <h1 className="text-3xl font-black text-primary">الدردشة والمجتمع</h1>
         </header>
 
-        {/* كروت الوصول السريع */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-2">
           <Link href="/chat/ai" onClick={() => playSound('click')} className="block">
             <div className="flex items-center justify-between p-6 rounded-[2rem] bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
@@ -96,7 +93,6 @@ export default function ChatListPage() {
           </Link>
         </div>
 
-        {/* البحث والدردشات */}
         <Card className="rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2">
           <CardHeader className="p-8 border-b border-border bg-secondary/10 flex flex-row items-center justify-between flex-row-reverse">
             <CardTitle className="text-xl font-black text-primary flex items-center gap-2">الرسائل الخاصة <Users size={20}/></CardTitle>

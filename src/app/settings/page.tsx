@@ -15,11 +15,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
+
+// معرف الإدارة الثابت للأمان العالي
+const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
 
 export default function SettingsPage() {
   const { user } = useUser();
@@ -46,8 +49,8 @@ export default function SettingsPage() {
   const [selectedPlan, setSelectedType] = useState('1month');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  // ثيم التطبيق
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [isMuted, setIsMuted] = useState(false);
 
   useEffect(() => {
     if (userData) {
@@ -61,6 +64,8 @@ export default function SettingsPage() {
     }
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
     setTheme(savedTheme);
+    const savedMute = localStorage.getItem('careingo_muted') === 'true';
+    setIsMuted(savedMute);
   }, [userData]);
 
   const toggleTheme = () => {
@@ -76,7 +81,14 @@ export default function SettingsPage() {
     toast({ title: newTheme === 'dark' ? "تم تفعيل الوضع الليلي 🌙" : "تم تفعيل الوضع المضيء ☀️" });
   };
 
-  const isAdmin = userData?.name === 'admin';
+  const toggleMute = (checked: boolean) => {
+    setIsMuted(checked);
+    localStorage.setItem('careingo_muted', checked.toString());
+    if (!checked) playSound('click');
+    toast({ title: checked ? "تم كتم الأصوات 🔇" : "تم تفعيل الأصوات 🔊" });
+  };
+
+  const isAdmin = user?.uid === ADMIN_UID || userData?.name === 'admin';
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -152,7 +164,7 @@ export default function SettingsPage() {
 
   const handleDeleteAccount = async () => {
     playSound('click');
-    if (userData?.name === 'admin') return;
+    if (isAdmin) return;
     const confirmed = window.confirm("تحذير نهائي! هل أنت متأكد؟ 🐱⚠️");
     if (!user || !confirmed) return;
     try {
@@ -165,7 +177,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const requestStatus = userData?.premiumRequest?.status;
 
@@ -179,15 +191,24 @@ export default function SettingsPage() {
         </header>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right flex flex-row items-center justify-between flex-row-reverse">
-            <CardTitle className="text-lg font-black text-primary flex items-center gap-3">مظهر التطبيق <Sparkles size={20} /></CardTitle>
+          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
+            <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تخصيص التجربة <Sparkles size={20} /></CardTitle>
           </CardHeader>
-          <CardContent className="p-6 flex items-center justify-between">
-            <div className="text-right">
-              <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">الوضع {theme === 'dark' ? 'الداكن' : 'المضيء'}{theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}</p>
-              <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق</p>
+          <CardContent className="p-0 divide-y divide-border">
+            <div className="p-6 flex items-center justify-between">
+              <div className="text-right">
+                <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">الوضع {theme === 'dark' ? 'الداكن' : 'المضيء'}{theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}</p>
+                <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق</p>
+              </div>
+              <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} className="scale-125 data-[state=checked]:bg-primary" />
             </div>
-            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} className="scale-125 data-[state=checked]:bg-primary" />
+            <div className="p-6 flex items-center justify-between">
+              <div className="text-right">
+                <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">المؤثرات الصوتية {isMuted ? <VolumeX size={16} className="text-destructive" /> : <Volume2 size={16} className="text-green-600" />}</p>
+                <p className="text-[10px] text-muted-foreground font-bold">كتم أو تفعيل أصوات التطبيق</p>
+              </div>
+              <Switch checked={isMuted} onCheckedChange={toggleMute} className="scale-125 data-[state=checked]:bg-destructive" />
+            </div>
           </CardContent>
         </Card>
 
@@ -295,7 +316,7 @@ export default function SettingsPage() {
 
         <div className="pt-6 flex flex-col gap-3 mx-2">
           <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black"><LogOut className="ml-2" /> تسجيل الخروج</Button>
-          {userData?.name !== 'admin' && <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black"><Trash2 className="ml-2" /> حذف الحساب نهائياً</Button>}
+          {!isAdmin && <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black"><Trash2 className="ml-2" /> حذف الحساب نهائياً</Button>}
         </div>
       </div>
     </div>

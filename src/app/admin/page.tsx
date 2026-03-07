@@ -15,6 +15,8 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
 
+const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
+
 export default function AdminDashboardPage() {
   const { user } = useUser();
   const { database, auth } = useFirebase();
@@ -27,19 +29,18 @@ export default function AdminDashboardPage() {
   const currentUserRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: myData } = useDatabase(currentUserRef);
 
-  // حماية المسار
+  // حماية المسار بالـ UID
   React.useEffect(() => {
-    if (myData && myData.name !== 'admin') {
+    if (user && user.uid !== ADMIN_UID && myData && myData.name !== 'admin') {
       toast({ variant: "destructive", title: "دخول غير مصرح" });
       router.replace('/');
     }
-  }, [myData, router]);
+  }, [user, myData, router]);
 
   const users = useMemo(() => {
     if (!usersData) return [];
-    // استثناء الآدمن من القائمة الإدارية تماماً
     return Object.values(usersData)
-      .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter((u: any) => u.id !== ADMIN_UID && u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
   }, [usersData, searchTerm]);
 
@@ -65,7 +66,9 @@ export default function AdminDashboardPage() {
     router.replace('/login');
   };
 
-  if (isLoading || myData?.name !== 'admin') {
+  const isAccessAllowed = user?.uid === ADMIN_UID || myData?.name === 'admin';
+
+  if (isLoading || !isAccessAllowed) {
     return <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>;
@@ -92,7 +95,7 @@ export default function AdminDashboardPage() {
 
         <div className="grid grid-cols-2 gap-3 mx-2">
            <Card className="p-4 rounded-[1.5rem] bg-secondary/20 border-none shadow-sm text-center">
-              <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء (حقيقيين)</p>
+              <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء</p>
               <p className="text-2xl font-black text-primary">{users.length}</p>
            </Card>
            <Card className="p-4 rounded-[1.5rem] bg-yellow-50 border-none shadow-sm text-center">

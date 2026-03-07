@@ -14,6 +14,11 @@ const sounds: Record<string, HTMLAudioElement | null> = {
 };
 
 export function playSound(name: 'click' | 'success' | 'login' | 'startup') {
+  if (typeof window !== 'undefined') {
+    const isMuted = localStorage.getItem('careingo_muted') === 'true';
+    if (isMuted) return;
+  }
+
   const sound = sounds[name];
   if (sound) {
     sound.currentTime = 0;

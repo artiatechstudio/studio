@@ -18,6 +18,8 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
+const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
+
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
@@ -34,8 +36,8 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  const isAdmin = userData?.name === 'admin';
-  const isPremium = userData?.isPremium === 1;
+  const isAdmin = user?.uid === ADMIN_UID || userData?.name === 'admin';
+  const isPremium = userData?.isPremium === 1 || isAdmin;
 
   useEffect(() => {
     if (userData && user && !isAdmin && !hasCheckedStatus.current) {

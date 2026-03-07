@@ -1,6 +1,7 @@
+
+/**
+ * تم إفراغ هذا الملف نهائياً بناءً على طلب صاحب التطبيق.
+ * لا يوجد ذكاء اصطناعي في مشروع كارينجو.
+ */
 import { config } from 'dotenv';
 config();
-
-import '@/ai/flows/daily-challenge-generation.ts';
-import '@/ai/flows/ai-helper-contextual-response.ts';
-import '@/ai/flows/ai-chat-flow.ts';

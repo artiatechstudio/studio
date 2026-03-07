@@ -174,7 +174,7 @@ export default function StreakPage() {
             <div className="text-right">
               <h4 className="font-black text-xs text-primary">حالة اليوم</h4>
               <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
-                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم تبدأ بعد؟ كاري ينتظرك بشوق!"}
+                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم بدأت بعد؟ كاري ينتظرك بشوق!"}
               </p>
             </div>
           </Card>

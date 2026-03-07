@@ -53,7 +53,7 @@ export default function NotificationsPage() {
   const getIcon = (type: string) => {
     switch (type) {
       case 'like': return <Heart className="text-red-500" fill="currentColor" size={20} />;
-      case 'achievement': return <Trophy className="text-yellow-500" size={20} />;
+      case 'achievement': return < Trophy className="text-yellow-500" size={20} />;
       case 'bonus': return <Zap className="text-accent" size={20} />;
       case 'system': return <Bell className="text-primary" size={20} />;
       default: return <Bell size={20} />;
@@ -135,7 +135,7 @@ export default function NotificationsPage() {
 
         <section className="bg-primary/5 p-6 rounded-[2.5rem] border border-primary/10 mx-2 space-y-4">
           <div className="flex items-center gap-2 text-primary font-black text-xs">
-            <Star size={14} className="text-yellow-500" fill="currentColor" />
+            < Star size={14} className="text-yellow-500" fill="currentColor" />
             نصيحة كاري للإشعارات
           </div>
           <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">

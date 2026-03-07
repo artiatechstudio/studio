@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png مع كلمة "تقدم" تحتها بشكل موسط ومزاح للأعلى قليلاً.
+ * يعرض أيقونة splash.png بعرض الشاشة مع كلمة "تقدم" صغيرة بلون أسود صلب تحتها مباشرة.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
@@ -18,8 +18,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden p-0">
-      <div className="flex flex-col items-center gap-4 animate-pulse -translate-y-16">
-        <div className="relative w-44 h-44 md:w-60 md:h-56">
+      <div className="flex flex-col items-center gap-2 -translate-y-12 w-full">
+        <div className="relative w-full aspect-square max-w-md">
           <Image 
             src="/splash.png" 
             alt="Careingo Icon" 
@@ -28,11 +28,11 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             priority
           />
         </div>
-        <h1 className="text-4xl md:text-6xl font-black text-primary tracking-tighter">تقدم</h1>
+        <h1 className="text-sm font-bold text-black tracking-widest mt-[-20px]">تقدم</h1>
       </div>
       
       <div className="absolute bottom-12 left-0 right-0 text-center">
-        <p className="text-primary/20 font-black text-[10px] tracking-[0.2em] uppercase">
+        <p className="text-black/10 font-black text-[8px] tracking-[0.2em] uppercase">
           Artiatech Studio 2026
         </p>
       </div>

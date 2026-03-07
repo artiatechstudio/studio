@@ -24,17 +24,17 @@ export default function LeaderboardPage() {
   const stats = useMemo(() => {
     if (!rawData) return { leaders: [], losers: [] };
     
-    const today = new Date();
+    // توحيد صيغة التاريخ مع باقي التطبيق (en-CA)
     const dates = [];
     for (let i = 0; i < 3; i++) {
-      const d = new Date(today);
+      const d = new Date();
       d.setDate(d.getDate() - i);
-      dates.push(d.toISOString().split('T')[0]);
+      dates.push(d.toLocaleDateString('en-CA'));
     }
 
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
+    const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
 
     const allUsers = Object.values(rawData)
       .filter((u: any) => u.name !== 'admin')
@@ -110,6 +110,7 @@ export default function LeaderboardPage() {
             <div className="divide-y divide-border">
               {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => {
                 const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+                const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div 
                     key={user.id} 
@@ -144,7 +145,7 @@ export default function LeaderboardPage() {
                       <div className="text-right overflow-hidden flex-1 px-1">
                         <div className="flex items-center justify-end gap-1 mb-1">
                           <h3 className="font-black text-primary text-[11px] truncate leading-none">{user.name}</h3>
-                          {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                          {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
                         </div>
                         <div className="flex flex-wrap items-center justify-end gap-1">
                           <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
@@ -179,6 +180,7 @@ export default function LeaderboardPage() {
             <div className="p-4 space-y-3">
               {stats.losers.length > 0 ? stats.losers.map((user: any) => {
                 const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+                const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
                     <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg">
@@ -199,7 +201,7 @@ export default function LeaderboardPage() {
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-1">
                           <p className="font-black text-red-900 text-xs">{user.name}</p>
-                          {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                          {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
                         </div>
                         <p className="text-[8px] font-bold text-red-400">فقد الالتزام والحماسة</p>
                       </div>

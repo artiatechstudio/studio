@@ -5,8 +5,7 @@ import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal } from 'lucide-react';
-import Link from 'next/link';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
@@ -107,6 +106,15 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     setTimeLeft(durationSeconds);
     setTimerActive(true);
     playSound('click');
+  };
+
+  const handleCancelTimer = () => {
+    playSound('click');
+    setTimerActive(false);
+    setTimeLeft(0);
+    const timerKey = `timer_end_${trackKey}_${stageId}`;
+    localStorage.removeItem(timerKey);
+    toast({ title: "تم إلغاء المهمة", description: "يمكنك البدء من جديد عندما تكون مستعداً." });
   };
 
   const handleComplete = useCallback(async () => {
@@ -248,9 +256,14 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                       <p className="text-xs font-black text-primary uppercase">الوقت المتبقي (يعمل في الخلفية)</p>
                       <p className="text-6xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
                     </div>
-                    <Button onClick={handleComplete} disabled={isUpdating} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">
-                      أنهيت المهمة 🔥
-                    </Button>
+                    <div className="flex flex-col gap-3">
+                      <Button onClick={handleComplete} disabled={isUpdating} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">
+                        أنهيت المهمة 🔥
+                      </Button>
+                      <Button onClick={handleCancelTimer} variant="ghost" className="text-destructive font-black gap-2">
+                        <XCircle size={18} /> إلغاء التحدي
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <Button onClick={handleStartTimer} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl shadow-primary/20">

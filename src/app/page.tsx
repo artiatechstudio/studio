@@ -33,13 +33,11 @@ export default function Home() {
 
   const isAdmin = userData?.name === 'admin';
 
-  // منطق حارس الحماسة + فحص صلاحية البريميوم (فقط للمستخدمين العاديين)
   useEffect(() => {
     if (userData && user && !isAdmin) {
       const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
 
-      // 1. فحص انتهاء البريميوم
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         update(ref(database, `users/${user.uid}`), {
           isPremium: 0,
@@ -48,7 +46,6 @@ export default function Home() {
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
-      // 2. مكافأة المستخدمين النشطين بالبريميوم
       if (userData.isPremium !== 1 && (userData.points >= 5000 || userData.streak >= 15)) {
         update(ref(database, `users/${user.uid}`), {
           isPremium: 1,
@@ -64,7 +61,6 @@ export default function Home() {
         toast({ title: "مبروك! حصلت على بريميوم 🎁" });
       }
 
-      // 3. خصم التغيب
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       const lastActive = userData.lastActiveDate;
@@ -131,11 +127,10 @@ export default function Home() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
-        {/* شريط الإحصائيات (يختفي للآدمن) */}
         {!isAdmin && (
           <div className="grid grid-cols-2 gap-3 mx-2">
             <Link href="/streak" className="block">
-              <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
+              <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
                 <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
                   <Activity size={20} />
                 </div>
@@ -151,7 +146,7 @@ export default function Home() {
               </Card>
             </Link>
             <Link href="/profile" className="block">
-              <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
+              <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
                 <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0">
                   <HeartPulse size={20} />
                 </div>
@@ -167,25 +162,24 @@ export default function Home() {
           </div>
         )}
 
-        {/* واجهة الآدمن المبسطة */}
         {isAdmin ? (
-          <section className="bg-primary/5 rounded-[2.5rem] p-10 border border-primary/10 mx-2 shadow-inner space-y-6">
+          <section className="bg-primary/5 rounded-[2rem] p-8 border border-primary/10 mx-2 shadow-inner space-y-5">
             <div className="flex items-center gap-4">
-              <div className="w-20 h-20 bg-primary text-white rounded-3xl flex items-center justify-center text-5xl shadow-xl">🛡️</div>
+              <div className="w-16 h-16 bg-primary text-white rounded-[1.5rem] flex items-center justify-center text-4xl shadow-lg shrink-0">🛡️</div>
               <div className="text-right">
-                <h1 className="text-3xl font-black text-primary">مرحباً يا مدير كاري!</h1>
-                <p className="font-bold text-muted-foreground">أنت في وضع الإدارة الآن. تحكم بذكاء وحكمة.</p>
+                <h1 className="text-2xl font-black text-primary">أهلاً يا مدير كاري!</h1>
+                <p className="text-xs font-bold text-muted-foreground leading-tight">أنت الآن في وضع الرقابة والتحكم الكامل بالنظام.</p>
               </div>
             </div>
             <Link href="/admin" onClick={() => playSound('click')}>
-              <Button className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black gap-3 shadow-xl">
-                فتح لوحة التحكم العليا <ArrowRight className="rotate-180" />
+              <Button className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-lg font-black gap-3 shadow-lg">
+                لوحة الإدارة العليا <ArrowRight className="rotate-180" size={20} />
               </Button>
             </Link>
           </section>
         ) : (
           <>
-            <section className="bg-primary/5 rounded-[2.5rem] p-6 border border-primary/10 mx-2 shadow-inner">
+            <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner">
               <Mascot />
             </section>
 
@@ -199,13 +193,13 @@ export default function Home() {
               </div>
               
               <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">
-                <Card className="p-6 rounded-[2.5rem] shadow-xl border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
-                  <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg">
-                    <Sparkles size={28} />
+                <Card className="p-5 rounded-[2rem] shadow-lg border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
+                  <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-md">
+                    <Sparkles size={24} />
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-black text-primary leading-tight">المسار العام</p>
-                    <p className="text-xs font-bold text-primary/60">تحديات الأساطير والتدريب الحر 🔥</p>
+                    <p className="text-lg font-black text-primary leading-tight">المسار العام</p>
+                    <p className="text-[10px] font-bold text-primary/60">تحديات الأساطير والتدريب الحر 🔥</p>
                   </div>
                 </Card>
               </Link>

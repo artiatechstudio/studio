@@ -39,16 +39,20 @@ export default function MasterTrackPage() {
 
   const isLegend = useMemo(() => {
     if (!userData?.trackProgress) return false;
-    const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
+    const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
     return tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
   }, [userData]);
 
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
+    if (pool.length === 0) {
+      toast({ title: "عذراً", description: "لا توجد تحديات كافية لهذا الاختيار." });
+      return;
+    }
     const random = pool[Math.floor(Math.random() * pool.length)];
     setCurrentChallenge(random);
     setStep('active');
-    setTimeLeft(random.time * 60);
+    setTimeLeft((random.time || 5) * 60);
     setTimerActive(true);
     playSound('click');
   };
@@ -68,7 +72,7 @@ export default function MasterTrackPage() {
     
     if (isLegend) {
       const todayStr = new Date().toLocaleDateString('en-CA');
-      const points = currentChallenge.points;
+      const points = currentChallenge.points || 50;
       await update(ref(database, `users/${user.uid}`), {
         points: (userData.points || 0) + points,
         [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + points
@@ -99,7 +103,6 @@ export default function MasterTrackPage() {
     playSound('click');
     setCompletingId(todoId);
     
-    // منح نقاط رمزية (5 نقاط)
     const todayStr = new Date().toLocaleDateString('en-CA');
     const currentPoints = userData?.points || 0;
     const dailyPoints = userData?.dailyPoints?.[todayStr] || 0;
@@ -109,10 +112,9 @@ export default function MasterTrackPage() {
       [`dailyPoints/${todayStr}`]: dailyPoints + 5
     });
 
-    toast({ title: "أحسنت! +5 نقاط حماسة 🌟" });
+    toast({ title: "أحسنت! +5 نقاط 🌟" });
     playSound('success');
 
-    // تأثير الاختفاء الشبحي: الانتظار ثانية ثم الحذف من الداتابيز
     setTimeout(() => {
       remove(ref(database, `users/${user.uid}/todos/${todoId}`));
       setCompletingId(null);
@@ -128,15 +130,15 @@ export default function MasterTrackPage() {
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-8">
-        <header className="flex items-center justify-between bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
-              <Sparkles size={32} />
+      <div className="app-container py-6 space-y-6">
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
+              <Sparkles size={28} />
             </div>
             <div className="text-right">
-              <h1 className="text-2xl font-black text-primary">المسار العام</h1>
-              <p className="text-[10px] font-bold text-muted-foreground uppercase">تحديات الأساطير والتدريب الحر</p>
+              <h1 className="text-xl font-black text-primary leading-tight">المسار العام</h1>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">تحديات الأساطير والتدريب</p>
             </div>
           </div>
           <Link href="/">
@@ -147,25 +149,25 @@ export default function MasterTrackPage() {
         </header>
 
         {step === 'setup' && (
-          <Card className="rounded-[2.5rem] p-8 shadow-xl border-none bg-card mx-2 space-y-8">
+          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card mx-4 space-y-6 overflow-hidden">
             {!isLegend && (
               <div className="bg-orange-50 border-r-4 border-orange-500 p-4 rounded-2xl flex items-start gap-3">
-                <ShieldAlert className="text-orange-600 shrink-0" />
-                <p className="text-xs font-bold text-orange-900 leading-relaxed">
-                  تنبيه: هذا المسار لا يمنح نقاطاً رسمية إلا للأعضاء الذين أتموا الـ 120 يوماً في المسارات الأساسية. يمكنك استخدامه للتدريب الآن!
+                <ShieldAlert className="text-orange-600 shrink-0" size={18} />
+                <p className="text-[10px] font-bold text-orange-900 leading-relaxed">
+                  تنبيه: لا يتم منح نقاط رسمية هنا إلا بعد إتمام الـ 120 يوماً في المسارات الأساسية. يمكنك استخدامه للتدريب الحر حالياً!
                 </p>
               </div>
             )}
 
-            <div className="space-y-4">
-              <h3 className="font-black text-primary">1. اختر نوع المهمة</h3>
-              <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-3">
+              <h3 className="font-black text-primary text-sm">1. نوع المهمة</h3>
+              <div className="grid grid-cols-2 gap-2">
                 {(['Fitness', 'Nutrition', 'Behavior', 'Study'] as TrackKey[]).map(t => (
                   <Button 
                     key={t}
                     variant={selectedType === t ? 'default' : 'outline'}
                     onClick={() => { playSound('click'); setSelectedType(t); }}
-                    className={cn("h-14 rounded-2xl font-black", selectedType === t ? "shadow-lg scale-[1.02]" : "")}
+                    className={cn("h-12 rounded-xl font-black text-xs", selectedType === t ? "shadow-md scale-[1.02]" : "")}
                   >
                     {t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'تغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}
                   </Button>
@@ -173,15 +175,15 @@ export default function MasterTrackPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
-              <h3 className="font-black text-primary">2. مستوى الصعوبة</h3>
-              <div className="flex gap-3">
+            <div className="space-y-3">
+              <h3 className="font-black text-primary text-sm">2. الصعوبة</h3>
+              <div className="flex gap-2">
                 {(['سهل', 'متوسط', 'صعب'] as const).map(d => (
                   <Button 
                     key={d}
                     variant={selectedDifficulty === d ? 'default' : 'outline'}
                     onClick={() => { playSound('click'); setSelectedDifficulty(d); }}
-                    className={cn("flex-1 h-14 rounded-2xl font-black", selectedDifficulty === d ? "shadow-lg scale-[1.02]" : "")}
+                    className={cn("flex-1 h-12 rounded-xl font-black text-xs", selectedDifficulty === d ? "shadow-md scale-[1.02]" : "")}
                   >
                     {d}
                   </Button>
@@ -189,35 +191,33 @@ export default function MasterTrackPage() {
               </div>
             </div>
 
-            <Button onClick={handleStart} className="w-full h-16 rounded-[1.5rem] bg-primary text-xl font-black shadow-xl shadow-primary/20">
-              ابدأ التحدي العشوائي 🐱🚀
+            <Button onClick={handleStart} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl shadow-primary/20">
+              ابدأ التحدي 🚀
             </Button>
           </Card>
         )}
 
         {step === 'active' && currentChallenge && (
-          <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border mx-2 text-right shadow-2xl">
-            <CardHeader className="bg-primary text-white p-6">
+          <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border mx-4 text-right shadow-2xl">
+            <CardHeader className="bg-primary text-white p-5">
               <div className="flex items-center justify-between flex-row-reverse">
-                <CardTitle className="text-xl font-black">{currentChallenge.title}</CardTitle>
-                <div className="flex gap-2">
-                  <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black">{currentChallenge.difficulty}</span>
-                </div>
+                <CardTitle className="text-lg font-black truncate max-w-[70%]">{currentChallenge.title}</CardTitle>
+                <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black">{currentChallenge.difficulty}</span>
               </div>
             </CardHeader>
-            <CardContent className="p-8 space-y-8">
-              <p className="text-lg font-bold text-muted-foreground leading-relaxed">{currentChallenge.description}</p>
+            <CardContent className="p-6 space-y-6">
+              <p className="text-base font-bold text-muted-foreground leading-relaxed">{currentChallenge.description}</p>
               
-              <div className="bg-secondary/30 p-8 rounded-[2rem] text-center space-y-2">
-                <p className="text-xs font-black text-primary uppercase">الوقت المتبقي</p>
-                <p className="text-6xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
+              <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
+                <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي</p>
+                <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
               </div>
 
-              <div className="flex flex-col gap-3">
-                <Button onClick={handleCompleteChallenge} className="h-16 rounded-2xl bg-accent text-xl font-black shadow-lg">
+              <div className="flex flex-col gap-2">
+                <Button onClick={handleCompleteChallenge} className="h-14 rounded-2xl bg-accent text-lg font-black shadow-lg">
                   أنهيت المهمة 🔥
                 </Button>
-                <Button onClick={() => setStep('setup')} variant="ghost" className="text-destructive font-black">
+                <Button onClick={() => setStep('setup')} variant="ghost" className="text-destructive font-black text-xs h-10">
                   إلغاء التحدي
                 </Button>
               </div>
@@ -226,59 +226,58 @@ export default function MasterTrackPage() {
         )}
 
         {step === 'done' && (
-          <Card className="rounded-[2.5rem] p-12 text-center mx-2 bg-card shadow-2xl space-y-6">
-            <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle size={64} />
+          <Card className="rounded-[2.5rem] p-8 text-center mx-4 bg-card shadow-2xl space-y-4">
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
+              <CheckCircle size={48} />
             </div>
-            <h2 className="text-3xl font-black text-primary">عمل رائع!</h2>
-            <p className="text-muted-foreground font-bold">كل تمرين إضافي هو خطوة نحو العظمة. استمر في النمو!</p>
-            <Button onClick={() => setStep('setup')} className="w-full h-14 rounded-2xl font-black">تحدي جديد 🐱</Button>
+            <h2 className="text-2xl font-black text-primary">عمل رائع!</h2>
+            <p className="text-xs font-bold text-muted-foreground leading-relaxed">كل خطوة إضافية هي حجر أساس في بناء أسطورتك الشخصية.</p>
+            <Button onClick={() => setStep('setup')} className="w-full h-12 rounded-xl font-black">تحدي جديد 🐱</Button>
           </Card>
         )}
 
-        {/* قائمة المهام المخصصة الدائمة */}
-        <section className="mx-2 space-y-4 pt-10 border-t border-border/50">
-          <header className="flex items-center justify-between px-2">
-            <h2 className="text-xl font-black text-primary flex items-center gap-2">
-              <ListChecks size={24} /> قائمة مهامي الدائمة
+        <section className="mx-4 space-y-4 pt-6 border-t border-border/50">
+          <header className="flex items-center justify-between px-1">
+            <h2 className="text-lg font-black text-primary flex items-center gap-2">
+              <ListChecks size={20} /> قائمة مهامي
             </h2>
-            <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-3 py-1 rounded-full">كل مهمة = +5 نقاط 🌟</span>
+            <span className="text-[8px] font-black text-muted-foreground bg-secondary px-2.5 py-1 rounded-full uppercase">كل مهمة = +5 نقاط</span>
           </header>
           
-          <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card space-y-6">
+          <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5">
             <form onSubmit={handleAddTodo} className="flex gap-2">
               <Input 
-                placeholder="أضف مهمة شخصية لليوم..." 
-                className="h-12 rounded-2xl bg-secondary/50 border-none font-bold text-right focus-visible:ring-primary"
+                placeholder="أضف مهمة شخصية..." 
+                className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs focus-visible:ring-primary"
                 value={todoInput}
                 onChange={(e) => setTodoInput(e.target.value)}
               />
-              <Button type="submit" size="icon" className="h-12 w-12 rounded-2xl bg-primary shadow-lg shadow-primary/20">
-                <Plus size={24} />
+              <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0">
+                <Plus size={20} />
               </Button>
             </form>
 
-            <div className="space-y-3">
-              {todosData ? Object.values(todosData).sort((a:any, b:any) => b.timestamp - a.timestamp).map((todo: any) => (
+            <div className="space-y-2">
+              {todosData ? Object.values(todosData).sort((a:any, b:any) => (b.timestamp || 0) - (a.timestamp || 0)).map((todo: any) => (
                 <div 
                   key={todo.id} 
                   className={cn(
-                    "flex items-center justify-between p-4 bg-secondary/20 rounded-2xl group border border-transparent hover:border-primary/10 transition-all duration-1000",
+                    "flex items-center justify-between p-3.5 bg-secondary/20 rounded-xl group transition-all duration-700",
                     completingId === todo.id ? "opacity-0 scale-95 blur-sm" : "opacity-100"
                   )}
                 >
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 overflow-hidden">
                     <button 
                       onClick={() => handleToggleTodo(todo.id)}
                       disabled={!!completingId}
                       className={cn(
-                        "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                        "w-7 h-7 rounded-lg flex items-center justify-center transition-all shrink-0",
                         completingId === todo.id ? "bg-green-500 text-white" : "bg-white border-2 border-primary/20 text-transparent"
                       )}
                     >
-                      <CheckSquare size={18} />
+                      <CheckSquare size={16} />
                     </button>
-                    <span className={cn("font-bold text-sm text-primary")}>
+                    <span className="font-bold text-[11px] text-primary truncate">
                       {todo.title}
                     </span>
                   </div>
@@ -286,15 +285,15 @@ export default function MasterTrackPage() {
                     onClick={() => remove(ref(database, `users/${user!.uid}/todos/${todo.id}`))} 
                     variant="ghost" 
                     size="icon" 
-                    className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   >
-                    <Trash2 size={18} />
+                    <Trash2 size={14} />
                   </Button>
                 </div>
               )) : (
-                <div className="text-center py-10 opacity-30">
-                  <ListChecks size={48} className="mx-auto mb-2" />
-                  <p className="font-black text-sm italic">لا توجد مهام حالياً. أضف شيئاً لتنجزه! 🐱</p>
+                <div className="text-center py-8 opacity-20">
+                  <ListChecks size={32} className="mx-auto mb-2" />
+                  <p className="font-black text-[10px] italic">لا توجد مهام حالياً.</p>
                 </div>
               )}
             </div>

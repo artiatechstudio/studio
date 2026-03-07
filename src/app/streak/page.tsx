@@ -93,7 +93,6 @@ export default function StreakPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
-        {/* Header Section */}
         <header className="bg-gradient-to-br from-primary to-accent p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
           <div className="flex items-center justify-between relative z-10">
@@ -114,7 +113,6 @@ export default function StreakPage() {
           </div>
         </header>
 
-        {/* Weekly Momentum */}
         <div className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-6">
             <h3 className="text-lg font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
@@ -139,7 +137,6 @@ export default function StreakPage() {
           </Card>
         </div>
 
-        {/* Achievement Map */}
         <div className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-6">
             <div className="flex items-center justify-between mb-6 flex-row-reverse">
@@ -167,7 +164,6 @@ export default function StreakPage() {
           </Card>
         </div>
 
-        {/* Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
           <Card className="rounded-[2rem] border-none shadow-lg bg-card p-6 flex items-center gap-4">
             <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0", isDoneToday ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600")}>

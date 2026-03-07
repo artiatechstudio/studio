@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -36,7 +36,6 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // حقول كلمة المرور
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [changingPass, setChangingPass] = useState(false);
@@ -67,7 +66,7 @@ export default function SettingsPage() {
       toast({ 
         variant: "destructive", 
         title: "بيانات غير منطقية", 
-        description: "يرجى إدخل طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
+        description: "يرجى إدخال طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
       });
       return;
     }
@@ -114,26 +113,6 @@ export default function SettingsPage() {
       toast({ variant: "destructive", title: "خطأ في التحديث", description: "تأكد من كلمة المرور الحالية." });
     } finally {
       setChangingPass(false);
-    }
-  };
-
-  const handleSendPremiumRequest = async () => {
-    if (!user || !userData) return;
-    playSound('click');
-    
-    try {
-      await update(ref(database, `users/${user.uid}/premiumRequest`), {
-        status: 'pending',
-        duration: duration,
-        requestedAt: Date.now(),
-        email: userData.email,
-        name: userData.name
-      });
-      
-      toast({ title: "تم إرسال طلبك! 🚀", description: "سيتم مراجعة طلبك من قبل المطور قريباً." });
-      setIsRequestOpen(false);
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل الإرسال" });
     }
   };
 
@@ -370,20 +349,42 @@ export default function SettingsPage() {
               التواصل والدعم الفني <MessageSquare size={20} />
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <a href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2 hover:bg-green-100">
-                <Phone size={18} /> واتساب الدعم
-              </Button>
-            </a>
-            <a href="https://careingo.app" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2 hover:bg-blue-100">
-                <Globe size={18} /> الموقع الرسمي
-              </Button>
-            </a>
-            <a href="https://twitter.com/careingo" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2 hover:bg-slate-100">
-                <Twitter size={18} /> منصة X
+          <CardContent className="p-6 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <a href="https://wa.me/218929196425" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2 hover:bg-green-100">
+                  <Phone size={18} /> واتساب الدعم
+                </Button>
+              </a>
+              <a href="https://artiatechstudio.com.ly" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2 hover:bg-blue-100">
+                  <Globe size={18} /> الموقع الرسمي
+                </Button>
+              </a>
+              <a href="https://x.com/artiatechstudio" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2 hover:bg-slate-100">
+                  <Twitter size={18} /> منصة X
+                </Button>
+              </a>
+              <a href="https://instagram.com/artiatechstudio" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-pink-100 bg-pink-50/30 text-pink-700 font-black gap-2 hover:bg-pink-100">
+                  <Instagram size={18} /> إنستغرام
+                </Button>
+              </a>
+              <a href="https://youtube.com/@artiatechstudio" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-red-100 bg-red-50/30 text-red-700 font-black gap-2 hover:bg-red-100">
+                  <Youtube size={18} /> يوتيوب
+                </Button>
+              </a>
+              <a href="https://www.facebook.com/share/1cJCMxmp9f/" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-200 bg-blue-50/50 text-blue-800 font-black gap-2 hover:bg-blue-100">
+                  <Facebook size={18} /> فيسبوك
+                </Button>
+              </a>
+            </div>
+            <a href="mailto:artiateech@gmail.com" onClick={() => playSound('click')} className="block w-full">
+              <Button variant="ghost" className="w-full h-12 rounded-2xl bg-secondary/50 text-muted-foreground font-bold gap-2">
+                <Mail size={16} /> {userData?.email || 'artiateech@gmail.com'}
               </Button>
             </a>
           </CardContent>

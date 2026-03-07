@@ -106,7 +106,13 @@ const STATIC_MESSAGES = [
   "لا تكتفِ بالأحلام، قم وحققها الآن. 🔥",
   "التميز ليس فعلاً، بل هو عادة تمارسها يومياً.",
   "أنت بطل في أعين كاري، استمر في التقدم! 🐱👑",
-  "غداً سيكون أفضل لأنك اخترت أن تعمل اليوم."
+  "غداً سيكون أفضل لأنك اخترت أن تعمل اليوم.",
+  "لا تجعل أحلامك مجرد أماني، حولها لخطوات.",
+  "كاري يحيي روحك القتالية اليوم! 🐱⚔️",
+  "اجعل الاستمرارية هي قانونك المقدس.",
+  "أنت اليوم بذرة، وغداً ستكون غابة من النجاح. 🌲",
+  "تذكر أن كاري فخور بكل محاولة تقوم بها. ✅",
+  "كل يوم تنجز فيه هو انتصار لنسختك الأفضل."
 ];
 
 interface MascotProps {
@@ -117,21 +123,16 @@ interface MascotProps {
 export function Mascot({ messageOnly = false, customMessage }: MascotProps) {
   const { user } = useUser();
   const { database } = useFirebase();
-  const [message, setMessage] = useState<string>("جاري التفكير... 🐱");
-
-  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
-  const { data: userData } = useDatabase(userRef);
+  const [message, setMessage] = useState<string>("Careingo... 🐱");
 
   useEffect(() => {
     if (customMessage) {
       setMessage(customMessage);
       return;
     }
-
-    // نختار رسالة عشوائية من القائمة الموسعة
     const randomIdx = Math.floor(Math.random() * STATIC_MESSAGES.length);
     setMessage(STATIC_MESSAGES[randomIdx]);
-  }, [userData, customMessage]);
+  }, [customMessage]);
 
   if (messageOnly) {
     return (

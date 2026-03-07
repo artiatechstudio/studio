@@ -28,6 +28,9 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             priority
           />
         </div>
+        <div className="mt-8">
+           <p className="text-primary font-black text-4xl tracking-[0.1em] uppercase animate-pulse">Careingo</p>
+        </div>
       </div>
       
       <div className="absolute bottom-12 left-0 right-0 text-center">

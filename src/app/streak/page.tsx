@@ -35,7 +35,7 @@ export default function StreakPage() {
   const membershipRank = useMemo(() => {
     if (!allUsersData || !user) return 0;
     const usersArray = Object.values(allUsersData) as any[];
-    const sorted = usersArray.sort((a, b) => new Date(a.registrationDate || 0).getTime() - new Date(b.registrationDate || 0).getTime());
+    const sorted = usersArray.filter((u: any) => u.name !== 'admin').sort((a, b) => new Date(a.registrationDate || 0).getTime() - new Date(b.registrationDate || 0).getTime());
     const idx = sorted.findIndex(u => u.id === user.uid);
     return idx >= 0 ? idx + 1 : 0;
   }, [allUsersData, user]);
@@ -81,8 +81,9 @@ export default function StreakPage() {
 
   if (isUserLoading || isUserDataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background gap-6">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         <p className="text-primary font-black text-xl animate-pulse tracking-widest uppercase">Careingo</p>
       </div>
     );

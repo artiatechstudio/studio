@@ -5,7 +5,7 @@ import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal } from 'lucide-react';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
@@ -49,7 +49,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     setBonusValue(calculateBonus());
   }, [calculateBonus]);
 
-  // منطق المؤقت المستمر في الخلفية
   useEffect(() => {
     const timerKey = `timer_end_${trackKey}_${stageId}`;
     const savedEnd = localStorage.getItem(timerKey);
@@ -129,7 +128,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         completedStages.push(stageId);
       }
 
-      // لا يتم فتح المرحلة التالية إلا إذا كانت هذه هي المرحلة الحالية المفتوحة
       let nextStage = currentProgress.currentStage || 1;
       if (stageId === nextStage) {
         nextStage = stageId + 1;
@@ -145,10 +143,29 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         newStreak = userData.lastActiveDate === yesterdayStr ? newStreak + 1 : 1;
       }
 
+      const newBadges = [...(userData.badges || [])];
+      
+      // منح الأوسمة بناءً على التقدم
+      if (completedStages.length === 1 && !newBadges.includes("أول خطوة 🐾")) newBadges.push("أول خطوة 🐾");
+      if (completedStages.length === 5 && !newBadges.includes("المنضبط الصغير 🐣")) newBadges.push("المنضبط الصغير 🐣");
+      if (completedStages.length === 15 && !newBadges.includes("المكافح ⚔️")) newBadges.push("المكافح ⚔️");
+      if (completedStages.length === 30 && !newBadges.includes(`سيد مسار ${trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'} 👑`)) {
+        newBadges.push(`سيد مسار ${trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'} 👑`);
+      }
+      
+      const totalPoints = (userData.points || 0) + pointsEarned;
+      if (totalPoints >= 1000 && !newBadges.includes("نادي الألف 🌟")) newBadges.push("نادي الألف 🌟");
+      if (totalPoints >= 5000 && !newBadges.includes("الأسطورة الفضية 🥈")) newBadges.push("الأسطورة الفضية 🥈");
+      if (totalPoints >= 10000 && !newBadges.includes("الأسطورة الذهبية 🥇")) newBadges.push("الأسطورة الذهبية 🥇");
+
+      if (newStreak >= 7 && !newBadges.includes("المثابر الأسبوعي 🔥")) newBadges.push("المثابر الأسبوعي 🔥");
+      if (newStreak >= 30 && !newBadges.includes("وحش الالتزام 🦁")) newBadges.push("وحش الالتزام 🦁");
+
       await update(userRef, {
-        points: (userData.points || 0) + pointsEarned,
+        points: totalPoints,
         streak: newStreak,
         lastActiveDate: todayStr,
+        badges: newBadges,
         [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsEarned,
         [`trackProgress/${trackKey}`]: {
           completedStages,

@@ -77,7 +77,11 @@ export default function RegisterPage() {
 
       await sendEmailVerification(user);
 
-      const membershipRank = allUsers.length + 1;
+      const membershipRank = allUsers.length; // الآدمن لا يحسب فالعضو الأول هو رقم 1
+
+      const initialBadges = name.trim() === 'admin' 
+        ? ['المطور المؤسس 🛡️', 'مدير النظام 👑'] 
+        : ['عضو جديد 🐱', 'أول خطوة 🌱'];
 
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,
@@ -94,7 +98,7 @@ export default function RegisterPage() {
         isPremium: name.trim() === 'admin' ? 1 : 0,
         registrationRank: membershipRank,
         registrationDate: new Date().toISOString(),
-        badges: name.trim() === 'admin' ? ['المطور المؤسس 🛡️'] : ['عضو جديد 🐱'],
+        badges: initialBadges,
         trackProgress: {
           Fitness: { currentStage: 1, completedStages: [] },
           Nutrition: { currentStage: 1, completedStages: [] },

@@ -35,13 +35,11 @@ export default function Home() {
 
   const isAdmin = userData?.name === 'admin';
 
-  // منطق التحقق من الاشتراك والاحتفال
   useEffect(() => {
     if (userData && user && !isAdmin) {
       const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
 
-      // فحص انتهاء الاشتراك
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         update(ref(database, `users/${user.uid}`), {
           isPremium: 0,
@@ -51,7 +49,6 @@ export default function Home() {
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
-      // فحص الاحتفال
       if (userData.showPremiumCelebration) {
         setShowCelebration(true);
         playSound('success');
@@ -60,7 +57,6 @@ export default function Home() {
         });
       }
 
-      // منطق كسر الحماسة
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       const lastActive = userData.lastActiveDate;
@@ -218,7 +214,6 @@ export default function Home() {
           <AdBanner label="إعلان ممول" />
         </div>
 
-        {/* حوار الاحتفال بالبريميوم */}
         <Dialog open={showCelebration} onOpenChange={setShowCelebration}>
           <DialogContent className="rounded-[3rem] p-10 text-center max-w-sm">
             <DialogHeader>

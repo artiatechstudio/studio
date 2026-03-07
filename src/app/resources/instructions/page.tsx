@@ -4,12 +4,50 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
 
 export default function InstructionsPage() {
+  const badgeCategories = [
+    {
+      title: "أوسمة الالتزام (Streaks)",
+      items: [
+        { name: "البداية الواثقة", criteria: "إكمال 3 أيام متتالية", icon: "🌱" },
+        { name: "المحارب الأسبوعي", criteria: "إكمال 7 أيام متتالية", icon: "⚔️" },
+        { name: "باني العادات", criteria: "إكمال 21 يوماً متتالياً", icon: "🏗️" },
+        { name: "أسطورة الشهر", criteria: "إكمال 30 يوماً متتالياً", icon: "🏆" },
+        { name: "الخالد", criteria: "إكمال 60 يوماً متتالياً", icon: "♾️" }
+      ]
+    },
+    {
+      title: "أوسمة النقاط (Wealth)",
+      items: [
+        { name: "جامع النقاط", criteria: "الوصول لـ 1,000 نقطة", icon: "💎" },
+        { name: "النخبة", criteria: "الوصول لـ 5,000 نقطة", icon: "🥇" },
+        { name: "المليونير الصحي", criteria: "الوصول لـ 10,000 نقطة", icon: "💰" },
+        { name: "سلطان كارينجو", criteria: "الوصول لـ 50,000 نقطة", icon: "👑" }
+      ]
+    },
+    {
+      title: "أوسمة التبكير (Early Bird)",
+      items: [
+        { name: "نجم الفجر", criteria: "إنجاز مهمة في الساعة 5 صباحاً", icon: "🌅" },
+        { name: "صياد الشمس", criteria: "إنجاز 10 مهام قبل الساعة 7 صباحاً", icon: "☀️" },
+        { name: "قاهر النوم", criteria: "إنجاز 30 مهمة قبل الساعة 6 صباحاً", icon: "🦅" }
+      ]
+    },
+    {
+      title: "أوسمة التفاعل (Social)",
+      items: [
+        { name: "المحبوب", criteria: "الحصول على 50 إعجاب بملفك", icon: "❤️" },
+        { name: "المؤثر", criteria: "الحصول على 200 إعجاب بملفك", icon: "🌍" },
+        { name: "نجم المجتمع", criteria: "نشر 100 منشور في العام", icon: "🌟" }
+      ]
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-background md:pr-64 pb-40" dir="rtl">
       <NavSidebar />
@@ -36,6 +74,7 @@ export default function InstructionsPage() {
         </header>
 
         <section className="space-y-12">
+          {/* 1. نظام النقاط */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
               <Star className="text-yellow-500" fill="currentColor" /> <h2>1. نظام النقاط المتقدم</h2>
@@ -67,25 +106,38 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
+          {/* 2. نظام الأوسمة المكتشف */}
           <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-destructive">
-              <AlertTriangle className="text-red-600" /> <h2>2. قانون كسر الحماسة (العقوبات)</h2>
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
+              <Medal className="text-accent" /> <h2>2. دليل الأوسمة والتشريفات</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-red-100 bg-red-50/20 space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-start gap-4 p-6 bg-white rounded-3xl border-r-8 border-red-600 shadow-sm">
-                  <Zap className="text-red-600 shrink-0" size={32} />
-                  <div>
-                    <h5 className="font-black text-red-900 text-base">عقوبة الغياب (-150 نقطة)</h5>
-                    <p className="text-xs font-bold text-slate-600 mt-2 leading-relaxed">تطبيق كارينجو مصمم لبناء العادات. إذا مر يوم كامل (24 ساعة) دون أن تفتح التطبيق وتنجز مهمة واحدة على الأقل في أي مسار، سيقوم النظام تلقائياً بـ:
-                    <br />● تصفير عداد أيامك (Streak).
-                    <br />● خصم 150 نقطة فورية من رصيدك العام كعقوبة على التكاسل.</p>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-10">
+              <p className="font-bold text-slate-700 leading-relaxed text-sm">الأوسمة ليست مجرد زينة، بل هي سجل تاريخي لعظمتك في كارينجو. إليك كيف تحصل عليها:</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {badgeCategories.map((cat, i) => (
+                  <div key={i} className="space-y-4">
+                    <h4 className="font-black text-primary text-base flex items-center gap-2 border-b pb-2">
+                      {cat.title}
+                    </h4>
+                    <div className="space-y-3">
+                      {cat.items.map((item, j) => (
+                        <div key={j} className="flex items-center gap-3 bg-secondary/30 p-3 rounded-2xl">
+                          <span className="text-2xl">{item.icon}</span>
+                          <div>
+                            <p className="font-black text-primary text-[11px] leading-none">{item.name}</p>
+                            <p className="text-[9px] font-bold text-muted-foreground mt-1">{item.criteria}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                ))}
               </div>
             </Card>
           </div>
 
+          {/* 3. عضوية بريميوم */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
               <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية كارينجو الملكية (Premium)</h2>
@@ -113,6 +165,7 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
+          {/* 4. جدار العار */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-red-800">
               <Skull className="text-red-800" /> <h2>4. جدار العار (Wall of Shame)</h2>

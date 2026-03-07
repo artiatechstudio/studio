@@ -9,13 +9,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart } from 'lucide-react';
+import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -51,7 +52,6 @@ export default function ProfilePage() {
     if (profile?.name === 'admin') return { rank: 0, total: 0 };
 
     const usersArray = Object.values(allUsersData) as any[];
-    // استثناء الآدمن من الترتيب تماماً ليكون العضو رقم 0
     const filteredUsers = usersArray.filter(u => u.name !== 'admin')
       .sort((a, b) => {
         const dateA = new Date(a.registrationDate || 0).getTime();
@@ -74,9 +74,11 @@ export default function ProfilePage() {
   if (isUserLoading || (isLoading && !cachedProfile) || isAllUsersLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
-        <div className="text-8xl animate-bounce">🐱</div>
-        <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
-        <p className="text-primary font-black text-xl animate-pulse tracking-widest uppercase">Careingo</p>
+        <div className="flex flex-col items-center gap-6">
+           <div className="text-8xl animate-bounce">🐱</div>
+           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+           <p className="text-primary font-black text-xl animate-pulse tracking-widest uppercase">Careingo</p>
+        </div>
       </div>
     );
   }
@@ -92,6 +94,19 @@ export default function ProfilePage() {
     return "مبتدئ طموح 🌱";
   };
 
+  const allPossibleBadges = [
+    { name: "عضو جديد 🐱", icon: "🐱" },
+    { name: "البداية الواثقة 🌱", icon: "🌱" },
+    { name: "المحارب الأسبوعي ⚔️", icon: "⚔️" },
+    { name: "أسطورة الشهر 🏆", icon: "🏆" },
+    { name: "جامع النقاط 💎", icon: "💎" },
+    { name: "النخبة 🥇", icon: "🥇" },
+    { name: "المليونير الصحي 💰", icon: "💰" },
+    { name: "نجم الفجر 🌅", icon: "🌅" },
+    { name: "المحبوب ❤️", icon: "❤️" },
+    { name: "المؤثر 🌍", icon: "🌍" }
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
@@ -103,7 +118,7 @@ export default function ProfilePage() {
           
           <div className="flex-1 text-center md:text-right space-y-3">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3">
-              <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name || 'جارِ التحميل'}</h1>
+              <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name || 'Careingo'}</h1>
               <span className="bg-primary/10 px-4 py-1 rounded-full text-xs font-black text-primary border border-primary/20">
                 {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
               </span>
@@ -142,7 +157,7 @@ export default function ProfilePage() {
             <CardHeader className="p-0 mb-6">
               <CardTitle className="text-2xl font-black text-primary flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                   <Trophy className="text-accent" /> الأوسمة المكتسبة
+                   <Medal className="text-accent" /> سجل التشريفات (Hall of Fame)
                 </div>
                 {userData.name !== 'admin' && (
                   <Link href="/streak" onClick={() => playSound('click')}>
@@ -151,14 +166,23 @@ export default function ProfilePage() {
                 )}
               </CardTitle>
             </CardHeader>
-            <div className="flex flex-wrap gap-4">
-              {userData.badges && userData.badges.length > 0 ? userData.badges.map((badge: string, i: number) => (
-                <div key={i} className="bg-secondary/40 dark:bg-secondary/20 px-6 py-3 rounded-2xl font-black text-primary dark:text-primary-foreground shadow-sm border border-border">
-                  {badge}
-                </div>
-              )) : (
-                <p className="text-muted-foreground font-bold italic">لم تكتسب أوسمة بعد، استمر في التقدم! 🔥</p>
-              )}
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {allPossibleBadges.map((badge, i) => {
+                const isEarned = userData.badges?.some((b: string) => b.includes(badge.name.split(' ')[0]));
+                return (
+                  <div key={i} className={cn(
+                    "flex flex-col items-center gap-2 p-4 rounded-3xl border transition-all",
+                    isEarned 
+                      ? "bg-primary/5 border-primary/20 shadow-md scale-100" 
+                      : "bg-secondary/20 border-transparent opacity-40 grayscale"
+                  )}>
+                    <div className="text-4xl mb-1">{isEarned ? badge.icon : <Lock className="w-8 h-8 text-muted-foreground opacity-30" />}</div>
+                    <p className="text-[10px] font-black text-center text-primary">{badge.name}</p>
+                    {isEarned && <span className="text-[7px] font-black bg-green-500 text-white px-2 py-0.5 rounded-full uppercase">مكتمل</span>}
+                  </div>
+                );
+              })}
             </div>
           </Card>
 

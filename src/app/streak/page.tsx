@@ -175,7 +175,7 @@ export default function StreakPage() {
         </section>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-          <Card className="rounded-[2rem] border-none shadow-md bg-card p-5 flex items-center gap-4 border border-border">
+          <Card className="rounded-[2rem] border-none shadow-md bg-card p-5 flex items-center gap-4">
             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0", isDoneToday ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600")}>
               {isDoneToday ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
             </div>
@@ -187,7 +187,7 @@ export default function StreakPage() {
             </div>
           </Card>
 
-          <Card className="rounded-[2rem] border-none shadow-md bg-primary/5 p-5 flex items-center gap-4 border border-primary/10">
+          <Card className="rounded-[2rem] border-none shadow-md bg-primary/5 p-5 flex items-center gap-4">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
               <UserCheck size={24} />
             </div>

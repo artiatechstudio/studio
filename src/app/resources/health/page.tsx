@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -29,7 +28,7 @@ export default function FitnessResourcePage() {
     },
     { 
       name: "تمارين البربي (Burpees)", 
-      desc: "التمرين الشامل الحارق للدهون. ابدأ بوضع الوقوف، ثم انزل لوضع القرفصاء وضع يديك على الأرض، اقفز بقدميك للخلف لوضع الضغط، ثم اقفز للأمام للعودة للقرفصاء، وانتهِ بقفزة عمودية قوية نحو السماء.", 
+      desc: "التمرين الشامل الحارق للدهون. ابدأ بوضع الوقوف، ثم انزل لوضع القرفصاء وضع يديك على الأرض، اقفز بقدمين للخلف لوضع الضغط، ثم اقفز للأمام للعودة للقرفصاء، وانتهِ بقفزة عمودية قوية نحو السماء.", 
       target: "رفع معدل ضربات القلب، حرق السعرات، وتقوية كامل عضلات الجسم." 
     },
     { 
@@ -91,11 +90,11 @@ export default function FitnessResourcePage() {
 
         <div className="relative w-full h-[350px] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-card">
           <Image 
-            src="https://picsum.photos/seed/fitness-ultra/1200/800" 
+            src="https://picsum.photos/seed/careingo-fitness-pro/1200/800" 
             alt="لياقة بدنية" 
             fill 
             className="object-cover"
-            data-ai-hint="gym fitness"
+            data-ai-hint="fitness training"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-10">
             <p className="text-white text-2xl font-black">أداؤك الصحيح للتمرين هو ما يبني جسدك، وليس عدد التكرارات الخاطئة.</p>

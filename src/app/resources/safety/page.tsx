@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -38,11 +37,11 @@ export default function SafetyResourcePage() {
 
         <div className="relative w-full h-[350px] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-card">
           <Image 
-            src="https://picsum.photos/seed/safety-master/1200/800" 
+            src="https://picsum.photos/seed/careingo-safety-first/1200/800" 
             alt="السلامة أولا" 
             fill 
             className="object-cover"
-            data-ai-hint="medical safety"
+            data-ai-hint="medical checkup"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-10">
             <p className="text-white text-2xl font-black">الألم هو لغة جسدك؛ تعلم كيف تستمع إليه قبل أن يتحول لصرخة إصابة.</p>

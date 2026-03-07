@@ -114,17 +114,17 @@ export default function Home() {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mx-1">
+        <div className="grid grid-cols-2 gap-2 mx-1">
           <Link href="/profile" className="block">
-            <Card className="p-3 rounded-[2rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.01] transition-transform">
-              <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center text-green-600 shrink-0">
-                <HeartPulse size={20} />
+            <Card className="p-2.5 rounded-[1.5rem] shadow-md border border-border flex items-center gap-2 bg-card hover:scale-[1.01] transition-transform h-full">
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center text-green-600 shrink-0">
+                <HeartPulse size={16} />
               </div>
-              <div className="overflow-hidden">
-                <p className="text-[8px] font-black text-muted-foreground uppercase mb-0.5">مؤشر الجسم (BMI)</p>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-lg font-black text-primary">{bmiInfo?.value || '--'}</span>
-                  <span className={cn("text-[8px] font-black px-1.5 py-0.5 rounded-full bg-secondary shadow-sm", bmiInfo?.color)}>
+              <div className="overflow-hidden flex-1">
+                <p className="text-[7px] font-black text-muted-foreground uppercase leading-none mb-1 truncate">مؤشر الجسم (BMI)</p>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-black text-primary">{bmiInfo?.value || '--'}</span>
+                  <span className={cn("text-[6px] font-black px-1 py-0.5 rounded-full bg-secondary shadow-sm truncate", bmiInfo?.color)}>
                     {bmiInfo?.status || '--'}
                   </span>
                 </div>
@@ -133,15 +133,15 @@ export default function Home() {
           </Link>
 
           <Link href="/streak" className="block">
-            <Card className="p-3 rounded-[2rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.01] transition-transform">
-              <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-                <Activity size={20} />
+            <Card className="p-2.5 rounded-[1.5rem] shadow-md border border-border flex items-center gap-2 bg-card hover:scale-[1.01] transition-transform h-full">
+              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center text-accent shrink-0">
+                <Activity size={16} />
               </div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-[8px] font-black text-muted-foreground uppercase mb-0.5">الإنجاز الكلي</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-black text-primary">{progressPercent}%</span>
-                  <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden hidden sm:block">
+              <div className="overflow-hidden flex-1">
+                <p className="text-[7px] font-black text-muted-foreground uppercase leading-none mb-1 truncate">الإنجاز الكلي</p>
+                <div className="flex items-center gap-1">
+                  <span className="text-sm font-black text-primary">{progressPercent}%</span>
+                  <div className="flex-1 bg-secondary h-1 rounded-full overflow-hidden">
                     <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
                   </div>
                 </div>

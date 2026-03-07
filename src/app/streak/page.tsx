@@ -8,7 +8,6 @@ import { ref } from 'firebase/database';
 import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Flame, CalendarDays, CheckCircle2, AlertCircle, UserCheck } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
@@ -67,59 +66,59 @@ export default function StreakPage() {
   return (
     <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 md:py-12 space-y-6">
+      <div className="app-container py-4 md:py-8 space-y-4">
         
         {/* Header Section */}
-        <header className="bg-card p-5 md:p-8 rounded-[2rem] shadow-xl border border-border mx-1 relative overflow-hidden text-right">
+        <header className="bg-card p-4 md:p-6 rounded-[2rem] shadow-lg border border-border mx-1 relative overflow-hidden text-right">
           <div className="absolute top-0 left-0 w-24 h-24 bg-primary/5 rounded-full -translate-x-12 -translate-y-12" />
           
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
-            <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="w-16 h-16 md:w-20 md:h-20 bg-orange-100 dark:bg-orange-900/30 rounded-[1.5rem] flex items-center justify-center text-orange-600 shadow-md border-2 border-white dark:border-slate-800 animate-float shrink-0">
-                <Flame className="size-8 md:size-10" fill="currentColor" />
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <div className="w-12 h-12 md:w-16 md:h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 shadow-md border border-white shrink-0 animate-float">
+                <Flame size={24} fill="currentColor" />
               </div>
               <div className="text-right">
-                <h1 className="text-2xl md:text-4xl font-black text-primary leading-none">سجل الحماسة</h1>
-                <p className="text-[10px] md:text-sm font-bold text-muted-foreground mt-1">توثيق رحلة نموك اليومية 🔥</p>
+                <h1 className="text-lg md:text-2xl font-black text-primary leading-none">سجل الحماسة</h1>
+                <p className="text-[8px] md:text-xs font-bold text-muted-foreground mt-1">رحلة نموك اليومية 🔥</p>
               </div>
             </div>
             
-            <div className="flex gap-2 w-full md:w-auto justify-center">
-              <div className="flex-1 md:flex-none bg-orange-500 text-white px-4 py-2 rounded-2xl text-center shadow-md">
-                 <p className="text-xl md:text-2xl font-black">{userData?.streak || 0}</p>
-                 <p className="text-[7px] font-black uppercase opacity-80">يوم مستمر</p>
+            <div className="flex gap-2 w-full md:w-auto">
+              <div className="flex-1 md:flex-none bg-orange-500 text-white px-3 py-1.5 rounded-xl text-center shadow-md">
+                 <p className="text-base md:text-xl font-black">{userData?.streak || 0}</p>
+                 <p className="text-[6px] font-black uppercase opacity-80">يوم</p>
               </div>
-              <div className="flex-1 md:flex-none bg-primary text-white px-4 py-2 rounded-2xl text-center shadow-md">
-                 <p className="text-xl md:text-2xl font-black">{(userData?.points || 0).toLocaleString()}</p>
-                 <p className="text-[7px] font-black uppercase opacity-80">نقطة إجمالية</p>
+              <div className="flex-1 md:flex-none bg-primary text-white px-3 py-1.5 rounded-xl text-center shadow-md">
+                 <p className="text-base md:text-xl font-black">{(userData?.points || 0).toLocaleString()}</p>
+                 <p className="text-[6px] font-black uppercase opacity-80">نقطة</p>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mx-1">
-          <Card className="lg:col-span-2 border-none shadow-lg rounded-[2rem] bg-card overflow-hidden border border-border">
-            <CardHeader className="bg-secondary/10 p-5 border-b border-border">
-              <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-2">
-                خارطة الإنجاز <CalendarDays size={20} className="text-primary" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mx-1">
+          <Card className="lg:col-span-2 border-none shadow-md rounded-[2rem] bg-card overflow-hidden border border-border">
+            <CardHeader className="bg-secondary/10 p-4 border-b border-border">
+              <CardTitle className="text-sm font-black text-primary flex items-center justify-end gap-2">
+                خارطة الإنجاز <CalendarDays size={16} />
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 md:p-6 overflow-hidden">
-              <div className="rtl-calendar-clean w-full overflow-hidden">
+            <CardContent className="p-2 md:p-4">
+              <div className="rtl-calendar-clean w-full flex justify-center">
                 <Calendar
                   mode="multiple"
                   selected={completedDates}
                   showOutsideDays={false}
-                  className="p-0 bg-transparent w-full"
+                  className="p-0 scale-90 sm:scale-100 origin-top"
                   components={{
                     Head: () => null, 
                     DayContent: ({ date }) => {
                       if (!date) return null;
                       const isCompleted = completedDates.some(d => d.toDateString() === date.toDateString());
                       if (isCompleted) {
-                        return <div className="text-lg animate-pulse">🔥</div>;
+                        return <div className="text-sm animate-pulse">🔥</div>;
                       }
-                      return <span className="font-black text-[10px] opacity-60">{date.getDate()}</span>;
+                      return <span className="font-black text-[9px] opacity-60">{date.getDate()}</span>;
                     }
                   }}
                 />
@@ -127,27 +126,27 @@ export default function StreakPage() {
             </CardContent>
           </Card>
 
-          <div className="space-y-6">
-            <Card className="border-none shadow-lg rounded-[2rem] bg-card p-6 border border-border text-right relative overflow-hidden">
-              <h3 className="font-black text-lg text-primary mb-4 flex items-center justify-end gap-2">
+          <div className="space-y-4">
+            <Card className="border-none shadow-md rounded-[2rem] bg-card p-4 border border-border text-right">
+              <h3 className="font-black text-xs text-primary mb-2 flex items-center justify-end gap-2">
                 حالة اليوم
-                {isDoneToday ? <CheckCircle2 size={18} className="text-green-500" /> : <AlertCircle size={18} className="text-orange-500" />}
+                {isDoneToday ? <CheckCircle2 size={14} className="text-green-500" /> : <AlertCircle size={14} className="text-orange-500" />}
               </h3>
-              <p className="text-xs font-bold text-muted-foreground leading-relaxed">
+              <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
                 {isDoneToday 
                   ? "أحسنت يا بطل! لقد أتممت مهمتك لليوم وحافظت على السلسلة بنجاح." 
                   : "لم تسجل أي إنجاز لليوم بعد. هيا ابدأ الآن!"}
               </p>
             </Card>
 
-            <Card className="border-none shadow-lg rounded-[2rem] bg-primary/5 p-6 border border-primary/10 text-right">
-              <div className="flex items-center justify-end gap-2 text-primary mb-4">
-                <h3 className="font-black text-lg">مرتبة العضوية</h3>
-                <UserCheck size={20} />
+            <Card className="border-none shadow-md rounded-[2rem] bg-primary/5 p-4 border border-primary/10 text-right">
+              <div className="flex items-center justify-end gap-2 text-primary mb-2">
+                <h3 className="font-black text-xs">مرتبة العضوية</h3>
+                <UserCheck size={14} />
               </div>
-              <div className="space-y-4 text-center">
-                 <p className="text-[8px] font-black text-muted-foreground uppercase">رقم العضوية الفخري</p>
-                 <p className="font-black text-primary text-xl">أنت العضو رقم {membershipRank || '--'}</p>
+              <div className="space-y-1 text-center">
+                 <p className="text-[7px] font-black text-muted-foreground uppercase">رقم العضوية الفخري</p>
+                 <p className="font-black text-primary text-base">أنت العضو رقم {membershipRank || '--'}</p>
               </div>
             </Card>
           </div>

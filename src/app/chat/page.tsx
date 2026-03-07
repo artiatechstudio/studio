@@ -102,7 +102,7 @@ export default function ChatListPage() {
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
               <Input 
                 placeholder="ابحث باسم المستخدم لبدء محادثة..." 
-                className="h-14 pr-12 rounded-2xl bg-secondary/50 border-none font-bold text-right"
+                className="h-14 pr-12 rounded-2xl bg-secondary/50 border-none font-bold text-right text-xs sm:text-sm md:text-base"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

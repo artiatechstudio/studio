@@ -85,21 +85,45 @@ export default function ResourcesPage() {
           
           <Accordion type="single" collapsible className="w-full">
             <AccordionItem value="privacy">
-              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية والدردشة</AccordionTrigger>
+              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية والأحكام</AccordionTrigger>
               <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
-                <p>نحن في ارتياتك نلتزم بحماية بياناتك الشخصية الأساسية (الاسم، العمر، الطول، الوزن). يتم استخدام هذه البيانات فقط لحساب مؤشراتك الصحية الشخصية ووضعك في قائمة المتصدرين.</p>
-                <div className="p-3 bg-secondary/10 rounded-xl border-r-2 border-primary/20 text-xs opacity-70">
-                   تنبيه : في الدردشة لا يوجد تشفير بين الطرفين حيث قد يتمكن اي شخص لديه الوصول الى حسابك على الاطلاع عليها تأكد الا تشارك معلومات حساسة
+                <div className="space-y-4">
+                  <p>● <span className="text-primary font-black">حماية البيانات:</span> نلتزم في "كارينجو" بحماية معلوماتك الشخصية (الاسم، الوزن، الطول) واستخدامها فقط لتحسين تجربتك الصحية. لا يتم مشاركة هذه البيانات مع أطراف خارجية لأغراض إعلانية.</p>
+                  <p>● <span className="text-primary font-black">سلوك المستخدم:</span> يُتوقع من جميع الأعضاء الاحترام المتبادل في غرف الدردشة. أي تنمر أو إساءة سيؤدي إلى حظر الحساب نهائياً دون سابق إنذار.</p>
+                  <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> جميع النصائح المقدمة عبر المساعد الذكي "كاري" هي نصائح تحفيزية وتثقيفية فقط، وليست بديلاً عن الاستشارة الطبية المتخصصة.</p>
+                  <div className="p-3 bg-red-50 rounded-xl border-r-2 border-red-200 text-xs text-red-700">
+                    تنبيه: الدردشات العامة والخاصة لا تخضع للتشفير التام (End-to-End)، يرجى تجنب مشاركة كلمات المرور أو البيانات الحساسة جداً.
+                  </div>
+                  <p>● <span className="text-primary font-black">حذف الحساب:</span> يحق للمستخدم حذف حسابه في أي وقت، وسيتم مسح كافة سجلات تقدمه من قواعد البيانات بشكل نهائي.</p>
                 </div>
-                <p>نحن لا نبيع بياناتك لأطراف خارجية. ومع ذلك، فإن ميزات التفاعل الاجتماعي تخضع للرقابة لضمان بيئة آمنة للجميع.</p>
               </AccordionContent>
             </AccordionItem>
+            
             <AccordionItem value="faq">
               <AccordionTrigger className="text-right font-black text-lg">الأسئلة الشائعة</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
-                <p className="mb-2">● كيف أحافظ على حماستي؟ الإنجاز اليومي هو المفتاح، حتى لو كان بسيطاً.</p>
-                <p className="mb-2">● هل يمكنني تغيير مساري؟ نعم، يمكنك التبديل بين المسارات في أي وقت من الرئيسية.</p>
-                <p>● كيف تُحسب النقاط؟ تعتمد على وقت الإنجاز (نظام بونص التبكير) وصعوبة المهمة الأساسية.</p>
+              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="text-primary font-black">كيف يمكنني تغيير مساري الحالي؟</h4>
+                    <p>يمكنك التبديل بين المسارات الأربعة (اللياقة، التغذية، السلوك، الدراسة) في أي وقت من الصفحة الرئيسية. تقدمك في كل مسار منفصل تماماً.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-primary font-black">لماذا لا يمكنني فتح أكثر من مرحلة يومياً؟</h4>
+                    <p>فلسفة كارينجو تقوم على "التراكم المستدام". الهدف هو بناء عادة يومية وليس إنهاء التحديات بسرعة. الصبر هو مفتاح النمو.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-primary font-black">كيف يتم حساب "رقم العضوية"؟</h4>
+                    <p>رقمك يعكس ترتيبك الزمني في الانضمام لمجتمعنا. العضو رقم 1 هو أول من سجل، وهكذا. هذا الرقم فخري ويبقى ثابتاً.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-primary font-black">هل يمكنني استعادة سجل دردشة محذوف؟</h4>
+                    <p>للأسف لا. بمجرد الضغط على زر حذف السجل، يتم مسح الرسائل نهائياً من خوادمنا لحماية خصوصيتك.</p>
+                  </div>
+                  <div>
+                    <h4 className="text-primary font-black">ما هو دور "بونص التبكير"؟</h4>
+                    <p>نحن نكافئ من يستيقظ مبكراً لإنجاز مهامه. كلما أنجزت مهمتك في الصباح الباكر، حصلت على نقاط إضافية تصل إلى 75 نقطة.</p>
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
           </Accordion>

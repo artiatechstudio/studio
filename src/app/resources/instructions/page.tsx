@@ -30,7 +30,7 @@ export default function InstructionsPage() {
             </div>
             <div>
               <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">الدستور الكامل لكارينجو</h1>
-              <p className="text-muted-foreground text-base md:text-lg font-bold">كل القوانين، العقوبات، والآليات التي تحكم مجتمعنا.</p>
+              <p className="text-muted-foreground text-base md:text-lg font-bold">كل القوانين والآليات التي تحكم مجتمعنا.</p>
             </div>
           </div>
         </header>
@@ -76,14 +76,7 @@ export default function InstructionsPage() {
                   <Zap className="text-red-600 shrink-0" />
                   <div>
                     <h5 className="font-black text-red-900 text-sm">عقوبة كسر الحماسة (-150 نقطة)</h5>
-                    <p className="text-[10px] font-bold text-slate-600 mt-1">تغيبك عن التطبيق ليوم واحد فقط يؤدي لتصفير عداد أيامك وخصم 150 نقطة فورية من رصيدك العام كعقوبة على التخاذل.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border-r-4 border-orange-500">
-                  <ListChecks className="text-orange-500 shrink-0" />
-                  <div>
-                    <h5 className="font-black text-orange-900 text-sm">عقوبة المهام اليومية (-30 نقطة)</h5>
-                    <p className="text-[10px] font-bold text-slate-600 mt-1">أي مهمة تضعها في "قائمة مهامي" ولم تنجزها قبل منتصف الليل، أو قمت بإلغائها يدوياً، سيتم خصم 30 نقطة عن كل مهمة منها.</p>
+                    <p className="text-[10px] font-bold text-slate-600 mt-1">تغيبك عن التطبيق ليوم كامل دون إنجاز أي مهمة في أي مسار يؤدي لتصفير عداد أيامك وخصم 150 نقطة فورية من رصيدك العام.</p>
                   </div>
                 </div>
               </div>
@@ -103,11 +96,11 @@ export default function InstructionsPage() {
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
                   <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><Globe size={12}/> نشر غير محدود</h5>
-                  <p className="text-[10px] font-bold opacity-70">إمكانية إرسال أكثر من 3 منشورات يومياً في المجتمع العام.</p>
+                  <p className="text-[10px] font-bold opacity-70">إمكانية إرسال عدد لا نهائي من المنشورات في المجتمع العام.</p>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
                   <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><ListChecks size={12}/> مهام لا نهائية</h5>
-                  <p className="text-[10px] font-bold opacity-70">إضافة أكثر من 5 مهام شخصية في قائمة المهام اليومية.</p>
+                  <p className="text-[10px] font-bold opacity-70">إضافة عدد غير محدود من المهام الشخصية والتحديات يومياً.</p>
                 </div>
                 <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
                   <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><Crown size={12}/> شارة التوثيق الملكية</h5>
@@ -130,21 +123,6 @@ export default function InstructionsPage() {
                 <li>كان نشطاً خلال **آخر 7 أيام** فقط (لا يظهر فيه القدامى المختفون).</li>
                 <li>يتم رفع اسمك من جدار العار فور حصولك على أول نقطة إنجاز جديدة.</li>
               </ul>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
-              <Brain className="text-blue-600" /> <h2>5. حالة السيرفر والذكاء الاصطناعي</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-blue-100 bg-blue-50/20 space-y-4">
-              <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border-r-4 border-blue-600">
-                <AlertCircle className="text-blue-600 shrink-0" />
-                <div>
-                  <h5 className="font-black text-blue-900 text-sm">حالة المساعد "كاري":</h5>
-                  <p className="text-[10px] font-bold text-slate-600 mt-1">سيرفر الذكاء الاصطناعي متوقف حالياً للصيانة والترقية في النسخة الأولية. "كاري" يعمل الآن بنظام الرسائل التحفيزية الثابتة لضمان سرعة واستقرار التطبيق.</p>
-                </div>
-              </div>
             </Card>
           </div>
         </section>

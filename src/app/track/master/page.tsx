@@ -6,12 +6,12 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, X, CheckSquare, AlertTriangle, Crown, Infinity, Clock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, remove } from 'firebase/database';
+import { ref, update, push, serverTimestamp } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -78,48 +78,6 @@ export default function MasterTrackPage() {
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
-
-  // منطق حذف المهام المنتهية وخصم النقاط آلياً
-  useEffect(() => {
-    if (!user || !todosData || !database || !userData) return;
-    
-    const checkAndPenalize = async () => {
-      const now = Date.now();
-      const entries = Object.entries(todosData);
-      
-      for (const [id, todo] of entries as [string, any][]) {
-        if (todo.expiry && now >= todo.expiry) {
-          const penalty = 30;
-          const currentTotalPoints = userData.points || 0;
-          const currentDailyPoints = userData.dailyPoints?.[today] || 0;
-
-          const updates: any = {};
-          updates[`users/${user.uid}/todos/${id}`] = null;
-          updates[`users/${user.uid}/points`] = Math.max(0, currentTotalPoints - penalty);
-          updates[`users/${user.uid}/dailyPoints/${today}`] = currentDailyPoints - penalty;
-
-          try {
-            await update(ref(database), updates);
-            
-            push(ref(database, `users/${user.uid}/notifications`), {
-              type: 'system',
-              title: 'انتهى وقت المهمة! 🛑',
-              message: `تم حذف المهمة "${todo.title}" وخصم 30 نقطة لعدم الالتزام.`,
-              isRead: false,
-              timestamp: serverTimestamp()
-            });
-
-            toast({ variant: "destructive", title: "انتهى الوقت!", description: "تم خصم 30 نقطة لعدم الإتمام." });
-          } catch (e) {
-            console.error(e);
-          }
-        }
-      }
-    };
-
-    const interval = setInterval(checkAndPenalize, 5000);
-    return () => clearInterval(interval);
-  }, [user, todosData, database, userData, today]);
 
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
@@ -212,52 +170,38 @@ export default function MasterTrackPage() {
     setTodoMinutes('');
   };
 
-  const handleToggleTodo = (todoId: string) => {
+  const handleToggleTodo = (todo: any) => {
     if (!user || completingId || !userData) return;
     playSound('click');
-    setCompletingId(todoId);
+    setCompletingId(todo.id);
     
+    const now = Date.now();
+    const isExpired = todo.expiry <= now;
+    const pointsToAdd = isExpired ? 0 : 5;
+
     const currentPoints = userData.points || 0;
     const dailyPoints = userData.dailyPoints?.[today] || 0;
 
     const updates: any = {};
-    updates[`users/${user.uid}/points`] = currentPoints + 5;
-    updates[`users/${user.uid}/dailyPoints/${today}`] = dailyPoints + 5;
-    updates[`users/${user.uid}/todos/${todoId}`] = null;
+    updates[`users/${user.uid}/points`] = currentPoints + pointsToAdd;
+    updates[`users/${user.uid}/dailyPoints/${today}`] = dailyPoints + pointsToAdd;
+    updates[`users/${user.uid}/todos/${todo.id}`] = null;
 
     setTimeout(async () => {
       try {
         await update(ref(database), updates);
-        toast({ title: "أحسنت! +5 نقاط 🌟" });
-        playSound('success');
+        if (pointsToAdd > 0) {
+          toast({ title: "أحسنت في الوقت! +5 نقاط 🌟" });
+          playSound('success');
+        } else {
+          toast({ title: "تم الإنجاز (متأخر) - 0 نقطة", variant: "default" });
+        }
       } catch (e) {
         console.error(e);
       } finally {
         setCompletingId(null);
       }
     }, 800);
-  };
-
-  const handleDeleteTodo = async (todoId: string) => {
-    if (!user || !database || !userData) return;
-    const confirmDelete = window.confirm("إلغاء المهمة سيخصم 30 نقطة! هل أنت متأكد؟ 🛑");
-    if (!confirmDelete) return;
-
-    playSound('click');
-    const currentPoints = userData.points || 0;
-    const dailyPoints = userData.dailyPoints?.[today] || 0;
-    
-    const updates: any = {};
-    updates[`users/${user.uid}/todos/${todoId}`] = null;
-    updates[`users/${user.uid}/points`] = Math.max(0, currentPoints - 30);
-    updates[`users/${user.uid}/dailyPoints/${today}`] = dailyPoints - 30;
-
-    try {
-      await update(ref(database), updates);
-      toast({ variant: "destructive", title: "تم الإلغاء", description: "تم خصم 30 نقطة 🛑" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل الحذف" });
-    }
   };
 
   const formatTime = (s: number) => {
@@ -268,12 +212,14 @@ export default function MasterTrackPage() {
 
   function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
     const [display, setDisplay] = useState("");
+    const [isExpired, setIsExpired] = useState(false);
 
     useEffect(() => {
       const itv = setInterval(() => {
         const diff = expiry - Date.now();
         if (diff <= 0) {
-          setDisplay("منتهي");
+          setDisplay("منتهي (0 نقطة)");
+          setIsExpired(true);
         } else {
           const h = Math.floor(diff / (1000 * 60 * 60));
           const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
@@ -283,13 +229,14 @@ export default function MasterTrackPage() {
           } else {
             setDisplay(`${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
           }
+          setIsExpired(false);
         }
       }, 1000);
       return () => clearInterval(itv);
     }, [expiry, hasCustomTimer]);
 
     return (
-      <span className="text-[8px] font-black text-orange-500 flex items-center gap-1">
+      <span className={cn("text-[8px] font-black flex items-center gap-1", isExpired ? "text-red-500" : "text-orange-500")}>
         <Clock size={8}/> {display}
       </span>
     );
@@ -423,9 +370,6 @@ export default function MasterTrackPage() {
                  <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
                  {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{5 - todoCountToday}/5</span>}
               </div>
-              <span className="text-[7px] font-black text-red-500 flex items-center gap-1">
-                <AlertTriangle size={8} /> إلغاء/تجاهل = -30 نقطة
-              </span>
             </div>
           </header>
           
@@ -467,7 +411,7 @@ export default function MasterTrackPage() {
                 >
                   <div className="flex items-center gap-3 overflow-hidden flex-1">
                     <button 
-                      onClick={() => handleToggleTodo(todo.id)}
+                      onClick={() => handleToggleTodo(todo)}
                       disabled={!!completingId}
                       className={cn(
                         "w-7 h-7 rounded-lg flex items-center justify-center transition-all shrink-0",
@@ -483,14 +427,6 @@ export default function MasterTrackPage() {
                       <TodoExpiryTimer expiry={todo.expiry} hasCustomTimer={todo.hasCustomTimer} />
                     </div>
                   </div>
-                  <Button 
-                    onClick={() => handleDeleteTodo(todo.id)} 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-red-600 hover:bg-red-50 h-8 w-8 shrink-0 rounded-lg font-black text-sm"
-                  >
-                    X
-                  </Button>
                 </div>
               )) : (
                 <div className="text-center py-8 opacity-20">

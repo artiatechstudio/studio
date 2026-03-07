@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction, set } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, runTransaction, set } from 'firebase/database';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -71,7 +71,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
 
     playSound('click');
     try {
-      await set(chatRootRef, null); // استخدام set null كبديل أكثر ضماناً للحذف
+      await set(chatRootRef, null);
       toast({ title: "تم حذف السجل بنجاح" });
       router.push('/chat');
     } catch (error) {

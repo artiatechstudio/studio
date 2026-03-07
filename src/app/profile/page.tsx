@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -31,8 +32,8 @@ export default function ProfilePage() {
   const { data: userData, isLoading } = useDatabase(profileRef);
 
   const membershipInfo = useMemo(() => {
-    if (!allUsersData || !user) return { rank: 0, total: 0 };
-    if (userData?.name === 'admin') return { rank: 0, total: 0 };
+    if (!allUsersData || !user || !userData) return { rank: 0, total: 0 };
+    if (userData.name === 'admin') return { rank: 0, total: 0 };
 
     const usersArray = Object.values(allUsersData) as any[];
     const filteredUsers = usersArray.filter(u => u.name !== 'admin')
@@ -62,6 +63,9 @@ export default function ProfilePage() {
     );
   }
 
+  // حماية ضد البيانات الفارغة بعد التحميل
+  if (!userData) return null;
+
   const getRankName = (points: number = 0) => {
     if (userData.name === 'admin') return "مدير النظام الرسمي 🛡️";
     if (points >= 10000) return "أسطورة كاري 👑";
@@ -71,7 +75,7 @@ export default function ProfilePage() {
     return "مبتدئ طموح 🌱";
   };
 
-  const isAvatarUrl = userData?.avatar && userData.avatar.startsWith('http');
+  const isAvatarUrl = userData.avatar && typeof userData.avatar === 'string' && userData.avatar.startsWith('http');
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64 pt-4 md:pt-0" dir="rtl">
@@ -80,7 +84,7 @@ export default function ProfilePage() {
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-xl border border-border">
           <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0 overflow-hidden rounded-[2.5rem]">
             {isAvatarUrl ? (
-              <Image src={userData.avatar} alt="Profile" width={150} height={150} className="object-cover w-full h-full" />
+              <Image src={userData.avatar} alt="Profile" width={150} height={150} className="object-cover w-full h-full" unoptimized />
             ) : (
               <span className="text-6xl md:text-7xl">{userData.avatar || "🐱"}</span>
             )}

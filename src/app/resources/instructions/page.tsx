@@ -26,7 +26,7 @@ export default function InstructionsPage() {
         <header className="space-y-4">
           <div className="flex items-center justify-start gap-4 md:gap-6">
             <div className="w-16 h-16 md:w-20 md:h-20 bg-primary/10 text-primary rounded-[2rem] flex items-center justify-center shadow-xl border border-primary/20">
-              <Info size={40} />
+              <div className="text-4xl">ℹ️</div>
             </div>
             <div>
               <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">دستور Careingo الكامل</h1>

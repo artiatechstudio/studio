@@ -13,12 +13,11 @@ interface AdBannerProps {
 
 /**
  * مكون مساحة إعلانية مفعل لـ Google AdSense.
- * لاستخدامه فعلياً، استبدل data-ad-client برقمك الخاص و data-ad-slot برقم الوحدة الإعلانية.
+ * لاستخدامه فعلياً، استبدل ca-pub-XXXXXXXXXXXXXXXX برقم الناشر الخاص بك.
  */
 export function AdBanner({ label = "إعلان ممول", className, adSlot = "YYYYYYYYYY" }: AdBannerProps) {
   useEffect(() => {
     try {
-      // إطلاق طلب الإعلان بمجرد تحميل المكون
       if (typeof window !== 'undefined') {
         ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       }
@@ -34,7 +33,6 @@ export function AdBanner({ label = "إعلان ممول", className, adSlot = "Y
         <span>{label}</span>
       </div>
       
-      {/* AdSense Unit Container */}
       <div className="w-full overflow-hidden flex justify-center">
         <ins className="adsbygoogle"
              style={{ display: 'block' }}

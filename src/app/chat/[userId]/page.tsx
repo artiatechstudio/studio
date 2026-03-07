@@ -36,7 +36,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   const otherUserRef = useMemoFirebase(() => ref(database, `users/${otherId}`), [database, otherId]);
   const { data: otherUserData } = useDatabase(otherUserRef);
 
-  // تحديث وقت القراءة (Mark as Read) بمجرد تحميل الرسائل أو التواجد في الصفحة
   useEffect(() => {
     if (user && chatId && database) {
       const lastSeenRef = ref(database, `chats/${chatId}/lastSeen/${user.uid}`);
@@ -66,13 +65,13 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   };
 
   const handleDeleteChat = async () => {
+    if (!user || !chatId) return;
     const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ سيتم مسح الرسائل لدى الطرفين. 🐱⚠️");
     if (!confirmed) return;
 
     playSound('click');
     try {
-      // حذف كامل عقدة المحادثة لضمان اختفائها من القوائم
-      await remove(chatRootRef);
+      await set(chatRootRef, null); // استخدام set null كبديل أكثر ضماناً للحذف
       toast({ title: "تم حذف السجل بنجاح" });
       router.push('/chat');
     } catch (error) {
@@ -105,7 +104,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   }, [messagesData]);
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       
       {/* Header */}

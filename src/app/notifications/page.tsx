@@ -4,7 +4,7 @@
 import React, { useMemo, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, serverTimestamp, remove } from 'firebase/database';
+import { ref, update, serverTimestamp, remove, set } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Heart, Trophy, Zap, Trash2, CheckCheck, Clock, Star } from 'lucide-react';
@@ -38,9 +38,16 @@ export default function NotificationsPage() {
   };
 
   const handleClearAll = async () => {
-    if (!user || !window.confirm("هل تريد حذف كافة الإشعارات؟ 🐱🗑️")) return;
+    if (!user || !notificationsRef) return;
+    const confirmed = window.confirm("هل تريد حذف كافة الإشعارات؟ 🐱🗑️");
+    if (!confirmed) return;
+    
     playSound('click');
-    await remove(notificationsRef!);
+    try {
+      await set(notificationsRef, null); // حذف كافة الإشعارات عبر مسح العقدة
+    } catch (error) {
+      console.error("Clear notifications error:", error);
+    }
   };
 
   const getIcon = (type: string) => {
@@ -54,7 +61,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-32" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-32 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-10 space-y-8">
         <header className="flex items-center justify-between bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">

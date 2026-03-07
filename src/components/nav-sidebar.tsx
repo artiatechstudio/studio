@@ -74,18 +74,22 @@ export function NavSidebar() {
 
   return (
     <>
-      {/* Floating Notification Icon for Mobile Only */}
-      <div className="md:hidden fixed top-4 left-4 z-[60]">
-        <Link href="/notifications" onClick={() => playSound('click')} className="relative block">
-          <div className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center text-primary shadow-xl border border-primary/10">
-            <Bell className={cn("w-6 h-6", unreadNotifCount > 0 && "animate-tada")} />
+      {/* Top Header for Mobile Only - Contains Notification Bell */}
+      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-background/80 backdrop-blur-xl border-b border-border z-[60] flex items-center justify-between px-4">
+        <div className="flex items-center gap-2">
+          <Link href="/notifications" onClick={() => playSound('click')} className="relative p-2 rounded-xl bg-secondary/50">
+            <Bell className={cn("w-5 h-5 text-primary", unreadNotifCount > 0 && "animate-tada")} />
             {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-accent text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
+              <span className="absolute -top-1 -right-1 bg-accent text-white text-[8px] font-black min-w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce border border-white">
                 {unreadNotifCount}
               </span>
             )}
-          </div>
-        </Link>
+          </Link>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-black text-primary">كارينجو</span>
+          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">🐱</div>
+        </div>
       </div>
 
       {/* Desktop Sidebar */}

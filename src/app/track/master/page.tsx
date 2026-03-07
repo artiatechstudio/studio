@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,9 @@ export default function MasterTrackPage() {
     const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
     return tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
   }, [userData]);
+
+  // دالة لتنظيف العنوان من بادئة اليوم حتى لا يتم "الحرق" على المستخدم
+  const cleanTitle = (title: string) => title.replace(/^اليوم\s+\d+:\s*/, '');
 
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
@@ -128,10 +131,10 @@ export default function MasterTrackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-40 overflow-x-hidden" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-6">
-        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-4">
+      <div className="app-container py-6 space-y-6 px-4 md:px-0">
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
               <Sparkles size={28} />
@@ -149,7 +152,7 @@ export default function MasterTrackPage() {
         </header>
 
         {step === 'setup' && (
-          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card mx-4 space-y-6 overflow-hidden">
+          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden">
             {!isLegend && (
               <div className="bg-orange-50 border-r-4 border-orange-500 p-4 rounded-2xl flex items-start gap-3">
                 <ShieldAlert className="text-orange-600 shrink-0" size={18} />
@@ -198,10 +201,12 @@ export default function MasterTrackPage() {
         )}
 
         {step === 'active' && currentChallenge && (
-          <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border mx-4 text-right shadow-2xl">
+          <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl">
             <CardHeader className="bg-primary text-white p-5">
               <div className="flex items-center justify-between flex-row-reverse">
-                <CardTitle className="text-lg font-black truncate max-w-[70%]">{currentChallenge.title}</CardTitle>
+                <CardTitle className="text-lg font-black truncate max-w-[70%]">
+                  {cleanTitle(currentChallenge.title)}
+                </CardTitle>
                 <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black">{currentChallenge.difficulty}</span>
               </div>
             </CardHeader>
@@ -226,7 +231,7 @@ export default function MasterTrackPage() {
         )}
 
         {step === 'done' && (
-          <Card className="rounded-[2.5rem] p-8 text-center mx-4 bg-card shadow-2xl space-y-4">
+          <Card className="rounded-[2.5rem] p-8 text-center bg-card shadow-2xl space-y-4 mx-2">
             <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle size={48} />
             </div>
@@ -236,7 +241,7 @@ export default function MasterTrackPage() {
           </Card>
         )}
 
-        <section className="mx-4 space-y-4 pt-6 border-t border-border/50">
+        <section className="space-y-4 pt-6 border-t border-border/50">
           <header className="flex items-center justify-between px-1">
             <h2 className="text-lg font-black text-primary flex items-center gap-2">
               <ListChecks size={20} /> قائمة مهامي

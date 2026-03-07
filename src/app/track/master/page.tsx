@@ -44,7 +44,6 @@ export default function MasterTrackPage() {
   const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
   const todoCountToday = userData?.dailyTodoCount?.[today] || 0;
 
-  // جلب الحالة المحفوظة للمؤقت الأساسي
   useEffect(() => {
     const savedEnd = localStorage.getItem('master_timer_end');
     const savedChallenge = localStorage.getItem('master_current_challenge');
@@ -63,7 +62,6 @@ export default function MasterTrackPage() {
     }
   }, []);
 
-  // مؤقت التحدي الأساسي
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -81,23 +79,24 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
-  // فحص المهام المنتهية (قانون الـ 24 ساعة أو التوقيت المحدد)
   useEffect(() => {
     if (!user || !todosData) return;
     const now = Date.now();
     
     const checkExpiry = async () => {
-      for (const todo of Object.values(todosData) as any[]) {
+      const entries = Object.entries(todosData);
+      for (const [id, todo] of entries as [string, any][]) {
         if (todo.expiry && now > todo.expiry) {
           const penalty = 30;
           const currentPoints = userData?.points || 0;
           const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
           
-          await update(ref(database, `users/${user.uid}`), {
-            points: Math.max(0, currentPoints - penalty),
-            [`dailyPoints/${today}`]: currentDailyPoints - penalty
-          });
-          await remove(ref(database, `users/${user.uid}/todos/${todo.id}`));
+          const updates: any = {};
+          updates[`users/${user.uid}/points`] = Math.max(0, currentPoints - penalty);
+          updates[`users/${user.uid}/dailyPoints/${today}`] = currentDailyPoints - penalty;
+          
+          await update(ref(database), updates);
+          await remove(ref(database, `users/${user.uid}/todos/${id}`));
           
           push(ref(database, `users/${user.uid}/notifications`), {
             type: 'system',
@@ -110,7 +109,8 @@ export default function MasterTrackPage() {
         }
       }
     };
-    checkExpiry();
+    const timer = setInterval(checkExpiry, 10000); // فحص كل 10 ثواني
+    return () => clearInterval(timer);
   }, [user, todosData, database, userData, today]);
 
   const isLegend = useMemo(() => {
@@ -186,11 +186,9 @@ export default function MasterTrackPage() {
     const now = new Date();
     let expiryTime: number;
 
-    // إذا وضع المستخدم وقتاً محدداً بالدقائق
     if (todoMinutes && parseInt(todoMinutes) > 0) {
       expiryTime = now.getTime() + (parseInt(todoMinutes) * 60 * 1000);
     } else {
-      // الوقت الافتراضي هو حتى منتصف الليل
       const midnight = new Date();
       midnight.setHours(23, 59, 59, 999);
       expiryTime = midnight.getTime();
@@ -245,13 +243,17 @@ export default function MasterTrackPage() {
     const currentPoints = userData?.points || 0;
     const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
     
-    await update(ref(database, `users/${user.uid}`), {
-      points: Math.max(0, currentPoints - 30),
-      [`dailyPoints/${today}`]: currentDailyPoints - 30
-    });
+    const updates: any = {};
+    updates[`users/${user.uid}/points`] = Math.max(0, currentPoints - 30);
+    updates[`users/${user.uid}/dailyPoints/${today}`] = currentDailyPoints - 30;
 
-    await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
-    toast({ variant: "destructive", title: "تم الإلغاء", description: "خصم 30 نقطة لعدم الالتزام 🛑" });
+    try {
+      await update(ref(database), updates);
+      await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
+      toast({ variant: "destructive", title: "تم الإلغاء", description: "خصم 30 نقطة لعدم الالتزام 🛑" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الحذف" });
+    }
   };
 
   const formatTime = (s: number) => {
@@ -260,24 +262,23 @@ export default function MasterTrackPage() {
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // مؤقت صغير لكل مهمة في القائمة
   function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
     const [display, setDisplay] = useState("");
 
     useEffect(() => {
-      if (!hasCustomTimer) {
-        setDisplay("حتى منتصف الليل");
-        return;
-      }
-
       const itv = setInterval(() => {
         const diff = expiry - Date.now();
-        if (diff <= 0) setDisplay("منتهي");
-        else {
+        if (diff <= 0) {
+          setDisplay("منتهي");
+        } else {
           const h = Math.floor(diff / (1000 * 60 * 60));
           const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           const s = Math.floor((diff % (1000 * 60)) / 1000);
-          setDisplay(`${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
+          if (!hasCustomTimer) {
+            setDisplay("حتى منتصف الليل");
+          } else {
+            setDisplay(`${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
+          }
         }
       }, 1000);
       return () => clearInterval(itv);
@@ -438,14 +439,14 @@ export default function MasterTrackPage() {
               <div className="flex gap-2">
                 <Input 
                   placeholder="أضف مهمة شخصية..." 
-                  className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs focus-visible:ring-primary flex-1"
+                  className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] focus-visible:ring-primary flex-1"
                   value={todoInput}
                   onChange={(e) => setTodoInput(e.target.value)}
                 />
                 <Input 
-                  placeholder="الوقت (د)" 
+                  placeholder="د" 
                   type="number"
-                  className="h-11 w-20 rounded-xl bg-secondary/50 border-none font-bold text-center text-xs focus-visible:ring-primary"
+                  className="h-11 w-12 rounded-xl bg-secondary/50 border-none font-bold text-center text-[10px] focus-visible:ring-primary"
                   value={todoMinutes}
                   onChange={(e) => setTodoMinutes(e.target.value)}
                 />
@@ -477,7 +478,7 @@ export default function MasterTrackPage() {
                       <CheckSquare size={16} />
                     </button>
                     <div className="flex flex-col text-right overflow-hidden">
-                      <span className="font-bold text-[11px] text-primary truncate">
+                      <span className="font-bold text-[11px] text-primary break-words leading-tight">
                         {todo.title}
                       </span>
                       <TodoExpiryTimer expiry={todo.expiry} hasCustomTimer={todo.hasCustomTimer} />
@@ -487,9 +488,9 @@ export default function MasterTrackPage() {
                     onClick={() => handleDeleteTodo(todo.id)} 
                     variant="ghost" 
                     size="icon" 
-                    className="text-red-500 hover:bg-red-50 h-8 w-8 shrink-0 rounded-lg"
+                    className="text-red-600 hover:bg-red-50 h-8 w-8 shrink-0 rounded-lg font-black text-sm"
                   >
-                    <X size={18} />
+                    X
                   </Button>
                 </div>
               )) : (

@@ -92,10 +92,10 @@ export default function StreakPage() {
         <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
           <div className="flex items-center justify-between relative z-10">
-            <div className="space-y-1">
+            <div className="space-y-1 text-right">
               <h1 className="text-2xl font-black">سجل الحماسة</h1>
-              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest flex items-center gap-1">
-                <TrendingUp size={12} /> رحلة نموك اليومية
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest flex items-center justify-end gap-1">
+                رحلة نموك اليومية <TrendingUp size={12} />
               </p>
             </div>
             <div className="flex gap-2">
@@ -174,7 +174,7 @@ export default function StreakPage() {
             <div className="text-right">
               <h4 className="font-black text-xs text-primary">حالة اليوم</h4>
               <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
-                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم بدأت بعد؟ كاري ينتظرك بشوق!"}
+                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم تبدأ بعد؟ كاري ينتظرك بشوق!"}
               </p>
             </div>
           </Card>

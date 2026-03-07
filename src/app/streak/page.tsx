@@ -18,10 +18,18 @@ export default function StreakPage() {
     setTodayStr(new Date().toLocaleDateString('en-CA'));
   }, []);
 
-  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
+  const userRef = useMemoFirebase(() => {
+    if (!user || !database) return null;
+    return ref(database, `users/${user.uid}`);
+  }, [user, database]);
+
   const { data: userData, isLoading } = useDatabase(userRef);
 
-  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
+  const allUsersRef = useMemoFirebase(() => {
+    if (!database) return null;
+    return ref(database, 'users');
+  }, [database]);
+
   const { data: allUsersData } = useDatabase(allUsersRef);
 
   const membershipRank = useMemo(() => {
@@ -89,7 +97,6 @@ export default function StreakPage() {
     <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        
         <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
           <div className="flex items-center justify-between relative z-10">

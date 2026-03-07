@@ -102,19 +102,6 @@ export default function Home() {
     <div className="min-h-screen bg-background pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-4">
-        
-        <header className="flex items-center justify-between bg-card p-3 rounded-[2rem] shadow-lg border border-border sticky top-2 z-30 mx-1">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white text-xl shrink-0 shadow-md">
-              {profile.avatar || "🐱"}
-            </div>
-            <div className="flex flex-col text-right overflow-hidden">
-              <p className="text-[8px] font-black text-muted-foreground">أهلاً بك</p>
-              <p className="text-xs font-black text-primary leading-tight truncate max-w-[120px]">{profile.name || 'جارِ التحميل'}</p>
-            </div>
-          </div>
-        </header>
-
         <div className="grid grid-cols-2 gap-2 mx-1">
           <Link href="/profile" className="block">
             <Card className="p-2.5 rounded-[1.5rem] shadow-md border border-border flex items-center gap-2 bg-card hover:scale-[1.01] transition-transform h-full">
@@ -168,7 +155,6 @@ export default function Home() {
             <TrackCard type="Study" currentStage={profile.trackProgress?.Study?.currentStage || 1} totalStages={30} />
           </div>
         </section>
-
       </div>
     </div>
   );

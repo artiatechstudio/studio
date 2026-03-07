@@ -6,18 +6,18 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png بعرض الشاشة مرفوعة للأعلى قليلاً، مع إزالة كافة النصوص.
+ * يعرض أيقونة splash.png مرفوعة للأعلى لتكون في الثلث العلوي، بدون نصوص إضافية.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 2500); // ثانيتين ونصف
+    }, 2500);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-start overflow-hidden p-0 pt-20">
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-start overflow-hidden p-0 pt-16 md:pt-24">
       <div className="flex flex-col items-center gap-0 w-full relative">
         <div className="relative w-full aspect-square max-w-md">
           <Image 

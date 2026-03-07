@@ -5,9 +5,8 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Calendar } from '@/components/ui/calendar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CalendarDays, CheckCircle2, AlertCircle, UserCheck } from 'lucide-react';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Trophy, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
@@ -23,10 +22,7 @@ export default function StreakPage() {
 
   useEffect(() => {
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    setTodayStr(`${year}-${month}-${day}`);
+    setTodayStr(now.toLocaleDateString('en-CA'));
   }, []);
 
   const membershipRank = useMemo(() => {
@@ -40,17 +36,43 @@ export default function StreakPage() {
     return sortedUsers.findIndex(u => u.id === user.uid) + 1;
   }, [allUsersData, user]);
 
-  const completedDates = useMemo(() => {
-    if (!userData?.dailyPoints) return [];
-    return Object.keys(userData.dailyPoints).map(dateStr => {
-      const [year, month, day] = dateStr.split('-').map(Number);
-      return new Date(year, month - 1, day);
-    });
-  }, [userData]);
-  
   const isDoneToday = useMemo(() => {
     if (!todayStr || !userData?.dailyPoints) return false;
     return !!userData.dailyPoints[todayStr];
+  }, [userData, todayStr]);
+
+  // توليد بيانات آخر 30 يوم للشبكة
+  const last30Days = useMemo(() => {
+    const days = [];
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dStr = d.toLocaleDateString('en-CA');
+      days.push({
+        date: dStr,
+        dayNum: d.getDate(),
+        isCompleted: !!userData?.dailyPoints?.[dStr]
+      });
+    }
+    return days;
+  }, [userData]);
+
+  // توليد أيام الأسبوع الحالي
+  const currentWeek = useMemo(() => {
+    const week = [];
+    const dayLabels = ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      const day = d.getDay();
+      d.setDate(d.getDate() - (day - i));
+      const dStr = d.toLocaleDateString('en-CA');
+      week.push({
+        label: dayLabels[i],
+        isCompleted: !!userData?.dailyPoints?.[dStr],
+        isToday: dStr === todayStr
+      });
+    }
+    return week;
   }, [userData, todayStr]);
 
   if (isUserLoading || isLoading) {
@@ -66,91 +88,118 @@ export default function StreakPage() {
   return (
     <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-4 md:py-8 space-y-4">
+      <div className="app-container py-6 space-y-6">
         
-        {/* Header Section */}
-        <header className="bg-card p-4 md:p-6 rounded-[2rem] shadow-lg border border-border mx-1 relative overflow-hidden text-right">
-          <div className="absolute top-0 left-0 w-24 h-24 bg-primary/5 rounded-full -translate-x-12 -translate-y-12" />
-          
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 relative z-10">
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <div className="w-12 h-12 md:w-16 md:h-16 bg-orange-100 dark:bg-orange-900/30 rounded-2xl flex items-center justify-center text-orange-600 shadow-md border border-white shrink-0 animate-float">
-                <Flame size={24} fill="currentColor" />
-              </div>
-              <div className="text-right">
-                <h1 className="text-lg md:text-2xl font-black text-primary leading-none">سجل الحماسة</h1>
-                <p className="text-[8px] md:text-xs font-bold text-muted-foreground mt-1">رحلة نموك اليومية 🔥</p>
-              </div>
+        {/* Header - Compact */}
+        <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
+          <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
+          <div className="flex items-center justify-between relative z-10">
+            <div className="space-y-1">
+              <h1 className="text-2xl font-black">سجل الحماسة</h1>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest flex items-center gap-1">
+                <TrendingUp size={12} /> رحلة نموك اليومية
+              </p>
             </div>
-            
-            <div className="flex gap-2 w-full md:w-auto">
-              <div className="flex-1 md:flex-none bg-orange-500 text-white px-3 py-1.5 rounded-xl text-center shadow-md">
-                 <p className="text-base md:text-xl font-black">{userData?.streak || 0}</p>
-                 <p className="text-[6px] font-black uppercase opacity-80">يوم</p>
+            <div className="flex gap-2">
+              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-center border border-white/20">
+                <p className="text-xl font-black">{userData?.streak || 0}</p>
+                <p className="text-[8px] font-black uppercase opacity-70">يوم</p>
               </div>
-              <div className="flex-1 md:flex-none bg-primary text-white px-3 py-1.5 rounded-xl text-center shadow-md">
-                 <p className="text-base md:text-xl font-black">{(userData?.points || 0).toLocaleString()}</p>
-                 <p className="text-[6px] font-black uppercase opacity-80">نقطة</p>
+              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-center border border-white/20">
+                <p className="text-xl font-black">{userData?.points || 0}</p>
+                <p className="text-[8px] font-black uppercase opacity-70">نقطة</p>
               </div>
             </div>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mx-1">
-          <Card className="lg:col-span-2 border-none shadow-md rounded-[2rem] bg-card overflow-hidden border border-border">
-            <CardHeader className="bg-secondary/10 p-4 border-b border-border">
-              <CardTitle className="text-sm font-black text-primary flex items-center justify-end gap-2">
-                خارطة الإنجاز <CalendarDays size={16} />
+        {/* Weekly Momentum Strip */}
+        <section className="px-2">
+          <Card className="rounded-[2rem] border-none shadow-lg bg-card p-6 overflow-hidden">
+            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
+              زخم الأسبوع الحالي <Flame size={18} className="text-orange-500" />
+            </h3>
+            <div className="flex justify-between items-center gap-2">
+              {currentWeek.map((day, i) => (
+                <div key={i} className="flex flex-col items-center gap-3">
+                  <div className={cn(
+                    "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2",
+                    day.isCompleted ? "bg-orange-500 border-orange-400 text-white animate-pulse shadow-orange-500/20" : 
+                    day.isToday ? "bg-secondary border-primary/30 text-primary" : "bg-secondary border-transparent text-muted-foreground/40"
+                  )}>
+                    {day.isCompleted ? <Flame size={20} fill="currentColor" /> : <span className="text-[10px] font-black">{day.label[0]}</span>}
+                  </div>
+                  <span className={cn("text-[8px] font-black", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
+                    {day.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+
+        {/* Activity Heatmap Grid */}
+        <section className="px-2">
+          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-6 overflow-hidden">
+            <CardHeader className="p-0 mb-6 flex flex-row items-center justify-between flex-row-reverse">
+              <CardTitle className="text-sm font-black text-primary flex items-center gap-2">
+                خريطة الإنجاز (30 يوم) <CalendarIcon size={16} />
               </CardTitle>
-            </CardHeader>
-            <CardContent className="p-2 md:p-4">
-              <div className="rtl-calendar-clean w-full flex justify-center">
-                <Calendar
-                  mode="multiple"
-                  selected={completedDates}
-                  showOutsideDays={false}
-                  className="p-0 scale-90 sm:scale-100 origin-top"
-                  components={{
-                    Head: () => null, 
-                    DayContent: ({ date }) => {
-                      if (!date) return null;
-                      const isCompleted = completedDates.some(d => d.toDateString() === date.toDateString());
-                      if (isCompleted) {
-                        return <div className="text-sm animate-pulse">🔥</div>;
-                      }
-                      return <span className="font-black text-[9px] opacity-60">{date.getDate()}</span>;
-                    }
-                  }}
-                />
+              <div className="flex items-center gap-1 text-[8px] font-black text-muted-foreground">
+                <span>أقل</span>
+                <div className="w-2 h-2 bg-secondary rounded-sm" />
+                <div className="w-2 h-2 bg-orange-200 rounded-sm" />
+                <div className="w-2 h-2 bg-orange-500 rounded-sm" />
+                <span>أكثر</span>
               </div>
-            </CardContent>
+            </CardHeader>
+            <div className="grid grid-cols-6 sm:grid-cols-10 gap-2">
+              {last30Days.map((day, i) => (
+                <div 
+                  key={i} 
+                  title={day.date}
+                  className={cn(
+                    "aspect-square rounded-lg flex items-center justify-center transition-all duration-500",
+                    day.isCompleted ? "bg-orange-500 shadow-lg shadow-orange-500/20 text-white" : "bg-secondary text-muted-foreground/20"
+                  )}
+                >
+                  {day.isCompleted ? <CheckCircle2 size={12} /> : <span className="text-[8px] font-bold">{day.dayNum}</span>}
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+
+        {/* Status Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
+          <Card className="rounded-[2rem] border-none shadow-md bg-card p-5 flex items-center gap-4 border border-border">
+            <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0", isDoneToday ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600")}>
+              {isDoneToday ? <CheckCircle2 size={24} /> : <AlertCircle size={24} />}
+            </div>
+            <div className="text-right">
+              <h4 className="font-black text-xs text-primary">حالة اليوم</h4>
+              <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
+                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم تبدأ بعد؟ كاري ينتظرك بشوق!"}
+              </p>
+            </div>
           </Card>
 
-          <div className="space-y-4">
-            <Card className="border-none shadow-md rounded-[2rem] bg-card p-4 border border-border text-right">
-              <h3 className="font-black text-xs text-primary mb-2 flex items-center justify-end gap-2">
-                حالة اليوم
-                {isDoneToday ? <CheckCircle2 size={14} className="text-green-500" /> : <AlertCircle size={14} className="text-orange-500" />}
-              </h3>
-              <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
-                {isDoneToday 
-                  ? "أحسنت يا بطل! لقد أتممت مهمتك لليوم وحافظت على السلسلة بنجاح." 
-                  : "لم تسجل أي إنجاز لليوم بعد. هيا ابدأ الآن!"}
+          <Card className="rounded-[2rem] border-none shadow-md bg-primary/5 p-5 flex items-center gap-4 border border-primary/10">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
+              <UserCheck size={24} />
+            </div>
+            <div className="text-right">
+              <h4 className="font-black text-xs text-primary">رقم العضوية</h4>
+              <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
+                أنت العضو رقم <span className="text-primary font-black">{membershipRank || '--'}</span> في مجتمعنا.
               </p>
-            </Card>
-
-            <Card className="border-none shadow-md rounded-[2rem] bg-primary/5 p-4 border border-primary/10 text-right">
-              <div className="flex items-center justify-end gap-2 text-primary mb-2">
-                <h3 className="font-black text-xs">مرتبة العضوية</h3>
-                <UserCheck size={14} />
-              </div>
-              <div className="space-y-1 text-center">
-                 <p className="text-[7px] font-black text-muted-foreground uppercase">رقم العضوية الفخري</p>
-                 <p className="font-black text-primary text-base">أنت العضو رقم {membershipRank || '--'}</p>
-              </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
         </div>
+
+        <footer className="text-center opacity-20 font-black text-[8px] pt-4">
+          CAREINGO STREAK SYSTEM v2.0
+        </footer>
       </div>
     </div>
   );

@@ -56,17 +56,15 @@
   body {
     @apply bg-background text-foreground overflow-x-hidden;
     font-family: 'Cairo', sans-serif;
-    font-size: 0.8rem; /* تصغير الخط العام لدعم الجوال */
+    font-size: 0.8rem;
     line-height: 1.2;
   }
 }
 
-/* Container Constraint */
 .app-container {
   @apply max-w-xl mx-auto w-full px-2 sm:px-4;
 }
 
-/* Animations */
 .animate-float {
   animation: float 3s ease-in-out infinite;
 }
@@ -83,53 +81,4 @@
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
-}
-
-/* RTL Calendar Full Alignment */
-.rtl-calendar-clean {
-  direction: rtl !important;
-  width: 100% !important;
-  display: flex !important;
-  justify-content: center !important;
-}
-
-.rtl-calendar-clean .rdp-month {
-  width: 100% !important;
-}
-
-.rtl-calendar-clean .rdp-table {
-  width: 100% !important;
-}
-
-.rtl-calendar-clean .rdp-cell {
-  width: 14.28% !important;
-  display: inline-flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-}
-
-.rtl-calendar-clean .rdp-day {
-  width: 100% !important;
-  max-width: 30px;
-  aspect-ratio: 1/1 !important;
-  height: auto !important;
-  font-weight: 900 !important;
-  font-size: 0.75rem !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  border-radius: 0.5rem !important;
-}
-
-.rtl-calendar-clean .rdp-head {
-  display: none !important;
-}
-
-.rtl-calendar-clean .rdp-month_caption {
-  display: flex !important;
-  justify-content: center !important;
-  margin-bottom: 0.5rem !important;
-  font-weight: 900 !important;
-  font-size: 0.8rem !important;
-  color: hsl(var(--primary));
 }

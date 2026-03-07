@@ -50,79 +50,79 @@ export default function ChatListPage() {
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        <header className="flex items-center gap-4 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2 mt-2">
-          <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
-            <MessageCircle size={32} />
+        <header className="flex items-center gap-4 bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2 mt-2">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+            <MessageCircle size={24} />
           </div>
-          <h1 className="text-3xl font-black text-primary">الدردشة والمجتمع</h1>
+          <h1 className="text-2xl font-black text-primary">الدردشة والمجتمع</h1>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mx-2">
           <Link href="/chat/ai" onClick={() => playSound('click')} className="block">
-            <div className="flex items-center justify-between p-6 rounded-[2rem] bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-3xl shadow-inner border border-white/30">
+            <div className="flex items-center justify-between p-5 rounded-[1.5rem] bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30">
                   🐱
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-lg">كارينجو الذكي</p>
-                  <p className="text-[10px] font-bold opacity-80 flex items-center gap-1">
-                    <Sparkles size={10} /> مساعدك الشخصي
+                  <p className="font-black text-base">كارينجو الذكي</p>
+                  <p className="text-[8px] font-bold opacity-80 flex items-center gap-1">
+                    <Sparkles size={8} /> مساعدك الشخصي
                   </p>
                 </div>
               </div>
-              <ArrowLeft className="rotate-180 opacity-50" />
+              <ArrowLeft className="rotate-180 opacity-50" size={16} />
             </div>
           </Link>
 
           <Link href="/chat/public" onClick={() => playSound('click')} className="block">
-            <div className="flex items-center justify-between p-6 rounded-[2rem] bg-gradient-to-r from-accent to-pink-500 text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center text-3xl shadow-inner border border-white/30">
+            <div className="flex items-center justify-between p-5 rounded-[1.5rem] bg-gradient-to-r from-accent to-pink-500 text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30">
                   🌍
                 </div>
                 <div className="text-right">
-                  <p className="font-black text-lg">المجتمع العام</p>
-                  <p className="text-[10px] font-bold opacity-80 flex items-center gap-1">
-                    <Globe size={10} /> انشر إلهامك للجميع
+                  <p className="font-black text-base">المجتمع العام</p>
+                  <p className="text-[8px] font-bold opacity-80 flex items-center gap-1">
+                    <Globe size={8} /> انشر إلهامك للجميع
                   </p>
                 </div>
               </div>
-              <ArrowLeft className="rotate-180 opacity-50" />
+              <ArrowLeft className="rotate-180 opacity-50" size={16} />
             </div>
           </Link>
         </div>
 
-        <Card className="rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2">
-          <CardHeader className="p-8 border-b border-border bg-secondary/10 flex flex-row items-center justify-between flex-row-reverse">
-            <CardTitle className="text-xl font-black text-primary flex items-center gap-2">الرسائل الخاصة <Users size={20}/></CardTitle>
+        <Card className="rounded-[2rem] shadow-xl border-none bg-card overflow-hidden mx-2">
+          <CardHeader className="p-6 border-b border-border bg-secondary/10 flex flex-row items-center justify-between flex-row-reverse">
+            <CardTitle className="text-lg font-black text-primary flex items-center gap-2">الرسائل الخاصة <Users size={18}/></CardTitle>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
+          <CardContent className="p-6 space-y-6">
             <div className="relative">
-              <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <Input 
                 placeholder="ابحث باسم المستخدم لبدء محادثة..." 
-                className="h-14 pr-12 rounded-2xl bg-secondary/50 border-none font-bold text-right text-xs sm:text-sm md:text-base"
+                className="h-12 pr-10 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] sm:text-xs"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
 
             {searchTerm.trim() && (
-              <div className="space-y-3">
-                <p className="text-xs font-black text-muted-foreground px-2">نتائج البحث</p>
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-muted-foreground px-2 uppercase tracking-widest">نتائج البحث</p>
                 {filteredUsers.length > 0 ? filteredUsers.map((u: any) => (
                   <UserChatListItem key={u.id} user={u} />
                 )) : (
-                  <p className="text-center p-4 text-muted-foreground font-bold">لا يوجد مستخدمين بهذا الاسم</p>
+                  <p className="text-center p-4 text-muted-foreground font-bold text-xs italic">لا يوجد مستخدمين بهذا الاسم</p>
                 )}
               </div>
             )}
 
             {!searchTerm.trim() && recentChatUsers.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-xs font-black text-muted-foreground px-2 flex items-center gap-2">
-                  <Clock size={14} /> دردشات سابقة
+              <div className="space-y-2">
+                <p className="text-[10px] font-black text-muted-foreground px-2 flex items-center gap-2 uppercase tracking-widest">
+                  <Clock size={12} /> دردشات سابقة
                 </p>
                 {recentChatUsers.map((u: any) => (
                   <UserChatListItem key={u.id} user={u} />
@@ -138,20 +138,20 @@ export default function ChatListPage() {
 
 function UserChatListItem({ user }: { user: any }) {
   return (
-    <div className="flex items-center justify-between p-4 rounded-2xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
+    <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border shadow-sm hover:scale-110 transition-transform">
+        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm hover:scale-110 transition-transform">
           {user.avatar || "🐱"}
         </div>
       </Link>
-      <Link href={`/chat/${user.id}`} onClick={() => playSound('click')} className="flex-1 flex items-center justify-between mr-4">
+      <Link href={`/chat/${user.id}`} onClick={() => playSound('click')} className="flex-1 flex items-center justify-between mr-3">
         <div className="text-right">
-          <p className="font-black text-primary">{user.name}</p>
-          <p className="text-[10px] text-muted-foreground font-bold truncate max-w-[150px]">
+          <p className="font-black text-primary text-sm">{user.name}</p>
+          <p className="text-[9px] text-muted-foreground font-bold truncate max-w-[120px]">
             {user.bio || "عضو في كارينجو 🌱"}
           </p>
         </div>
-        <ArrowLeft className="text-primary opacity-30 rotate-180" />
+        <ArrowLeft className="text-primary opacity-30 rotate-180" size={14} />
       </Link>
     </div>
   );

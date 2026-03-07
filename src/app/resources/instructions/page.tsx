@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull, ListChecks } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';

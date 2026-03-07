@@ -37,7 +37,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const progressRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${trackKey}`) : null, [user, database, trackKey]);
   const { data: progressData } = useDatabase(progressRef);
 
-  // حساب بونص التبكير
   const calculateBonus = useCallback(() => {
     const now = new Date();
     const hour = now.getHours();
@@ -101,7 +100,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   }, [progressData, stageId]);
 
   const handleStartTimer = () => {
-    const durationSeconds = challenge.time * 60;
+    const durationSeconds = (challenge.time || 5) * 60;
     const endTime = Date.now() + (durationSeconds * 1000);
     const timerKey = `timer_end_${trackKey}_${stageId}`;
     
@@ -130,8 +129,9 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         completedStages.push(stageId);
       }
 
-      let nextStage = currentProgress.currentStage;
-      if (stageId === currentProgress.currentStage) {
+      // لا يتم فتح المرحلة التالية إلا إذا كانت هذه هي المرحلة الحالية المفتوحة
+      let nextStage = currentProgress.currentStage || 1;
+      if (stageId === nextStage) {
         nextStage = stageId + 1;
       }
 
@@ -160,14 +160,12 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       push(ref(database, `users/${user.uid}/notifications`), {
         type: 'achievement',
         title: 'إنجاز رائع! 🏆',
-        message: `لقد أكملت اليوم ${stageId} في مسار ${trackKey}. حصلت على ${pointsEarned} نقطة!`,
+        message: `لقد أكملت المستوى ${stageId} في مسار ${trackKey}. حصلت على ${pointsEarned} نقطة!`,
         isRead: false,
         timestamp: serverTimestamp()
       });
 
-      const timerKey = `timer_end_${trackKey}_${stageId}`;
-      localStorage.removeItem(timerKey);
-
+      localStorage.removeItem(`timer_end_${trackKey}_${stageId}`);
       setCompleted(true);
       setTimerActive(false);
       playSound('success');
@@ -231,7 +229,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                   <div className="space-y-6">
                     <div className="bg-primary/5 p-8 rounded-[2rem] text-center space-y-2 border border-primary/10">
                       <p className="text-xs font-black text-primary uppercase">الوقت المتبقي (يعمل في الخلفية)</p>
-                      <p className="text-6xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
+                      <p className="text-6xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
                     </div>
                     <Button onClick={handleComplete} disabled={isUpdating} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">
                       أنهيت المهمة 🔥

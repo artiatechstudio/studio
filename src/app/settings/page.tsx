@@ -152,7 +152,6 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        {/* بطاقة البريميوم */}
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500 to-amber-600 text-white overflow-hidden p-8 space-y-6 relative mx-2">
           <Crown className="absolute top-4 left-4 opacity-20" size={120} />
           <div className="relative z-10 space-y-2 text-right">

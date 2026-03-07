@@ -36,7 +36,6 @@ export default function InstructionsPage() {
         </header>
 
         <section className="space-y-12">
-          {/* 1. نظام احتساب النقاط */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
               <Star className="text-yellow-500" fill="currentColor" /> <h2>1. نظام النقاط والمكافآت</h2>
@@ -67,7 +66,6 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 2. نظام العقوبات الصارم */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-destructive">
               <AlertTriangle className="text-red-600" /> <h2>2. قانون الانضباط (العقوبات)</h2>
@@ -92,7 +90,6 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 3. نظام العضوية المميزة */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
               <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية كارينجو المميزة (Premium)</h2>
@@ -120,7 +117,6 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 4. جدار العار */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-red-800">
               <Skull className="text-red-800" /> <h2>4. جدار العار (Wall of Shame)</h2>
@@ -137,7 +133,6 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 5. الأنظمة التقنية والذكاء الاصطناعي */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
               <Brain className="text-blue-600" /> <h2>5. حالة السيرفر والذكاء الاصطناعي</h2>

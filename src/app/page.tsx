@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, Sparkles, HeartPulse, Crown, ArrowRight } from 'lucide-react';
+import { Activity, Sparkles, HeartPulse, Crown, ArrowRight, ShieldCheck } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -112,64 +112,71 @@ export default function Home() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
-        {!isAdmin && (
-          <div className="grid grid-cols-2 gap-3 mx-2">
-            <Link href="/streak" className="block">
-              <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-                  <Activity size={20} />
-                </div>
-                <div className="overflow-hidden flex-1">
-                  <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg font-black text-primary">{progressPercent}%</span>
-                    <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
-                      <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-            <Link href="/profile" className="block">
-              <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0">
-                  <HeartPulse size={20} />
-                </div>
-                <div className="overflow-hidden flex-1">
-                  <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
-                  <div className="flex items-center gap-2">
-                    <span className={cn("text-lg font-black", bmiInfo.color)}>{bmiInfo.value}</span>
-                    <span className={cn("text-[8px] font-black uppercase opacity-60", bmiInfo.color)}>{bmiInfo.status}</span>
-                  </div>
-                </div>
-              </Card>
-            </Link>
-          </div>
-        )}
-
         {isAdmin ? (
-          <section className="bg-primary/5 rounded-[2.5rem] p-6 border border-primary/10 mx-2 shadow-inner space-y-6">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 bg-primary text-white rounded-[1.5rem] flex items-center justify-center text-3xl shadow-lg shrink-0">🛡️</div>
-              <div className="text-right">
-                <h1 className="text-xl font-black text-primary">أهلاً يا مدير كاري!</h1>
-                <p className="text-[10px] font-bold text-muted-foreground leading-tight">أنت الآن في وضع الرقابة والتحكم الكامل بالنظام.</p>
+          <section className="bg-card rounded-[2.5rem] p-8 border border-border mx-2 shadow-xl space-y-8">
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="w-20 h-20 bg-primary text-white rounded-[2rem] flex items-center justify-center text-5xl shadow-lg border-4 border-white">🛡️</div>
+              <div>
+                <h1 className="text-3xl font-black text-primary">لوحة الإدارة العليا</h1>
+                <p className="text-sm font-bold text-muted-foreground mt-1">أهلاً بك يا مدير النظام. أنت الآن في وضع الرقابة والتحكم الكامل.</p>
               </div>
             </div>
-            <Link href="/admin" onClick={() => playSound('click')} className="block">
-              <Button className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-sm font-black gap-3 shadow-lg">
-                لوحة الإدارة العليا <ArrowRight className="rotate-180" size={16} />
-              </Button>
-            </Link>
+            
+            <div className="grid grid-cols-1 gap-4">
+              <Link href="/admin" onClick={() => playSound('click')} className="block">
+                <Button className="w-full h-16 rounded-[1.5rem] bg-primary hover:bg-primary/90 text-lg font-black gap-3 shadow-xl shadow-primary/20">
+                  <ShieldCheck size={24} /> دخول لوحة التحكم
+                </Button>
+              </Link>
+              <div className="p-6 bg-red-50 rounded-[2rem] border border-red-100">
+                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2 flex items-center gap-2">⚠️ تنبيه أمني</p>
+                <p className="text-xs font-bold text-red-900/70 leading-relaxed">
+                  أنت تمتلك صلاحيات تعديل رتب المستخدمين ومنح ميزات البريميوم. تأكد من مراجعة كافة الطلبات بدقة من خلال لوحة الإدارة.
+                </p>
+              </div>
+            </div>
           </section>
         ) : (
           <>
+            <div className="grid grid-cols-2 gap-3 mx-2">
+              <Link href="/streak" className="block">
+                <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
+                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
+                    <Activity size={20} />
+                  </div>
+                  <div className="overflow-hidden flex-1">
+                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-black text-primary">{progressPercent}%</span>
+                      <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+              <Link href="/profile" className="block">
+                <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0">
+                    <HeartPulse size={20} />
+                  </div>
+                  <div className="overflow-hidden flex-1">
+                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
+                    <div className="flex items-center gap-2">
+                      <span className={cn("text-lg font-black", bmiInfo.color)}>{bmiInfo.value}</span>
+                      <span className={cn("text-[8px] font-black uppercase opacity-60", bmiInfo.color)}>{bmiInfo.status}</span>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+            </div>
+
             <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner">
               <Mascot />
             </section>
 
             <section className="space-y-4 mx-2">
-              <h2 className="text-xl font-black text-primary px-2">مسارات النمو</h2>
+              <h2 className="text-xl font-black text-primary px-2 text-right">مسارات النمو</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
                 <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
@@ -188,8 +195,9 @@ export default function Home() {
                   </div>
                 </Card>
               </Link>
-            </>
-          )}
+            </section>
+          </>
+        )}
 
         <div className="mx-2">
           <AdBanner label="إعلان ممول" />

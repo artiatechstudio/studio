@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, BookOpen, Bell } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -24,7 +24,7 @@ const sideNavItems = [
 
 const mobileNavItems = [
   { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
-  { label: 'الإشعارات', icon: Bell, href: '/notifications' },
+  { label: 'الموارد', icon: BookMarked, href: '/resources' },
   { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'أنت', icon: User, href: '/profile' },
@@ -43,7 +43,6 @@ export function NavSidebar() {
   const notificationsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/notifications`) : null, [database, user]);
   const { data: notificationsData } = useDatabase(notificationsRef);
 
-  // حساب إجمالي الرسائل غير المقروءة
   const unreadChatCount = useMemo(() => {
     if (!chatsData || !user) return 0;
     let totalUnread = 0;
@@ -61,7 +60,6 @@ export function NavSidebar() {
     return totalUnread;
   }, [chatsData, user]);
 
-  // حساب الإشعارات غير المقروءة (likes, achievements, etc.)
   const unreadNotifCount = useMemo(() => {
     if (!notificationsData) return 0;
     return Object.values(notificationsData).filter((n: any) => !n.isRead).length;
@@ -76,6 +74,21 @@ export function NavSidebar() {
 
   return (
     <>
+      {/* Floating Notification Icon for Mobile Only */}
+      <div className="md:hidden fixed top-4 left-4 z-[60]">
+        <Link href="/notifications" onClick={() => playSound('click')} className="relative block">
+          <div className="w-12 h-12 bg-white/90 backdrop-blur-md rounded-2xl flex items-center justify-center text-primary shadow-xl border border-primary/10">
+            <Bell className={cn("w-6 h-6", unreadNotifCount > 0 && "animate-tada")} />
+            {unreadNotifCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-accent text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
+                {unreadNotifCount}
+              </span>
+            )}
+          </div>
+        </Link>
+      </div>
+
+      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl overflow-y-auto">
         <div className="flex items-center gap-4 mb-10 justify-end" dir="rtl">
           <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">🐱</div>
@@ -140,6 +153,7 @@ export function NavSidebar() {
         </div>
       </aside>
 
+      {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[2.5rem]">
         {mobileNavItems.map((item) => (
           <Link
@@ -163,12 +177,6 @@ export function NavSidebar() {
               {item.label === 'الدردشة' && unreadChatCount > 0 && (
                 <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
                   {unreadChatCount > 99 ? "99+" : unreadChatCount}
-                </span>
-              )}
-
-              {item.label === 'الإشعارات' && unreadNotifCount > 0 && (
-                <span className="absolute -top-1 -left-1 bg-accent text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
-                  {unreadNotifCount}
                 </span>
               )}
             </div>

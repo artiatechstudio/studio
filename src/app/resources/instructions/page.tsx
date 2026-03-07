@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull, ListChecks } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull, ListChecks, Crown, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -92,10 +92,38 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 3. جدار العار */}
+          {/* 3. نظام العضوية المميزة */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
+              <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية كارينجو المميزة (Premium)</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-yellow-100 bg-yellow-50/20 space-y-4">
+              <p className="font-bold text-slate-900 text-sm">تمنحك العضوية المميزة صلاحيات مطلقة وتجربة خالية من العوائق:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
+                  <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><Sparkles size={12}/> تجربة بدون إعلانات</h5>
+                  <p className="text-[10px] font-bold opacity-70">إزالة كاملة للإعلانات المزعجة في كافة أنحاء التطبيق.</p>
+                </div>
+                <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
+                  <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><Globe size={12}/> نشر غير محدود</h5>
+                  <p className="text-[10px] font-bold opacity-70">إمكانية إرسال أكثر من 3 منشورات يومياً في المجتمع العام.</p>
+                </div>
+                <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
+                  <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><ListChecks size={12}/> مهام لا نهائية</h5>
+                  <p className="text-[10px] font-bold opacity-70">إضافة أكثر من 5 مهام شخصية في قائمة المهام اليومية.</p>
+                </div>
+                <div className="p-4 bg-white rounded-xl shadow-sm border border-yellow-200">
+                  <h5 className="font-black text-yellow-800 text-xs flex items-center gap-2"><Crown size={12}/> شارة التوثيق الملكية</h5>
+                  <p className="text-[10px] font-bold opacity-70">ظهور تاج ذهبي بجانب اسمك في المتصدرين والدردشات.</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* 4. جدار العار */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-red-800">
-              <Skull className="text-red-800" /> <h2>3. جدار العار (Wall of Shame)</h2>
+              <Skull className="text-red-800" /> <h2>4. جدار العار (Wall of Shame)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
               <p className="font-bold text-slate-900 leading-relaxed text-sm">
@@ -109,10 +137,10 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 4. المسار العام وتحدي الأساطير */}
+          {/* 5. المسار العام وتحدي الأساطير */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
-              <Trophy className="text-accent" /> <h2>4. المسار العام للأساطير</h2>
+              <Trophy className="text-accent" /> <h2>5. المسار العام للأساطير</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
               <p className="font-bold text-slate-900 text-sm">المسار العام هو مولد تحديات عشوائي يحتوي على 210 تحدياً متنوعاً.</p>
@@ -121,40 +149,6 @@ export default function InstructionsPage() {
                 <p className="text-[10px] font-bold text-slate-700 leading-relaxed">
                   لا يمكنك الحصول على نقاط من المسار العام إلا إذا كنت "أسطورة"، أي أنك أتممت **30 مرحلة كاملة** في كل المسارات الأربعة (اللياقة، التغذية، السلوك، الدراسة). قبل ذلك، يعتبر المسار العام للتدريب الحر فقط بدون نقاط.
                 </p>
-              </div>
-            </Card>
-          </div>
-
-          {/* 5. التواصل الاجتماعي */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
-              <MessageCircle className="text-blue-600" /> <h2>5. المجتمع والمنشورات</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <ul className="space-y-3 text-xs font-bold text-slate-700 pr-4 list-disc">
-                <li>المنشورات العامة يجب ألا تتجاوز **150 حرفاً** لضمان السرعة والتركيز.</li>
-                <li>تختفي المنشورات تلقائياً من المجتمع بعد **24 ساعة** لضمان تجدد المحتوى يومياً.</li>
-                <li>يمكنك الإعجاب بمنشورات الآخرين (مرة واحدة لكل منشور).</li>
-                <li>الإساءة في المجتمع تؤدي لحظر الحساب نهائياً.</li>
-              </ul>
-            </Card>
-          </div>
-
-          {/* 6. مؤشر BMI والرتب */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-green-600">
-              <Activity className="text-green-600" /> <h2>6. الرتب الصحية والفخرية</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 bg-secondary/20 rounded-2xl">
-                  <h5 className="font-black text-primary text-xs mb-1">رقم العضوية:</h5>
-                  <p className="text-[10px] font-bold opacity-70">يعكس ترتيبك التاريخي في التسجيل بالمنصة وهو رقم ثابت لا يتغير، يظهر في بروفايلك العام كمصدر للفخر.</p>
-                </div>
-                <div className="p-4 bg-secondary/20 rounded-2xl">
-                  <h5 className="font-black text-primary text-xs mb-1">مؤشر BMI:</h5>
-                  <p className="text-[10px] font-bold opacity-70">يتم حسابه تلقائياً من وزنك وطولك. نسعى جميعاً للوصول للمنطقة الخضراء (18.5 - 25) لضمان صحة مثالية.</p>
-                </div>
               </div>
             </Card>
           </div>

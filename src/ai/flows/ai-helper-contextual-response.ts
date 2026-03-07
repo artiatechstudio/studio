@@ -43,10 +43,11 @@ export async function aiHelperContextualResponse(
   input: AIHelperContextualResponseInput
 ): Promise<AIHelperContextualResponseOutput> {
   try {
-    return await aiHelperContextualResponseFlow(input);
+    const {output} = await aiHelperContextualResponseFlow(input);
+    return output!;
   } catch (error) {
-    console.error('AI Helper Flow Error:', error);
-    // Fallback message if AI fails or API key is invalid
+    console.error('AI Helper Flow Error (likely API key issue):', error);
+    // Fallback static message to prevent UI crash
     return {
       message: `أهلاً بك يا ${input.userName}! كاري فخور بتقدمك في مسار ${input.currentTrack}. استمر في السعي نحو أهدافك، فكل خطوة صغيرة تصنع فارقاً كبيراً! 🐱🔥`
     };

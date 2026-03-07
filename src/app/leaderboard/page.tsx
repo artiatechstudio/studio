@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Avatar } from "@/components/ui/avatar";
-import { Trophy, Medal, Flame, Star, TrendingUp, Heart, Skull, AlertCircle } from "lucide-react";
+import { Trophy, Medal, Flame, Star, TrendingUp, Heart, Skull, AlertCircle, Crown } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
@@ -132,7 +132,10 @@ export default function LeaderboardPage() {
                       </Link>
 
                       <div className="text-right overflow-hidden flex-1 px-1">
-                        <h3 className="font-black text-primary text-[11px] truncate leading-none mb-1">{user.name}</h3>
+                        <div className="flex items-center justify-end gap-1 mb-1">
+                          <h3 className="font-black text-primary text-[11px] truncate leading-none">{user.name}</h3>
+                          {user.isPremium === 1 && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                        </div>
                         <div className="flex flex-wrap items-center justify-end gap-1">
                           <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
                             {user.likesCount || 0} <Heart size={8} fill="currentColor" />
@@ -154,7 +157,7 @@ export default function LeaderboardPage() {
               </div>
             </div>
 
-            {/* جدار العار (الراسبين) */}
+            {/* جدار العار */}
             <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
               <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
                 <div className="flex items-center gap-2">

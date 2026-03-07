@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -13,7 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Phone, Mail, Globe, Instagram, Facebook, Youtube, PenLine } from 'lucide-react';
+import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Phone, Mail, Globe, Instagram, Facebook, Youtube, PenLine, Crown, Sparkles } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -96,6 +97,15 @@ export default function SettingsPage() {
     }
   };
 
+  const handleRequestPremium = () => {
+    playSound('click');
+    const msg = `أهلاً مطور كارينجو! أرغب في ترقية حسابي للبريميوم. 
+اسم المستخدم: ${userData?.name}
+البريد: ${userData?.email}
+معرف الحساب: ${user?.uid}`;
+    window.open(`https://wa.me/218929196428?text=${encodeURIComponent(msg)}`, '_blank');
+  };
+
   const handleLogout = async () => {
     playSound('click');
     try {
@@ -162,6 +172,38 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي وتجربة التطبيق</p>
           </div>
         </header>
+
+        {/* بطاقة البريميوم */}
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500 to-amber-600 text-white overflow-hidden p-8 space-y-6 relative">
+          <Crown className="absolute top-4 left-4 opacity-20" size={120} />
+          <div className="relative z-10 space-y-2 text-right">
+            <div className="flex items-center justify-end gap-2">
+              <h2 className="text-2xl font-black">عضوية كارينجو المميزة</h2>
+              <Crown size={24} fill="currentColor" />
+            </div>
+            <p className="text-sm font-bold opacity-90">
+              {userData?.isPremium === 1 ? "أنت الآن مستخدم بريميوم! استمتع بكافة المزايا 👑" : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات."}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 relative z-10">
+            {[
+              { t: "بدون إعلانات", i: Sparkles },
+              { t: "نشر غير محدود", i: Globe },
+              { t: "تحديات مفتوحة", i: Trophy },
+              { t: "توثيق ملكي", i: Crown },
+            ].map((m, i) => (
+              <div key={i} className="flex items-center gap-2 justify-end bg-white/10 p-2 rounded-xl border border-white/20">
+                <span className="text-[10px] font-black">{m.t}</span>
+                <m.i size={14} />
+              </div>
+            ))}
+          </div>
+          {userData?.isPremium !== 1 && (
+            <Button onClick={handleRequestPremium} className="w-full h-14 rounded-2xl bg-white text-amber-600 hover:bg-white/90 text-lg font-black shadow-lg relative z-10">
+              طلب ترقية الحساب 👑
+            </Button>
+          )}
+        </Card>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">

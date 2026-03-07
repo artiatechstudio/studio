@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare, AlertTriangle, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -36,6 +36,8 @@ export default function MasterTrackPage() {
 
   const todosRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/todos`) : null, [user, database]);
   const { data: todosData } = useDatabase(todosRef);
+
+  const isPremium = userData?.isPremium === 1;
 
   // منطق المؤقت المستمر في المسار العام
   useEffect(() => {
@@ -128,6 +130,15 @@ export default function MasterTrackPage() {
       toast({ title: "عذراً", description: "لا توجد تحديات كافية لهذا الاختيار." });
       return;
     }
+    
+    // حدود المستخدم المجاني
+    const today = new Date().toLocaleDateString('en-CA');
+    const masterCount = userData?.dailyMasterCount?.[today] || 0;
+    if (!isPremium && masterCount >= 5) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لتحديات غير محدودة! 👑" });
+      return;
+    }
+
     const random = pool[Math.floor(Math.random() * pool.length)];
     setCurrentChallenge(random);
     setStep('active');
@@ -138,6 +149,11 @@ export default function MasterTrackPage() {
     localStorage.setItem('master_timer_end', endTime.toString());
     localStorage.setItem('master_current_challenge', JSON.stringify(random));
     
+    // تحديث عداد التحديات اليومي
+    update(ref(database, `users/${user.uid}`), {
+      [`dailyMasterCount/${today}`]: masterCount + 1
+    });
+
     setTimeLeft(durationSeconds);
     setTimerActive(true);
     playSound('click');
@@ -168,6 +184,13 @@ export default function MasterTrackPage() {
   const handleAddTodo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!todoInput.trim() || !user) return;
+
+    const currentTodos = todosData ? Object.keys(todosData).length : 0;
+    if (!isPremium && currentTodos >= 5) {
+      toast({ variant: "destructive", title: "الحد الأقصى للمهام", description: "اشترك في بريميوم لإضافة مهام لا نهائية! 👑" });
+      return;
+    }
+
     playSound('click');
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
     update(newTodoRef, {
@@ -237,7 +260,10 @@ export default function MasterTrackPage() {
             </div>
             <div className="text-right">
               <h1 className="text-xl font-black text-primary leading-tight">المسار العام</h1>
-              <p className="text-[8px] font-bold text-muted-foreground uppercase tracking-widest">تحديات الأساطير والتدريب</p>
+              <div className="flex items-center gap-1">
+                <p className="text-[8px] font-bold text-muted-foreground uppercase">تحديات الأساطير والتدريب</p>
+                {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+              </div>
             </div>
           </div>
           <Link href="/">
@@ -297,7 +323,7 @@ export default function MasterTrackPage() {
         )}
 
         {step === 'active' && currentChallenge && (
-          <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl">
+          <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl mx-2">
             <CardHeader className="bg-primary text-white p-5">
               <div className="flex items-center justify-between flex-row-reverse">
                 <CardTitle className="text-lg font-black truncate max-w-[70%]">
@@ -355,7 +381,7 @@ export default function MasterTrackPage() {
             </div>
           </header>
           
-          <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5">
+          <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5 mx-2">
             <form onSubmit={handleAddTodo} className="flex gap-2">
               <Input 
                 placeholder="أضف مهمة شخصية..." 
@@ -396,7 +422,7 @@ export default function MasterTrackPage() {
                     onClick={() => handleDeleteTodo(todo.id)} 
                     variant="ghost" 
                     size="icon" 
-                    className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                    className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
                   >
                     <Trash2 size={14} />
                   </Button>

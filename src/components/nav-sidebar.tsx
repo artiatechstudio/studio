@@ -1,16 +1,16 @@
 
 "use client"
 
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { ref } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
-import { useMemo } from 'react';
 
 const sideNavItems = [
   { label: 'الرئيسية', icon: Home, href: '/' },
@@ -68,6 +68,8 @@ export function NavSidebar() {
     return Object.values(notificationsData).filter((n: any) => !n.isRead).length;
   }, [notificationsData]);
 
+  const isPremium = userData?.isPremium === 1;
+
   const handleLogout = async () => {
     playSound('click');
     await signOut(auth);
@@ -106,7 +108,9 @@ export function NavSidebar() {
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-primary">كارينجو</span>
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">🐱</div>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">
+              {isPremium ? "👑" : "🐱"}
+            </div>
           </div>
         </div>
       )}
@@ -114,8 +118,13 @@ export function NavSidebar() {
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl overflow-y-auto">
         <div className="flex items-center gap-4 mb-10 justify-end" dir="rtl">
-          <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">🐱</div>
-          <span className="text-3xl font-black text-primary tracking-tight">كارينجو</span>
+          <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">
+            {isPremium ? "👑" : "🐱"}
+          </div>
+          <div className="text-right">
+            <span className="text-3xl font-black text-primary tracking-tight block">كارينجو</span>
+            {isPremium && <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">Premium</span>}
+          </div>
         </div>
 
         <nav className="flex-1 space-y-3" dir="rtl">

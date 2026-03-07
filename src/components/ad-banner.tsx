@@ -4,6 +4,8 @@
 import React, { useEffect } from 'react';
 import { Card } from './ui/card';
 import { Megaphone } from 'lucide-react';
+import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
+import { ref } from 'firebase/database';
 
 interface AdBannerProps {
   label?: string;
@@ -13,18 +15,26 @@ interface AdBannerProps {
 
 /**
  * مكون مساحة إعلانية مفعل لـ Google AdSense.
- * يستخدم الآن رقم الناشر الخاص بالمستخدم: pub-2754396305908181
+ * يختفي تلقائياً للمستخدمين البريميوم.
  */
 export function AdBanner({ label = "إعلان ممول", className, adSlot = "8823456789" }: AdBannerProps) {
+  const { user } = useUser();
+  const { database } = useFirebase();
+  
+  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
+  const { data: userData } = useDatabase(userRef);
+
   useEffect(() => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && userData?.isPremium !== 1) {
         ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
       }
     } catch (e) {
       console.warn("AdSense push error:", e);
     }
-  }, []);
+  }, [userData]);
+
+  if (userData?.isPremium === 1) return null;
 
   return (
     <Card className={`bg-secondary/30 border-2 border-dashed border-muted-foreground/10 flex flex-col items-center justify-center p-2 rounded-2xl min-h-[100px] overflow-hidden ${className}`}>

@@ -1,170 +1,245 @@
 
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, remove } from 'firebase/database';
-import { Input } from '@/components/ui/input';
+import { ref, push, serverTimestamp, remove, update } from 'firebase/database';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, MessageSquare, Trash2, Globe, Crown } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Send, Trash2, Globe, Sparkles, Crown, Clock, AlertCircle, MessageSquarePlus } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
-import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { toast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import Link from 'next/link';
 
 export default function PublicChatPage() {
   const { user } = useUser();
   const { database } = useFirebase();
-  const [msgText, setMsgText] = useState('');
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  const publicMessagesRef = useMemoFirebase(() => ref(database, 'publicChat'), [database]);
-  const publicMessagesQuery = useMemoFirebase(() => query(publicMessagesRef, limitToLast(50)), [publicMessagesRef]);
-  const { data: messagesData, isLoading } = useDatabase(publicMessagesQuery);
+  const [postText, setPostText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
-  const { data: myData } = useDatabase(userRef);
+  const { data: userData } = useDatabase(userRef);
 
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messagesData]);
+  const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
+  const { data: postsData, isLoading } = useDatabase(postsRef);
 
-  const handleSendMessage = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!msgText.trim() || !user || !myData) return;
+  const isAdmin = userData?.name === 'admin';
+  const isPremium = userData?.isPremium === 1 || isAdmin;
+  const today = new Date().toLocaleDateString('en-CA');
+  const dailyCount = userData?.dailyPostCount?.[today] || 0;
+  const maxPosts = 5;
+  const remainingPosts = isPremium ? Infinity : Math.max(0, maxPosts - dailyCount);
 
-    playSound('click');
-    const msg = {
-      senderId: user.uid,
-      name: myData.name,
-      avatar: myData.avatar,
-      isPremium: myData.isPremium || 0,
-      text: msgText.trim(),
-      timestamp: serverTimestamp()
-    };
-
-    push(publicMessagesRef, msg);
-    setMsgText('');
-  };
-
-  const handleDeleteMessage = (msgId: string) => {
-    playSound('click');
-    remove(ref(database, `publicChat/${msgId}`));
-  };
-
-  const messages = useMemo(() => {
-    if (!messagesData) return [];
-    return Object.entries(messagesData)
+  const posts = useMemo(() => {
+    if (!postsData) return [];
+    return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-  }, [messagesData]);
+      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+  }, [postsData]);
 
-  const isMyPremium = myData?.isPremium === 1 || myData?.name === 'admin';
+  const handleSendPost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postText.trim() || !user || isSubmitting) return;
+
+    if (!isPremium && remainingPosts <= 0) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لنشر غير محدود! 👑" });
+      return;
+    }
+
+    setIsSubmitting(true);
+    playSound('click');
+
+    try {
+      const newPost = {
+        senderId: user.uid,
+        senderName: userData?.name || 'عضو مجهول',
+        senderAvatar: userData?.avatar || '🐱',
+        content: postText.trim(),
+        timestamp: serverTimestamp(),
+        isPremium: isPremium
+      };
+
+      await push(postsRef, newPost);
+      
+      // تحديث عداد المنشورات اليومي
+      await update(ref(database, `users/${user.uid}/dailyPostCount`), {
+        [today]: dailyCount + 1
+      });
+
+      setPostText('');
+      toast({ title: "تم النشر بنجاح! 🌍" });
+      playSound('success');
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل النشر" });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeletePost = async (postId: string) => {
+    playSound('click');
+    if (!confirm("هل أنت متأكد من حذف هذا المنشور؟ 🗑️")) return;
+    try {
+      await remove(ref(database, `publicPosts/${postId}`));
+      toast({ title: "تم حذف المنشور" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الحذف" });
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
-      
-      <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-4 mt-4 sticky top-4 z-30">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-accent text-white rounded-full flex items-center justify-center text-2xl shadow-lg">
-            🌍
+      <div className="app-container py-6 space-y-6">
+        
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
+              <Globe size={28} className="animate-pulse" />
+            </div>
+            <div className="text-right">
+              <h1 className="text-xl font-black text-primary leading-tight">المجتمع العام</h1>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">شارك إلهامك مع العالم ✨</p>
+            </div>
           </div>
-          <div className="text-right">
-            <h2 className="font-black text-primary leading-none text-lg">الدردشة العامة</h2>
-            <p className="text-[10px] text-muted-foreground font-bold mt-1 flex items-center gap-1">
-              <Globe size={10} /> مجتمع كارينجو المفتوح
-            </p>
-          </div>
-        </div>
-        <Link href="/chat">
-          <Button variant="ghost" size="icon" className="rounded-full">
-            <ArrowLeft className="rotate-180" />
-          </Button>
-        </Link>
-      </header>
-
-      <div className="flex-1 overflow-hidden flex flex-col relative">
-        <div className="p-4 z-20">
-          <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
-            <Input 
-              placeholder="شارك إلهامك مع الجميع..." 
-              className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right focus-visible:ring-primary text-base"
-              value={msgText}
-              onChange={(e) => setMsgText(e.target.value)}
-            />
-            <Button 
-              type="submit" 
-              size="icon" 
-              className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
-            >
-              <Send className="rotate-180" />
+          <Link href="/chat">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <MessageSquarePlus className="rotate-180" />
             </Button>
-          </form>
-        </div>
+          </Link>
+        </header>
 
-        <div 
-          ref={scrollRef}
-          className="flex-1 p-6 space-y-6 overflow-y-auto scroll-smooth pb-40"
-        >
-          {isLoading ? (
-            <div className="flex justify-center p-20"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
-          ) : messages.length === 0 ? (
-            <div className="text-center py-20 opacity-30 font-black text-xl">كن أول من ينشر هنا! 🐱🌟</div>
-          ) : messages.map((m: any) => {
-            const isMine = m.senderId === user?.uid;
-            const isAdmin = myData?.name === 'admin';
-            const msgIsPremium = m.isPremium === 1 || m.name === 'admin';
-            const isAvatarUrl = m.avatar && m.avatar.startsWith('http');
-
-            return (
-              <div key={m.id} className={cn("flex flex-col", isMine ? "items-end" : "items-start")}>
-                <div className={cn("flex items-end gap-2 max-w-[85%]", isMine ? "flex-row-reverse" : "flex-row")}>
-                  <Link href={`/user/${m.senderId}`} className="shrink-0">
-                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shrink-0 shadow-sm overflow-hidden">
-                      {isAvatarUrl ? (
-                        <Image src={m.avatar} alt={m.name} width={40} height={40} className="object-cover w-full h-full" unoptimized />
-                      ) : (
-                        m.avatar || "🐱"
-                      )}
-                    </div>
-                  </Link>
-                  <div className="flex flex-col gap-1">
-                    <div className={cn("flex items-center gap-1", isMine ? "justify-end" : "justify-start")}>
-                      <span className="text-[10px] font-black text-muted-foreground">{m.name}</span>
-                      {msgIsPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-                    </div>
-                    <div className={cn(
-                      "p-4 rounded-3xl font-bold text-sm shadow-md relative group",
-                      isMine ? "bg-primary text-white rounded-br-none" : "bg-white text-primary rounded-bl-none border border-border"
-                    )}>
-                      {m.text}
-                      {(isMine || isAdmin) && (
-                        <button 
-                          onClick={() => handleDeleteMessage(m.id)}
-                          className={cn(
-                            "absolute -top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500 text-white rounded-full shadow-lg",
-                            isMine ? "-left-2" : "-right-2"
-                          )}
-                        >
-                          <Trash2 size={10} />
-                        </button>
-                      )}
-                    </div>
-                    <span className="text-[8px] font-bold text-muted-foreground/50 px-2">
-                      {m.timestamp ? formatDistanceToNow(m.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+        {/* صندوق إنشاء منشور - نظام فيسبوك */}
+        <Card className="rounded-[2rem] shadow-xl border-none bg-card overflow-hidden mx-2 border-t-4 border-primary">
+          <CardContent className="p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-secondary flex items-center justify-center text-2xl shrink-0 overflow-hidden border border-border shadow-sm">
+                {userData?.avatar && userData.avatar.startsWith('http') ? (
+                  <Image src={userData.avatar} alt="Me" width={48} height={48} className="object-cover w-full h-full" unoptimized />
+                ) : (
+                  <span>{userData?.avatar || "🐱"}</span>
+                )}
+              </div>
+              <div className="flex-1 space-y-2">
+                <Textarea 
+                  placeholder={`بماذا تفكر يا ${userData?.name?.split(' ')[0] || 'بطل'}؟...`}
+                  className="min-h-[100px] rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm focus-visible:ring-primary resize-none p-4"
+                  value={postText}
+                  onChange={(e) => setPostText(e.target.value.slice(0, 280))}
+                  maxLength={280}
+                />
+                <div className="flex items-center justify-between px-2">
+                  <div className="flex items-center gap-3">
+                    <span className={cn("text-[9px] font-black", postText.length >= 250 ? "text-destructive" : "text-muted-foreground")}>
+                      {postText.length}/280 حرف
                     </span>
+                    <div className="h-4 w-px bg-border" />
+                    <div className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-lg">
+                      <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
+                      {isPremium ? <Crown size={10} className="text-yellow-500" fill="currentColor" /> : <span className="text-[10px] font-black text-primary">{remainingPosts}</span>}
+                    </div>
                   </div>
+                  <Button 
+                    onClick={handleSendPost} 
+                    disabled={!postText.trim() || isSubmitting}
+                    className="h-10 px-6 rounded-xl bg-primary hover:bg-primary/90 font-black shadow-lg gap-2"
+                  >
+                    {isSubmitting ? "جاري النشر..." : "نشر الآن"}
+                    <Send size={16} className="rotate-180" />
+                  </Button>
                 </div>
               </div>
-            );
-          })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* سجل المنشورات - الأحدث أولاً */}
+        <div className="space-y-4 mx-2">
+          {isLoading ? (
+            <div className="py-20 flex flex-col items-center gap-4">
+              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+              <p className="text-[10px] font-black text-muted-foreground uppercase">جاري مزامنة المجتمع...</p>
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-20 opacity-30 space-y-4">
+              <Globe size={64} className="mx-auto" />
+              <p className="font-black text-xl">كن أول من ينشر في المجتمع! 🐱🌍</p>
+            </div>
+          ) : (
+            posts.map((post) => {
+              const isMyPost = post.senderId === user?.uid;
+              const canDelete = isMyPost || isAdmin;
+              const isPostPremium = post.isPremium === true;
+
+              return (
+                <Card key={post.id} className="rounded-[2rem] border-none shadow-md bg-card overflow-hidden group transition-all hover:shadow-xl">
+                  <CardContent className="p-5 space-y-4">
+                    <header className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Link href={`/user/${post.senderId}`} onClick={() => playSound('click')}>
+                          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-xl shrink-0 overflow-hidden border border-border shadow-sm hover:scale-110 transition-transform">
+                            {post.senderAvatar && post.senderAvatar.startsWith('http') ? (
+                              <Image src={post.senderAvatar} alt={post.senderName} width={40} height={40} className="object-cover w-full h-full" unoptimized />
+                            ) : (
+                              <span>{post.senderAvatar || "🐱"}</span>
+                            )}
+                          </div>
+                        </Link>
+                        <div className="text-right">
+                          <div className="flex items-center gap-1">
+                            <h3 className="font-black text-primary text-xs">{post.senderName}</h3>
+                            {isPostPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                          </div>
+                          <div className="flex items-center gap-1 text-[8px] text-muted-foreground font-bold">
+                            <Clock size={8} />
+                            {post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+                          </div>
+                        </div>
+                      </div>
+                      {canDelete && (
+                        <Button 
+                          onClick={() => handleDeletePost(post.id)} 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 rounded-full text-destructive/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      )}
+                    </header>
+
+                    <div className="bg-secondary/20 p-5 rounded-2xl border-r-4 border-primary/20">
+                      <p className="text-sm font-bold text-foreground leading-relaxed whitespace-pre-wrap text-right">
+                        {post.content}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-4 px-2">
+                       <p className="text-[8px] font-black text-muted-foreground/40 uppercase tracking-widest">Careingo Community Feed</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          )}
         </div>
+
+        {!isPremium && (
+          <section className="bg-primary/5 p-5 rounded-[2rem] border border-primary/10 mx-2 space-y-3">
+            <div className="flex items-center gap-2 text-primary font-black text-[10px]">
+              <AlertCircle size={12} /> نظام النشر المحدود
+            </div>
+            <p className="text-[9px] font-bold text-muted-foreground/70 leading-relaxed">
+              لحماية جودة المحتوى، يمنحك النظام {maxPosts} منشورات يومياً فقط. للحصول على نشر غير محدود وتمييز ملفك بالتاج الملكي، اشترك في بريميوم الآن! 👑✨
+            </p>
+          </section>
+        )}
       </div>
     </div>
   );

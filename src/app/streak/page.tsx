@@ -94,7 +94,7 @@ export default function StreakPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-72 pt-4 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2 mt-2">
@@ -128,13 +128,13 @@ export default function StreakPage() {
               {currentWeek.map((day, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 flex-1 min-w-0">
                   <div className={cn(
-                    "w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2 shrink-0",
+                    "w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2 shrink-0",
                     day.isCompleted ? "bg-orange-500 border-orange-400 text-white animate-pulse shadow-orange-500/20" : 
                     day.isToday ? "bg-secondary border-primary/30 text-primary" : "bg-secondary border-transparent text-muted-foreground/40"
                   )}>
-                    {day.isCompleted ? <Flame size={14} fill="currentColor" /> : <span className="text-[8px] sm:text-[9px] font-black">{day.label[0]}</span>}
+                    {day.isCompleted ? <Flame size={16} fill="currentColor" /> : <span className="text-[10px] font-black">{day.label[0]}</span>}
                   </div>
-                  <span className={cn("text-[6px] sm:text-[8px] md:text-[9px] font-black text-center truncate w-full", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
+                  <span className={cn("text-[8px] font-black text-center truncate w-full", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
                     {day.label}
                   </span>
                 </div>

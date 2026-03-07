@@ -38,7 +38,7 @@ export default function Home() {
 
   useEffect(() => {
     if (userData && user && !isAdmin && !hasCheckedStatus.current) {
-      hasCheckedStatus.current = true; // منع التكرار اللانهائي
+      hasCheckedStatus.current = true; 
       
       const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
@@ -91,7 +91,7 @@ export default function Home() {
       }
 
       if (needsUpdate) {
-        update(ref(database, `users/${user.uid}`), updates);
+        update(ref(database, `users/${user.uid}`), updates).catch(e => console.error("Update failed", e));
       }
     }
   }, [userData, user, database, isAdmin]);

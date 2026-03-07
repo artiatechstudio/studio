@@ -16,6 +16,7 @@ interface AdBannerProps {
 /**
  * مكون مساحة إعلانية مفعل لـ Google AdSense.
  * يختفي تلقائياً للمستخدمين البريميوم.
+ * تمت إضافة معالجة أخطاء لمنع "Failed to fetch" في حالة حظر الإعلانات.
  */
 export function AdBanner({ label = "إعلان ممول", className, adSlot = "8823456789" }: AdBannerProps) {
   const { user } = useUser();
@@ -27,10 +28,13 @@ export function AdBanner({ label = "إعلان ممول", className, adSlot = "8
   useEffect(() => {
     try {
       if (typeof window !== 'undefined' && userData?.isPremium !== 1) {
-        ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        if ((window as any).adsbygoogle) {
+          ((window as any).adsbygoogle = (window as any).adsbygoogle || []).push({});
+        }
       }
     } catch (e) {
-      console.warn("AdSense push error:", e);
+      // تجاهل أخطاء جلب الإعلانات الصامتة
+      console.warn("AdSense push error (usually ad-blocker related):", e);
     }
   }, [userData]);
 

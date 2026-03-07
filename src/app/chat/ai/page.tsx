@@ -6,10 +6,11 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, Brain } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { aiChat } from '@/ai/flows/ai-chat-flow';
 
 type Message = {
   role: 'user' | 'model';
@@ -29,7 +30,7 @@ export default function AiChatPage() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,20 +38,34 @@ export default function AiChatPage() {
 
     const userMsg = inputText.trim();
     setInputText('');
-    setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    const newMessages: Message[] = [...messages, { role: 'user', content: userMsg }];
+    setMessages(newMessages);
     
     setIsLoading(true);
     playSound('click');
 
-    // محاكاة تأخير للتفكير ثم إعطاء رسالة خطأ جميلة (الذكاء الاصطناعي متوقف)
-    setTimeout(() => {
+    try {
+      // استدعاء تدفق الذكاء الاصطناعي الحقيقي
+      const result = await aiChat({
+        message: userMsg,
+        history: messages.map(m => ({ role: m.role, content: m.content }))
+      });
+
+      if (result && result.response) {
+        setMessages(prev => [...prev, { role: 'model', content: result.response }]);
+        playSound('success');
+      } else {
+        throw new Error("No response from AI");
+      }
+    } catch (error) {
+      console.error('AI Chat Error:', error);
       setMessages(prev => [...prev, { 
         role: 'model', 
-        content: 'يا إلهي! يبدو أن عقلي السحابي متوقف حالياً للصيانة والترقية لخدمتك بشكل أفضل. حاول التحدث معي مجدداً في وقت لاحق! 🐱💤⚠️' 
+        content: 'يا إلهي! يبدو أن عقلي السحابي مشوش قليلاً الآن. هل يمكنك المحاولة مرة أخرى؟ 🐱⚠️' 
       }]);
+    } finally {
       setIsLoading(false);
-      playSound('success');
-    }, 1500);
+    }
   };
 
   return (
@@ -64,9 +79,9 @@ export default function AiChatPage() {
             🐱
           </div>
           <div className="text-right text-white">
-            <h2 className="font-black leading-none text-lg">كاري (وضع الصيانة)</h2>
+            <h2 className="font-black leading-none text-lg">كاري الذكي</h2>
             <p className="text-[10px] font-bold mt-1 flex items-center gap-1 opacity-80">
-              <AlertCircle size={10} /> سيرفر الذكاء الاصطناعي أوفلاين
+              <Sparkles size={10} className="animate-pulse" /> متاح الآن للإلهام
             </p>
           </div>
         </div>
@@ -98,8 +113,8 @@ export default function AiChatPage() {
           })}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-secondary/50 p-4 rounded-3xl rounded-bl-none font-black text-xs animate-pulse text-muted-foreground">
-                كاري يحاول الاتصال بالسيرفر... 🐱📡
+              <div className="bg-secondary/50 p-4 rounded-3xl rounded-bl-none font-black text-xs animate-pulse text-muted-foreground flex items-center gap-2">
+                <Brain size={14} className="animate-bounce" /> كاري يحلل ويفكر... 🐱📡
               </div>
             </div>
           )}
@@ -118,7 +133,7 @@ export default function AiChatPage() {
             <Button 
               type="submit" 
               size="icon" 
-              disabled={isLoading}
+              disabled={isLoading || !inputText.trim()}
               className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
             >
               <Send className="rotate-180" />

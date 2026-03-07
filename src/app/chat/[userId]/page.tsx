@@ -13,11 +13,13 @@ import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function ChatRoomPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId: otherId } = use(params);
   const { user } = useUser();
   const { database } = useFirebase();
+  const router = useRouter();
   const [msgText, setMsgText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -26,6 +28,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     return [user.uid, otherId].sort().join('_');
   }, [user, otherId]);
 
+  const chatRootRef = useMemoFirebase(() => ref(database, `chats/${chatId}`), [database, chatId]);
   const messagesRef = useMemoFirebase(() => ref(database, `chats/${chatId}/messages`), [database, chatId]);
   const messagesQuery = useMemoFirebase(() => query(messagesRef, limitToLast(50)), [messagesRef]);
   const { data: messagesData } = useDatabase(messagesQuery);
@@ -63,13 +66,15 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   };
 
   const handleDeleteChat = async () => {
-    const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ لا يمكن التراجع عن هذه الخطوة. 🐱⚠️");
+    const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ سيتم مسح الرسائل لدى الطرفين. 🐱⚠️");
     if (!confirmed) return;
 
     playSound('click');
     try {
-      await remove(messagesRef);
+      // حذف كامل عقدة المحادثة لضمان اختفائها من القوائم
+      await remove(chatRootRef);
       toast({ title: "تم حذف السجل بنجاح" });
+      router.push('/chat');
     } catch (error) {
       toast({ variant: "destructive", title: "فشل الحذف", description: "حاول مجدداً لاحقاً" });
     }

@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useMemo } from 'react';
@@ -25,9 +26,12 @@ export default function ChatListPage() {
   const recentChatUsers = useMemo(() => {
     if (!usersData || !chatsData || !user) return [];
     
+    // تصفية المحادثات التي تحتوي على رسائل فقط وتخص المستخدم الحالي
     const userIdsWithChats = Object.keys(chatsData)
       .filter(chatId => chatId.includes(user.uid))
-      .map(chatId => chatId.replace(user.uid, '').replace('_', ''));
+      .filter(chatId => chatsData[chatId].messages) // التأكد من وجود رسائل
+      .map(chatId => chatId.split('_').find(id => id !== user.uid))
+      .filter(Boolean) as string[];
 
     return Object.values(usersData)
       .filter((u: any) => userIdsWithChats.includes(u.id))

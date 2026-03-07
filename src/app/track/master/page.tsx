@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare, AlertTriangle, Crown, Infinity } from 'lucide-react';
+import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, X, CheckSquare, AlertTriangle, Crown, Infinity, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -43,6 +43,7 @@ export default function MasterTrackPage() {
   const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
   const todoCountToday = userData?.dailyTodoCount?.[today] || 0;
 
+  // جلب الحالة المحفوظة للمؤقت الأساسي
   useEffect(() => {
     const savedEnd = localStorage.getItem('master_timer_end');
     const savedChallenge = localStorage.getItem('master_current_challenge');
@@ -61,6 +62,7 @@ export default function MasterTrackPage() {
     }
   }, []);
 
+  // مؤقت التحدي الأساسي
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -78,44 +80,35 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
+  // فحص المهام المنتهية (قانون الـ 24 ساعة)
   useEffect(() => {
-    if (!user || !userData) return;
-
-    const checkDailyTodos = async () => {
-      const lastCheck = userData.lastTodoCheckDate;
-
-      if (lastCheck && lastCheck !== today) {
-        const currentTodosSnap = await get(ref(database, `users/${user.uid}/todos`));
-        if (currentTodosSnap.exists()) {
-          const todos = currentTodosSnap.val();
-          const count = Object.keys(todos).length;
-          const penalty = count * 30;
-
-          if (penalty > 0) {
-            await update(ref(database, `users/${user.uid}`), {
-              points: Math.max(0, (userData.points || 0) - penalty),
-              lastTodoCheckDate: today
-            });
-            push(ref(database, `users/${user.uid}/notifications`), {
-              type: 'system',
-              title: 'تنبيه الانضباط 🛑',
-              message: `لقد فاتك إنجاز ${count} مهام بالأمس. تم خصم ${penalty} نقطة.`,
-              isRead: false,
-              timestamp: serverTimestamp()
-            });
-            toast({ variant: "destructive", title: "يوم جديد!", description: `تم خصم ${penalty} نقطة لعدم إكمال مهام الأمس.` });
-          }
-          await remove(ref(database, `users/${user.uid}/todos`));
-        } else {
-          await update(ref(database, `users/${user.uid}`), { lastTodoCheckDate: today });
+    if (!user || !todosData) return;
+    const now = Date.now();
+    
+    const checkExpiry = async () => {
+      for (const todo of Object.values(todosData) as any[]) {
+        if (todo.expiry && now > todo.expiry) {
+          const penalty = 30;
+          const currentPoints = userData?.points || 0;
+          
+          await update(ref(database, `users/${user.uid}`), {
+            points: Math.max(0, currentPoints - penalty)
+          });
+          await remove(ref(database, `users/${user.uid}/todos/${todo.id}`));
+          
+          push(ref(database, `users/${user.uid}/notifications`), {
+            type: 'system',
+            title: 'فشل المهمة 🛑',
+            message: `انتهى وقت المهمة "${todo.title}". تم خصم ${penalty} نقطة لعدم الالتزام.`,
+            isRead: false,
+            timestamp: serverTimestamp()
+          });
+          toast({ variant: "destructive", title: "مهمة منتهية", description: "خصم 30 نقطة لتجاوز الوقت 🛑" });
         }
-      } else if (!lastCheck) {
-        await update(ref(database, `users/${user.uid}`), { lastTodoCheckDate: today });
       }
     };
-
-    checkDailyTodos();
-  }, [user, userData, database, today]);
+    checkExpiry();
+  }, [user, todosData, database, userData]);
 
   const isLegend = useMemo(() => {
     if (!userData?.trackProgress) return false;
@@ -187,12 +180,14 @@ export default function MasterTrackPage() {
     }
 
     playSound('click');
+    const now = Date.now();
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
     update(newTodoRef, {
       id: newTodoRef.key,
       title: todoInput.trim(),
       completed: false,
-      timestamp: serverTimestamp()
+      timestamp: now,
+      expiry: now + (24 * 60 * 60 * 1000) // تفتح لمدة 24 ساعة
     });
 
     update(ref(database, `users/${user.uid}`), {
@@ -221,12 +216,12 @@ export default function MasterTrackPage() {
     setTimeout(() => {
       remove(ref(database, `users/${user.uid}/todos/${todoId}`));
       setCompletingId(null);
-    }, 1000);
+    }, 800);
   };
 
   const handleDeleteTodo = async (todoId: string) => {
     if (!user) return;
-    const confirmDelete = window.confirm("إلغاء المهمة سيؤدي لخصم 30 نقطة! هل أنت متأكد؟ 🛑");
+    const confirmDelete = window.confirm("إلغاء المهمة يعتبر تراجعاً وسيخصم 30 نقطة! هل أنت متأكد؟ 🛑");
     if (!confirmDelete) return;
 
     playSound('click');
@@ -247,10 +242,28 @@ export default function MasterTrackPage() {
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
+  // مؤقت صغير لكل مهمة في القائمة
+  function TodoExpiryTimer({ expiry }: { expiry: number }) {
+    const [timeLeft, setTimeLeft] = useState("");
+    useEffect(() => {
+      const itv = setInterval(() => {
+        const diff = expiry - Date.now();
+        if (diff <= 0) setTimeLeft("منتهي");
+        else {
+          const h = Math.floor(diff / (1000 * 60 * 60));
+          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+          setTimeLeft(`${h}س ${m}د`);
+        }
+      }, 60000);
+      return () => clearInterval(itv);
+    }, [expiry]);
+    return <span className="text-[8px] font-black text-orange-500 flex items-center gap-1"><Clock size={8}/> {timeLeft || "جاري..."}</span>;
+  }
+
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40 overflow-x-hidden" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-6 px-4 md:px-0">
+      <div className="app-container py-6 space-y-6 px-2 sm:px-4">
         <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
@@ -284,14 +297,14 @@ export default function MasterTrackPage() {
             {!isLegend && (
               <div className="bg-orange-50 border-r-4 border-orange-500 p-4 rounded-2xl flex items-start gap-3">
                 <ShieldAlert className="text-orange-600 shrink-0" size={18} />
-                <p className="text-[10px] font-bold text-orange-900 leading-relaxed">
+                <p className="text-[10px] font-bold text-orange-900 leading-relaxed text-right">
                   تنبيه: لا يتم منح نقاط رسمية هنا إلا بعد إتمام الـ 120 يوماً في المسارات الأساسية. يمكنك استخدامه للتدريب الحر حالياً!
                 </p>
               </div>
             )}
 
             <div className="space-y-3">
-              <h3 className="font-black text-primary text-xs opacity-60">1. نوع المهمة</h3>
+              <h3 className="font-black text-primary text-xs opacity-60 text-right">1. نوع المهمة</h3>
               <div className="grid grid-cols-2 gap-2">
                 {(['Fitness', 'Nutrition', 'Behavior', 'Study'] as TrackKey[]).map(t => (
                   <Button 
@@ -307,7 +320,7 @@ export default function MasterTrackPage() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="font-black text-primary text-xs opacity-60">2. الصعوبة</h3>
+              <h3 className="font-black text-primary text-xs opacity-60 text-right">2. الصعوبة</h3>
               <div className="flex gap-2">
                 {(['سهل', 'متوسط', 'صعب'] as const).map(d => (
                   <Button 
@@ -339,7 +352,7 @@ export default function MasterTrackPage() {
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
-              <p className="text-base font-bold text-muted-foreground leading-relaxed">{currentChallenge.description}</p>
+              <p className="text-base font-bold text-muted-foreground leading-relaxed text-right">{currentChallenge.description}</p>
               
               <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
                 <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي (مستمر في الخلفية)</p>
@@ -412,7 +425,7 @@ export default function MasterTrackPage() {
                     completingId === todo.id ? "opacity-0 scale-95 blur-sm" : "opacity-100"
                   )}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="flex items-center gap-3 overflow-hidden flex-1">
                     <button 
                       onClick={() => handleToggleTodo(todo.id)}
                       disabled={!!completingId}
@@ -423,17 +436,20 @@ export default function MasterTrackPage() {
                     >
                       <CheckSquare size={16} />
                     </button>
-                    <span className="font-bold text-[11px] text-primary truncate">
-                      {todo.title}
-                    </span>
+                    <div className="flex flex-col text-right overflow-hidden">
+                      <span className="font-bold text-[11px] text-primary truncate">
+                        {todo.title}
+                      </span>
+                      <TodoExpiryTimer expiry={todo.expiry} />
+                    </div>
                   </div>
                   <Button 
                     onClick={() => handleDeleteTodo(todo.id)} 
                     variant="ghost" 
                     size="icon" 
-                    className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0"
+                    className="text-red-500 hover:bg-red-50 h-8 w-8 shrink-0 rounded-lg"
                   >
-                    <Trash2 size={14} />
+                    <X size={18} />
                   </Button>
                 </div>
               )) : (

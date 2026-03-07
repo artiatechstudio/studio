@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull, ListChecks, Crown, Sparkles } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull, ListChecks, Crown, Sparkles, Globe, Brain } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -137,18 +137,18 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* 5. المسار العام وتحدي الأساطير */}
+          {/* 5. الأنظمة التقنية والذكاء الاصطناعي */}
           <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
-              <Trophy className="text-accent" /> <h2>5. المسار العام للأساطير</h2>
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
+              <Brain className="text-blue-600" /> <h2>5. حالة السيرفر والذكاء الاصطناعي</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <p className="font-bold text-slate-900 text-sm">المسار العام هو مولد تحديات عشوائي يحتوي على 210 تحدياً متنوعاً.</p>
-              <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                <h5 className="font-black text-primary text-xs mb-2">شرط الحصول على نقاط:</h5>
-                <p className="text-[10px] font-bold text-slate-700 leading-relaxed">
-                  لا يمكنك الحصول على نقاط من المسار العام إلا إذا كنت "أسطورة"، أي أنك أتممت **30 مرحلة كاملة** في كل المسارات الأربعة (اللياقة، التغذية، السلوك، الدراسة). قبل ذلك، يعتبر المسار العام للتدريب الحر فقط بدون نقاط.
-                </p>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-blue-100 bg-blue-50/20 space-y-4">
+              <div className="flex items-center gap-3 p-4 bg-white rounded-2xl border-r-4 border-blue-600">
+                <AlertCircle className="text-blue-600 shrink-0" />
+                <div>
+                  <h5 className="font-black text-blue-900 text-sm">حالة المساعد "كاري":</h5>
+                  <p className="text-[10px] font-bold text-slate-600 mt-1">سيرفر الذكاء الاصطناعي متوقف حالياً للصيانة والترقية في النسخة الأولية. "كاري" يعمل الآن بنظام الرسائل التحفيزية الثابتة لضمان سرعة واستقرار التطبيق.</p>
+                </div>
               </div>
             </Card>
           </div>

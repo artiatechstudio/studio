@@ -6,11 +6,10 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser } from '@/firebase';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, Sparkles } from 'lucide-react';
+import { Send, ArrowLeft, Sparkles, AlertCircle } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { aiChat } from '@/ai/flows/ai-chat-flow';
 
 type Message = {
   role: 'user' | 'model';
@@ -38,27 +37,20 @@ export default function AiChatPage() {
 
     const userMsg = inputText.trim();
     setInputText('');
-    
-    // حفظ السجل الحالي قبل الإرسال
-    const currentHistory = [...messages];
     setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
     
     setIsLoading(true);
     playSound('click');
 
-    try {
-      const response = await aiChat({
-        message: userMsg,
-        history: currentHistory
-      });
-      
-      setMessages(prev => [...prev, { role: 'model', content: response.response }]);
-      playSound('success');
-    } catch (error) {
-      setMessages(prev => [...prev, { role: 'model', content: 'عذراً، واجهت مشكلة في التفكير! حاول مجدداً لاحقاً 🐱💤' }]);
-    } finally {
+    // محاكاة تأخير للتفكير ثم إعطاء رسالة خطأ جميلة (الذكاء الاصطناعي متوقف)
+    setTimeout(() => {
+      setMessages(prev => [...prev, { 
+        role: 'model', 
+        content: 'يا إلهي! يبدو أن عقلي السحابي متوقف حالياً للصيانة والترقية لخدمتك بشكل أفضل. حاول التحدث معي مجدداً في وقت لاحق! 🐱💤⚠️' 
+      }]);
       setIsLoading(false);
-    }
+      playSound('success');
+    }, 1500);
   };
 
   return (
@@ -72,9 +64,9 @@ export default function AiChatPage() {
             🐱
           </div>
           <div className="text-right text-white">
-            <h2 className="font-black leading-none text-lg">كاري (الذكاء الاصطناعي)</h2>
+            <h2 className="font-black leading-none text-lg">كاري (وضع الصيانة)</h2>
             <p className="text-[10px] font-bold mt-1 flex items-center gap-1 opacity-80">
-              <Sparkles size={10} /> رفيقك الدائم للتحفيز
+              <AlertCircle size={10} /> سيرفر الذكاء الاصطناعي أوفلاين
             </p>
           </div>
         </div>
@@ -107,7 +99,7 @@ export default function AiChatPage() {
           {isLoading && (
             <div className="flex justify-start">
               <div className="bg-secondary/50 p-4 rounded-3xl rounded-bl-none font-black text-xs animate-pulse text-muted-foreground">
-                كاري يكتب الآن... 🐱✍️
+                كاري يحاول الاتصال بالسيرفر... 🐱📡
               </div>
             </div>
           )}

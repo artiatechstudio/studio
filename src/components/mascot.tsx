@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { Card } from './ui/card';
 import { useUser, useDatabase, useMemoFirebase, useFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { aiHelperContextualResponse } from '@/ai/flows/ai-helper-contextual-response';
 
 const STATIC_MESSAGES = [
   "أهلاً! أنا كاري 🐱. دعنا ننمو معاً اليوم!",
@@ -13,6 +12,16 @@ const STATIC_MESSAGES = [
   "هل أنجزت مهمتك اليوم؟ الحماسة في انتظارك! 🔥",
   "تذكر، الاستمرارية أهم من السرعة. كاري فخور بك!",
   "يوم جديد، فرصة جديدة لتكون أفضل من الأمس!",
+  "العظماء لا يولدون عمالقة، بل يبدؤون بخطوة واحدة. 🌱",
+  "حافظ على زخمك، أنت تبلي بلاءً حسناً اليوم! 🚀",
+  "لا تقلق بشأن الأخطاء، المهم أنك تحاول دائماً. ✨",
+  "الالتزام هو الفارق الوحيد بين الحلم والحقيقة. 🏆",
+  "كاري يراقب تقدمك بسعادة، استمر في التألق! 🌟",
+  "هل شربت الماء اليوم؟ جسدك يحتاج للترطيب لتنجز. 💧",
+  "خمس دقائق من الحركة أفضل من لا شيء، تحرك الآن! 🏃‍♂️",
+  "عقلك مثل العضلة، كلما دربته أكثر صار أقوى. 🧠",
+  "أنت أقوى مما تعتقد، فقط استمر في المحاولة. 🔥",
+  "النوم المبكر هو سر النجاح في الغد، تذكر ذلك! 🌙"
 ];
 
 interface MascotProps {
@@ -24,7 +33,6 @@ export function Mascot({ messageOnly = false, customMessage }: MascotProps) {
   const { user } = useUser();
   const { database } = useFirebase();
   const [message, setMessage] = useState<string>("جاري التفكير... 🐱");
-  const [isAiLoading, setIsAiLoading] = useState(false);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
@@ -35,38 +43,9 @@ export function Mascot({ messageOnly = false, customMessage }: MascotProps) {
       return;
     }
 
-    async function fetchAiMessage() {
-      if (!userData || isAiLoading) return;
-      
-      setIsAiLoading(true);
-      try {
-        // تحديد المسار الحالي بشكل ذكي أو افتراضي
-        const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
-        const currentTrack = (Object.keys(userData.trackProgress || {}).find(k => userData.trackProgress[k]?.currentStage > 1) || 'Fitness') as any;
-        
-        const response = await aiHelperContextualResponse({
-          userName: userData.name || 'صديقي',
-          currentTrack: currentTrack,
-          currentStage: userData.trackProgress?.[currentTrack]?.currentStage || 1,
-          isCompletedToday: userData.lastActiveDate === new Date().toLocaleDateString('en-CA'),
-          completionStreak: userData.streak || 0
-        });
-        
-        setMessage(response.message);
-      } catch (e) {
-        const randomIdx = Math.floor(Math.random() * STATIC_MESSAGES.length);
-        setMessage(STATIC_MESSAGES[randomIdx]);
-      } finally {
-        setIsAiLoading(false);
-      }
-    }
-
-    if (userData) {
-      fetchAiMessage();
-    } else {
-      const randomIdx = Math.floor(Math.random() * STATIC_MESSAGES.length);
-      setMessage(STATIC_MESSAGES[randomIdx]);
-    }
+    // نختار رسالة عشوائية من القائمة الثابتة بدلاً من استدعاء AI
+    const randomIdx = Math.floor(Math.random() * STATIC_MESSAGES.length);
+    setMessage(STATIC_MESSAGES[randomIdx]);
   }, [userData, customMessage]);
 
   if (messageOnly) {

@@ -113,7 +113,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const isLikedByMe = userData.likedBy?.[currentUser?.uid || ''];
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 md:py-10 space-y-6">
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-6 rounded-[2rem] shadow-xl border border-border relative overflow-hidden group mx-2">

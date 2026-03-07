@@ -8,7 +8,7 @@ import { ref, runTransaction, push, serverTimestamp } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
-import { Trophy, Flame, Heart, ArrowLeft, Star, HeartPulse, ShieldCheck, User as UserIcon, Calendar as CalendarIcon } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, HeartPulse, ShieldCheck, User as UserIcon, Calendar as CalendarIcon, Crown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -29,15 +29,19 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
 
   const membershipInfo = useMemo(() => {
     if (!allUsersData || !id) return { rank: 0, total: 0 };
+    if (userData?.name === 'admin') return { rank: 0, total: 0 };
+
     const usersArray = Object.values(allUsersData) as any[];
-    const sortedUsers = usersArray.sort((a, b) => {
-      const dateA = new Date(a.registrationDate || 0).getTime();
-      const dateB = new Date(b.registrationDate || 0).getTime();
-      return dateA - dateB;
-    });
-    const rank = sortedUsers.findIndex(u => u.id === id) + 1;
-    return { rank: rank > 0 ? rank : 1, total: sortedUsers.length };
-  }, [allUsersData, id]);
+    const filteredUsers = usersArray.filter(u => u.name !== 'admin')
+      .sort((a, b) => {
+        const dateA = new Date(a.registrationDate || 0).getTime();
+        const dateB = new Date(b.registrationDate || 0).getTime();
+        return dateA - dateB;
+      });
+    
+    const rank = filteredUsers.findIndex(u => u.id === id) + 1;
+    return { rank: rank > 0 ? rank : 1, total: filteredUsers.length };
+  }, [allUsersData, id, userData]);
 
   const handleToggleLike = () => {
     if (!currentUser || !id) return;
@@ -121,18 +125,27 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           </Avatar>
           <div className="flex-1 text-center md:text-right space-y-2 z-10 overflow-hidden w-full">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2">
-              <h1 className="text-xl md:text-3xl font-black text-primary leading-tight truncate max-w-full">{userData.name}</h1>
+              <div className="flex items-center gap-1 justify-center md:justify-start">
+                <h1 className="text-xl md:text-3xl font-black text-primary leading-tight truncate max-w-[200px]">{userData.name}</h1>
+                {userData.isPremium === 1 && <Crown size={16} className="text-yellow-500 shrink-0" fill="currentColor" />}
+              </div>
               <Button onClick={handleToggleLike} variant="ghost" className={cn("bg-red-50 px-3 py-1 h-7 rounded-full text-[10px] font-black border border-red-100 flex items-center gap-1", isLikedByMe ? "text-red-600" : "text-gray-400 grayscale")}>
                  {userData.likesCount || 0} <Heart size={12} fill={isLikedByMe ? "currentColor" : "none"} />
               </Button>
             </div>
             <p className="text-muted-foreground font-bold text-xs bg-secondary/30 inline-block px-3 py-0.5 rounded-full italic truncate">
-               {userData.bio || "عضو طموح في كارينجو 🌱"}
+               {userData.name === 'admin' ? "مدير النظام الرسمي 🛡️" : (userData.bio || "عضو طموح في كارينجو 🌱")}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
-              <div className="bg-primary/10 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] border border-primary/10">العضو رقم {membershipInfo.rank}</div>
-              <div className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-orange-100 flex items-center gap-1"><Flame size={10} fill="currentColor" /> {userData.streak || 0}ي</div>
-              <div className="bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-yellow-100 flex items-center gap-1"><Star size={10} fill="currentColor" /> {userData.points?.toLocaleString() || 0}ن</div>
+              <div className="bg-primary/10 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] border border-primary/10">
+                {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${membershipInfo.rank}`}
+              </div>
+              {userData.name !== 'admin' && (
+                <>
+                  <div className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-orange-100 flex items-center gap-1"><Flame size={10} fill="currentColor" /> {userData.streak || 0}ي</div>
+                  <div className="bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-yellow-100 flex items-center gap-1"><Star size={10} fill="currentColor" /> {userData.points?.toLocaleString() || 0}ن</div>
+                </>
+              )}
             </div>
           </div>
         </header>
@@ -140,7 +153,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-2">
           <Card className="border-none shadow-lg rounded-[2rem] bg-card p-5 border border-border space-y-4">
             <CardHeader className="p-0 border-b border-border pb-3">
-              <CardTitle className="text-sm font-black text-primary flex items-center gap-2"><UserIcon size={16} /> المعلومات العامة</CardTitle>
+              <CardTitle className="text-sm font-black text-primary flex items-center justify-end gap-2"><UserIcon size={16} /> المعلومات العامة</CardTitle>
             </CardHeader>
             <div className="grid grid-cols-2 gap-3 text-right">
               <div className="space-y-0.5"><p className="text-[8px] font-black text-muted-foreground uppercase">الجنس</p><p className="font-black text-primary text-xs">{userData.gender === 'male' ? 'ذكر' : 'أنثى'}</p></div>
@@ -148,7 +161,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             </div>
           </Card>
           <Card className="border-none shadow-lg rounded-[2rem] bg-card p-5 border border-border space-y-4">
-            <CardHeader className="p-0 border-b border-border pb-3"><CardTitle className="text-sm font-black text-primary flex items-center gap-2"><HeartPulse size={16} /> مؤشر الأداء الصحي</CardTitle></CardHeader>
+            <CardHeader className="p-0 border-b border-border pb-3"><CardTitle className="text-sm font-black text-primary flex items-center justify-end gap-2"><HeartPulse size={16} /> مؤشر الأداء الصحي</CardTitle></CardHeader>
             <div className="flex flex-col items-center justify-center gap-2 py-2">
                <div className="text-4xl font-black text-primary">{bmiValue}</div>
                <div className={cn("px-4 py-1 rounded-full font-black text-xs bg-secondary", bmiStatus.color)}>{bmiStatus.label}</div>

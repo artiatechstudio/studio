@@ -48,15 +48,20 @@ export default function ProfilePage() {
 
   const membershipInfo = useMemo(() => {
     if (!allUsersData || !user) return { rank: 0, total: 0 };
+    if (profile?.name === 'admin') return { rank: 0, total: 0 };
+
     const usersArray = Object.values(allUsersData) as any[];
-    const sortedUsers = usersArray.sort((a, b) => {
-      const dateA = new Date(a.registrationDate || 0).getTime();
-      const dateB = new Date(b.registrationDate || 0).getTime();
-      return dateA - dateB;
-    });
-    const rank = sortedUsers.findIndex(u => u.id === user.uid) + 1;
-    return { rank: rank > 0 ? rank : 1, total: sortedUsers.length };
-  }, [allUsersData, user]);
+    // استثناء الآدمن من الترتيب
+    const filteredUsers = usersArray.filter(u => u.name !== 'admin')
+      .sort((a, b) => {
+        const dateA = new Date(a.registrationDate || 0).getTime();
+        const dateB = new Date(b.registrationDate || 0).getTime();
+        return dateA - dateB;
+      });
+    
+    const rank = filteredUsers.findIndex(u => u.id === user.uid) + 1;
+    return { rank: rank > 0 ? rank : 1, total: filteredUsers.length };
+  }, [allUsersData, user, profile]);
 
   const handleLogout = async () => {
     playSound('click');
@@ -79,6 +84,7 @@ export default function ProfilePage() {
   const userData = profile || cachedProfile || {};
 
   const getRankName = (points: number = 0) => {
+    if (userData.name === 'admin') return "مدير النظام الرسمي 🛡️";
     if (points >= 10000) return "أسطورة كاري 👑";
     if (points >= 5000) return "بطل متميز 🏅";
     if (points >= 2000) return "مكافح محترف 🔥";
@@ -99,7 +105,7 @@ export default function ProfilePage() {
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3">
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name || 'جارِ التحميل'}</h1>
               <span className="bg-primary/10 px-4 py-1 rounded-full text-xs font-black text-primary border border-primary/20">
-                العضو رقم {membershipInfo.rank} من {membershipInfo.total}
+                {userData.name === 'admin' ? "عضوية الإدارة العليا" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
               </span>
               <span className="bg-red-50 px-4 py-1 rounded-full text-xs font-black text-red-600 border border-red-100 flex items-center gap-1">
                  {userData.likesCount || 0} إعجاب <Heart size={14} fill="currentColor" />
@@ -138,9 +144,11 @@ export default function ProfilePage() {
                 <div className="flex items-center gap-3">
                    <Trophy className="text-accent" /> الأوسمة المكتسبة
                 </div>
-                <Link href="/streak" onClick={() => playSound('click')}>
-                  <Button variant="link" className="text-accent font-black">سجل الحماسة <ArrowLeft size={16} className="mr-1 rotate-180" /></Button>
-                </Link>
+                {userData.name !== 'admin' && (
+                  <Link href="/streak" onClick={() => playSound('click')}>
+                    <Button variant="link" className="text-accent font-black">سجل الحماسة <ArrowLeft size={16} className="mr-1 rotate-180" /></Button>
+                  </Link>
+                )}
               </CardTitle>
             </CardHeader>
             <div className="flex flex-wrap gap-4">
@@ -174,7 +182,7 @@ export default function ProfilePage() {
                  </DialogHeader>
                  <div className="flex flex-col items-center gap-6 mt-4">
                    <div className="bg-white p-6 rounded-[2rem] shadow-inner border-4 border-accent">
-                      <Image src="/qr.png" alt="QR Code" width={250} height={250} className="rounded-lg" />
+                      <Image src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://careingo.app" alt="QR Code" width={250} height={250} className="rounded-lg" />
                    </div>
                    <p className="font-bold text-muted-foreground">اجعل أصدقاءك يصورون هذا الرمز للتحميل المباشر 🐱</p>
                    <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-2xl font-black">إغلاق</Button>

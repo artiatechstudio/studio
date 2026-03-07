@@ -38,7 +38,7 @@ export default function AdminDashboardPage() {
   const users = useMemo(() => {
     if (!usersData) return [];
     return Object.values(usersData)
-      .filter((u: any) => u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+      .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
   }, [usersData, searchTerm]);
 
@@ -80,8 +80,8 @@ export default function AdminDashboardPage() {
               <ShieldCheck size={24} />
             </div>
             <div className="text-right">
-              <h1 className="text-xl font-black text-primary">لوحة التحكم</h1>
-              <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">الإدارة والرقابة ⚡</p>
+              <h1 className="text-xl font-black text-primary leading-tight">لوحة التحكم</h1>
+              <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">الإدارة والرقابة 🛡️</p>
             </div>
           </div>
           <Button onClick={handleLogout} variant="ghost" className="text-destructive font-black h-9 text-xs">

@@ -32,7 +32,6 @@ export default function StreakPage() {
 
   const { data: allUsersData } = useDatabase(allUsersRef);
 
-  // حساب رقم العضوية بناءً على تاريخ التسجيل
   const membershipRank = useMemo(() => {
     if (!allUsersData || !user) return 0;
     const usersArray = Object.values(allUsersData) as any[];
@@ -50,7 +49,6 @@ export default function StreakPage() {
     return !!userData.dailyPoints[todayStr];
   }, [userData, todayStr]);
 
-  // توليد بيانات آخر 30 يوم
   const last30Days = useMemo(() => {
     const days = [];
     const baseDate = new Date();
@@ -67,7 +65,6 @@ export default function StreakPage() {
     return days;
   }, [userData]);
 
-  // توليد بيانات الأسبوع الحالي
   const currentWeek = useMemo(() => {
     const week = [];
     const dayLabels = ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
@@ -97,7 +94,7 @@ export default function StreakPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-72 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2 mt-2">

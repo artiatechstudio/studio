@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png مرفوعة للأعلى لتكون في الثلث العلوي، بدون نصوص إضافية.
+ * تم رفع الشعار للأعلى قليلاً مع إزالة أي نصوص إضافية لتصميم نظيف.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {

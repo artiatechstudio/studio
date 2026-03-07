@@ -184,17 +184,14 @@ export default function SettingsPage() {
     setIsSubmittingRequest(true);
     playSound('click');
 
-    // تحديد كود التحويل بناءً على الباقة المختارة لشبكة ليبيانا
     let ussdCode = "";
     if (selectedPlan === '7days') ussdCode = "*122*0922813618*1000*1#";
     else if (selectedPlan === '1month') ussdCode = "*122*0922813618*3000*1#";
     else if (selectedPlan === '6months') ussdCode = "*122*0922813618*15000*1#";
 
     try {
-      // 1. فتح واجهة الاتصال أولاً بالكود المطلوب (مع ترميز علامة # لتصبح %23)
       window.location.href = `tel:${ussdCode.replace('#', '%23')}`;
 
-      // 2. تحديث قاعدة البيانات لتسجيل الطلب
       await update(ref(database, `users/${user.uid}/premiumRequest`), {
         status: 'pending',
         duration: selectedPlan,

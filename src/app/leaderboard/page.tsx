@@ -15,6 +15,7 @@ import Image from 'next/image';
 export default function LeaderboardPage() {
   const { database } = useFirebase();
   
+  // جلب أفضل 200 مستخدم بناءً على النقاط الكلية لضمان المزامنة اللحظية
   const leadersQuery = useMemoFirebase(() => {
     return query(ref(database, 'users'), orderByChild('points'), limitToLast(200));
   }, [database]);
@@ -24,26 +25,14 @@ export default function LeaderboardPage() {
   const stats = useMemo(() => {
     if (!rawData) return { leaders: [], losers: [] };
     
-    // توحيد صيغة التاريخ مع باقي التطبيق (en-CA)
-    const dates = [];
-    for (let i = 0; i < 3; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      dates.push(d.toLocaleDateString('en-CA'));
-    }
-
+    const today = new Date();
     const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    threeDaysAgo.setDate(today.getDate() - 3);
     const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
 
     const allUsers = Object.values(rawData)
       .filter((u: any) => u.name !== 'admin')
       .map((user: any) => {
-        const dailyPoints = user.dailyPoints || {};
-        const scores = dates.map(date => dailyPoints[date] || 0);
-        const sum = scores.reduce((a, b) => a + b, 0);
-        const avgScore = Math.round(sum / 3);
-
         let bmiColor = "text-gray-400";
         let bmiValue = "--";
         let bmiStatus = "غير محدد";
@@ -57,17 +46,20 @@ export default function LeaderboardPage() {
           else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
         }
 
-        return { ...user, avgScore, bmiColor, bmiValue, bmiStatus };
+        return { ...user, bmiColor, bmiValue, bmiStatus };
       });
 
-    const leaders = allUsers
+    // المتصدرون: ترتيب تنازلي حسب النقاط الكلية
+    const leaders = [...allUsers]
       .filter((user: any) => (user.points || 0) > 0)
-      .sort((a: any, b: any) => b.avgScore - a.avgScore)
+      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
       .slice(0, 100);
 
+    // جدار العار: من تم معاقبتهم في آخر 3 أيام
     const losers = allUsers
       .filter((user: any) => user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr)
-      .sort((a: any, b: any) => b.lastStreakPenaltyDate.localeCompare(a.lastStreakPenaltyDate));
+      .sort((a: any, b: any) => b.lastStreakPenaltyDate.localeCompare(a.lastStreakPenaltyDate))
+      .slice(0, 20);
 
     return { leaders, losers };
   }, [rawData]);
@@ -94,8 +86,7 @@ export default function LeaderboardPage() {
             <div className="text-right">
               <h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1>
               <p className="text-muted-foreground text-[9px] font-bold flex items-center justify-end gap-1 mt-0.5">
-                متوسط إنجاز آخر 3 أيام
-                <TrendingUp size={10} className="text-accent" />
+                ترتيب الأبطال حسب النقاط الكلية 🏆
               </p>
             </div>
           </div>
@@ -109,19 +100,20 @@ export default function LeaderboardPage() {
             </div>
             <div className="divide-y divide-border">
               {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => {
-                const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+                const isAvatarUrl = user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('http');
                 const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div 
                     key={user.id} 
                     className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
                   >
-                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
+                    {/* عرض النقاط الكلية بوضوح */}
+                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[75px] border border-primary/10">
                       <div className="flex items-center gap-1 justify-center">
                         <Star size={10} className="text-yellow-500" fill="currentColor" />
-                        <p className="font-black text-primary text-sm">{user.avgScore}</p>
+                        <p className="font-black text-primary text-sm">{(user.points || 0).toLocaleString()}</p>
                       </div>
-                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
+                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة كلية</p>
                     </div>
 
                     <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
@@ -133,13 +125,13 @@ export default function LeaderboardPage() {
                       </div>
                       
                       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                        <Avatar className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform overflow-hidden">
+                        <div className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white rounded-full hover:scale-105 transition-transform overflow-hidden relative">
                           {isAvatarUrl ? (
                             <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full" unoptimized />
                           ) : (
                             <span className="text-xl">{user.avatar || "🐱"}</span>
                           )}
-                        </Avatar>
+                        </div>
                       </Link>
 
                       <div className="text-right overflow-hidden flex-1 px-1">
@@ -169,32 +161,33 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
+          {/* جدار العار - مخصص لآخر 3 أيام فقط */}
           <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
             <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
               <div className="flex items-center gap-2">
                 <Skull size={18} />
                 <h2 className="text-sm font-black uppercase tracking-widest">جدار العار 🛑</h2>
               </div>
-              <p className="text-[8px] font-bold opacity-80">من كسر حماسته في آخر 3 أيام</p>
+              <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام في آخر 3 أيام</p>
             </div>
             <div className="p-4 space-y-3">
               {stats.losers.length > 0 ? stats.losers.map((user: any) => {
-                const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+                const isAvatarUrl = user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('http');
                 const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
-                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg">
+                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg border border-red-100">
                       <AlertCircle size={12} className="text-red-600" />
-                      <span className="text-[10px] font-black text-red-600">0 نقطة</span>
+                      <span className="text-[10px] font-black text-red-600">عقوبة غياب</span>
                     </div>
                     
                     <div className="flex items-center gap-3 flex-row-reverse">
                       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden">
+                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden relative">
                           {isAvatarUrl ? (
                             <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full opacity-50" unoptimized />
                           ) : (
-                            user.avatar || "🐱"
+                            <span className="opacity-50">{user.avatar || "🐱"}</span>
                           )}
                         </div>
                       </Link>
@@ -203,7 +196,7 @@ export default function LeaderboardPage() {
                           <p className="font-black text-red-900 text-xs">{user.name}</p>
                           {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
                         </div>
-                        <p className="text-[8px] font-bold text-red-400">فقد الالتزام والحماسة</p>
+                        <p className="text-[8px] font-bold text-red-400">انكسرت الحماسة في {user.lastStreakPenaltyDate}</p>
                       </div>
                     </div>
                   </div>

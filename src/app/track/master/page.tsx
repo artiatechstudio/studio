@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock, Trophy } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock, Trophy, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -118,7 +118,6 @@ export default function MasterTrackPage() {
     const isLegend = userData?.trackProgress && tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
 
     if (isLegend) {
-      // ميزة البريميوم: مضاعفة النقاط في المسار العام
       const basePoints = currentChallenge.points || 50;
       const points = isPremium ? basePoints * 2 : basePoints;
       
@@ -132,6 +131,15 @@ export default function MasterTrackPage() {
     }
     setStep('done');
     setTimerActive(false);
+  };
+
+  const handleCancelChallenge = () => {
+    playSound('click');
+    setStep('setup');
+    localStorage.removeItem('master_timer_end');
+    localStorage.removeItem('master_current_challenge');
+    setTimerActive(false);
+    toast({ title: "تم إلغاء التحدي" });
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -282,7 +290,7 @@ export default function MasterTrackPage() {
                <h3 className="font-black text-primary text-sm">ابدأ تحدياً جديداً</h3>
                <div className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full border border-border/50">
                   <span className="text-[9px] font-black text-muted-foreground">المتبقي اليوم:</span>
-                  {isPremium ? <Infinity size={12} className="text-yellow-600" /> : <span className="text-xs font-black text-primary">{5 - masterCountToday}/5</span>}
+                  {isPremium ? <Infinity size={12} className="text-yellow-600" /> : <span className="text-xs font-black text-primary">{Math.max(0, 5 - masterCountToday)}/5</span>}
                </div>
             </div>
 
@@ -346,13 +354,8 @@ export default function MasterTrackPage() {
                 <Button onClick={handleCompleteChallenge} className="h-14 rounded-2xl bg-accent text-lg font-black shadow-lg">
                   أنهيت المهمة 🔥
                 </Button>
-                <Button onClick={() => {
-                  setStep('setup');
-                  localStorage.removeItem('master_timer_end');
-                  localStorage.removeItem('master_current_challenge');
-                  setTimerActive(false);
-                }} variant="ghost" className="text-destructive font-black text-xs h-10">
-                  إلغاء التحدي
+                <Button onClick={handleCancelChallenge} variant="ghost" className="text-destructive font-black text-xs h-10 gap-2">
+                  <XCircle size={16} /> إلغاء التحدي
                 </Button>
               </div>
             </CardContent>
@@ -378,7 +381,7 @@ export default function MasterTrackPage() {
             <div className="flex flex-col items-end">
               <div className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-lg border border-border/20 mb-1">
                  <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
-                 {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{5 - todoCountToday}/5</span>}
+                 {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{Math.max(0, 5 - todoCountToday)}/5</span>}
               </div>
             </div>
           </header>

@@ -112,11 +112,11 @@ export default function StreakPage() {
         </header>
 
         <section className="px-1 sm:px-2">
-          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-4 sm:p-6">
-            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
+          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-4 sm:p-6 overflow-hidden">
+            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2 px-2">
               زخم الأسبوع الحالي <Flame size={18} className="text-orange-500" />
             </h3>
-            <div className="flex justify-around items-center gap-1">
+            <div className="flex justify-around items-center gap-1 px-1">
               {currentWeek.map((day, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 flex-1 min-w-0">
                   <div className={cn(

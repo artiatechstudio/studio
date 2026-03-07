@@ -24,15 +24,17 @@ export default function LeaderboardPage() {
     if (!rawData) return { leaders: [], losers: [] };
     
     const today = new Date();
+    const todayStr = today.toLocaleDateString('en-CA');
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
+
     const dates = [];
     for (let i = 0; i < 3; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       dates.push(d.toISOString().split('T')[0]);
     }
-
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const allUsers = Object.values(rawData)
       .filter((u: any) => u.name !== 'admin')
@@ -55,10 +57,7 @@ export default function LeaderboardPage() {
           else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
         }
 
-        const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
-        const isActiveRecently = lastActive && lastActive >= oneWeekAgo;
-
-        return { ...user, avgScore, bmiColor, bmiValue, bmiStatus, isActiveRecently };
+        return { ...user, avgScore, bmiColor, bmiValue, bmiStatus };
       });
 
     const leaders = allUsers
@@ -66,9 +65,10 @@ export default function LeaderboardPage() {
       .sort((a: any, b: any) => b.avgScore - a.avgScore)
       .slice(0, 100);
 
+    // منطق جدار العار: من كسر حماسته في آخر 3 أيام
     const losers = allUsers
-      .filter((user: any) => (user.points || 0) === 0 && user.isActiveRecently)
-      .sort((a: any, b: any) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime());
+      .filter((user: any) => user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr)
+      .sort((a: any, b: any) => b.lastStreakPenaltyDate.localeCompare(a.lastStreakPenaltyDate));
 
     return { leaders, losers };
   }, [rawData]);
@@ -139,7 +139,7 @@ export default function LeaderboardPage() {
                     <div className="text-right overflow-hidden flex-1 px-1">
                       <div className="flex items-center justify-end gap-1 mb-1">
                         <h3 className="font-black text-primary text-[11px] truncate leading-none">{user.name}</h3>
-                        {user.isPremium === 1 && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                        {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
                       </div>
                       <div className="flex flex-wrap items-center justify-end gap-1">
                         <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
@@ -168,7 +168,7 @@ export default function LeaderboardPage() {
                 <Skull size={18} />
                 <h2 className="text-sm font-black uppercase tracking-widest">جدار العار 🛑</h2>
               </div>
-              <p className="text-[8px] font-bold opacity-80">نشطون فقدوا كافة نقاطهم هذا الأسبوع</p>
+              <p className="text-[8px] font-bold opacity-80">من كسر حماسته في آخر 3 أيام</p>
             </div>
             <div className="p-4 space-y-3">
               {stats.losers.length > 0 ? stats.losers.map((user: any) => (
@@ -185,7 +185,10 @@ export default function LeaderboardPage() {
                       </div>
                     </Link>
                     <div className="text-right">
-                      <p className="font-black text-red-900 text-xs">{user.name}</p>
+                      <div className="flex items-center justify-end gap-1">
+                        <p className="font-black text-red-900 text-xs">{user.name}</p>
+                        {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                      </div>
                       <p className="text-[8px] font-bold text-red-400">فقد الالتزام والحماسة</p>
                     </div>
                   </div>

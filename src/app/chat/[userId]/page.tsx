@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction } from 'firebase/database';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, Heart } from 'lucide-react';
+import { Send, ArrowLeft, Heart, Crown } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -91,10 +91,11 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
 
   const messages = useMemo(() => {
     if (!messagesData) return [];
-    return Object.values(messagesData).sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
+    return Object.values(messagesData).sort((a: any, b: any) => (a.timestamp || 0) - (a.timestamp || 0));
   }, [messagesData]);
 
   const isLikedByMe = otherUserData?.likedBy?.[user?.uid || ''];
+  const otherIsPremium = otherUserData?.isPremium === 1 || otherUserData?.name === 'admin';
 
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
@@ -108,7 +109,10 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             </div>
           </Link>
           <div className="text-right">
-            <h2 className="font-black text-primary leading-none text-lg">{otherUserData?.name || "تحميل..."}</h2>
+            <div className="flex items-center gap-1 justify-end">
+              <h2 className="font-black text-primary leading-none text-lg">{otherUserData?.name || "تحميل..."}</h2>
+              {otherIsPremium && <Crown size={14} className="text-yellow-500" fill="currentColor" />}
+            </div>
             <p className="text-[10px] text-muted-foreground font-bold mt-1 truncate max-w-[120px]">
               {otherUserData?.bio || "عضو طموح في كارينجو"}
             </p>
@@ -148,7 +152,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           })}
         </div>
 
-        <div className="absolute bottom-24 md:bottom-6 left-4 right-4 z-40">
+        <div className="absolute bottom-[90px] md:bottom-6 left-4 right-4 z-40">
           <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 

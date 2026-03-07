@@ -8,7 +8,7 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, MessageCircle, ArrowLeft, Clock, Sparkles, Users, Globe } from 'lucide-react';
+import { Search, MessageCircle, ArrowLeft, Clock, Sparkles, Users, Globe, Crown } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import Link from 'next/link';
 
@@ -137,6 +137,7 @@ export default function ChatListPage() {
 }
 
 function UserChatListItem({ user }: { user: any }) {
+  const isPremium = user.isPremium === 1 || user.name === 'admin';
   return (
     <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
@@ -146,7 +147,10 @@ function UserChatListItem({ user }: { user: any }) {
       </Link>
       <Link href={`/chat/${user.id}`} onClick={() => playSound('click')} className="flex-1 flex items-center justify-between mr-3">
         <div className="text-right">
-          <p className="font-black text-primary text-sm">{user.name}</p>
+          <div className="flex items-center gap-1 justify-end">
+            <p className="font-black text-primary text-sm">{user.name}</p>
+            {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+          </div>
           <p className="text-[9px] text-muted-foreground font-bold truncate max-w-[120px]">
             {user.bio || "عضو في كارينجو 🌱"}
           </p>

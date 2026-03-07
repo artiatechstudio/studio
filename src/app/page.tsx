@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
@@ -19,9 +19,22 @@ export default function Home() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
   const router = useRouter();
+  const [cachedProfile, setCachedProfile] = useState<any>(null);
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
+
+  useEffect(() => {
+    // تحميل الكاش عند البداية
+    const cache = localStorage.getItem('careingo_user_data');
+    if (cache) {
+      try {
+        setCachedProfile(JSON.parse(cache));
+      } catch (e) {
+        console.error("Cache parsing error", e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -29,10 +42,20 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
+  useEffect(() => {
+    // تحديث الكاش عند جلب بيانات جديدة
+    if (userData) {
+      localStorage.setItem('careingo_user_data', JSON.stringify(userData));
+      setCachedProfile(userData);
+    }
+  }, [userData]);
+
+  const profile = userData || cachedProfile || {};
+
   const bmiInfo = useMemo(() => {
-    if (!userData || !userData.weight || !userData.height) return null;
-    const heightInMeters = userData.height / 100;
-    const bmi = (userData.weight / (heightInMeters * heightInMeters)).toFixed(1);
+    if (!profile.weight || !profile.height) return null;
+    const heightInMeters = profile.height / 100;
+    const bmi = (profile.weight / (heightInMeters * heightInMeters)).toFixed(1);
     const val = parseFloat(bmi);
     
     let status = "مثالي";
@@ -43,9 +66,9 @@ export default function Home() {
     else { status = "سمنة"; color = "text-red-500"; }
     
     return { value: bmi, status, color };
-  }, [userData]);
+  }, [profile]);
 
-  if (isUserLoading || (user && isDataLoading)) {
+  if (isUserLoading || (user && isDataLoading && !cachedProfile)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
@@ -57,7 +80,6 @@ export default function Home() {
 
   if (!user) return null;
 
-  const profile = userData || {};
   const totalStages = 120;
   const completedCount = Object.values(profile.trackProgress || {}).reduce((acc: number, curr: any) => acc + (curr.completedStages?.length || 0), 0);
   const progressPercent = Math.round((completedCount / totalStages) * 100);
@@ -74,7 +96,7 @@ export default function Home() {
             </div>
             <div className="flex flex-col text-right overflow-hidden">
               <p className="text-[8px] font-black text-muted-foreground">أهلاً بك</p>
-              <p className="text-xs font-black text-primary leading-tight truncate max-w-[80px]">{profile.name}</p>
+              <p className="text-xs font-black text-primary leading-tight truncate max-w-[80px]">{profile.name || 'جارِ التحميل'}</p>
             </div>
           </div>
           

@@ -4,8 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, runTransaction, set } from 'firebase/database';
-import { Card } from '@/components/ui/card';
+import { ref, push, serverTimestamp, query, limitToLast, set } from 'firebase/database';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, ArrowLeft, Heart } from 'lucide-react';
@@ -13,13 +12,11 @@ import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 
 export default function ChatRoomPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId: otherId } = use(params);
   const { user } = useUser();
   const { database } = useFirebase();
-  const router = useRouter();
   const [msgText, setMsgText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -63,28 +60,9 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setMsgText('');
   };
 
-  const handleLikeProfile = () => {
-    if (!user || !otherId) return;
-    playSound('success');
-    
-    const otherUserLikesRef = ref(database, `users/${otherId}/likesCount`);
-    const likedByRef = ref(database, `users/${otherId}/likedBy/${user.uid}`);
-    
-    runTransaction(likedByRef, (current) => {
-      if (current === true) {
-        toast({ title: "لقد أعجبت بهذا الملف مسبقاً!" });
-        return;
-      }
-      
-      runTransaction(otherUserLikesRef, (count) => (count || 0) + 1);
-      toast({ title: "تم إرسال إعجاب! ❤️" });
-      return true;
-    });
-  };
-
   const messages = useMemo(() => {
     if (!messagesData) return [];
-    return Object.values(messagesData).sort((a: any, b: any) => a.timestamp - b.timestamp);
+    return Object.values(messagesData).sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
   }, [messagesData]);
 
   return (
@@ -106,9 +84,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button onClick={handleLikeProfile} variant="ghost" size="icon" className="rounded-full text-red-500 hover:bg-red-50">
-            <Heart size={20} fill={otherUserData?.likedBy?.[user?.uid || ''] ? "currentColor" : "none"} />
-          </Button>
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="rounded-full">
               <ArrowLeft className="rotate-180" />
@@ -139,11 +114,12 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           })}
         </div>
 
-        <div className="absolute bottom-6 left-4 right-4 z-40">
+        {/* Input Form with safe margin for mobile navigation */}
+        <div className="absolute bottom-24 md:bottom-6 left-4 right-4 z-40">
           <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 
-              className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right focus-visible:ring-primary"
+              className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right focus-visible:ring-primary text-base"
               value={msgText}
               onChange={(e) => setMsgText(e.target.value)}
             />

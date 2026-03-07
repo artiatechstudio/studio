@@ -4,10 +4,10 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Flame, Star, Timer as TimerIcon, MessageSquare, UserCircle, Heart, Zap, Map, Search, Sparkles, Activity, ShieldCheck, Lock, Ruler, Weight } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 export default function InstructionsPage() {
   return (
@@ -48,11 +48,11 @@ export default function InstructionsPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10">
                   <h4 className="font-black text-primary text-lg mb-2 flex items-center gap-2">100 نقطة أساسية <Zap size={16}/></h4>
-                  <p className="text-xs font-bold text-muted-foreground">تحصل عليها بمجرد إكمال أي مهمة في أي مسار بنجاح.</p>
+                  <p className="text-xs font-bold text-slate-800">تحصل عليها بمجرد إكمال أي مهمة في أي مسار بنجاح.</p>
                 </div>
                 <div className="bg-yellow-50 p-6 rounded-3xl border border-yellow-200">
                   <h4 className="font-black text-yellow-700 text-lg mb-2 flex items-center gap-2">بونص التبكير (+75) <TimerIcon size={16}/></h4>
-                  <p className="text-xs font-bold text-muted-foreground">يبدأ من الساعة 5 صباحاً بـ 75 نقطة، ويتناقص 5 نقاط كل ساعة حتى يختفي تماماً الساعة 8 مساءً.</p>
+                  <p className="text-xs font-bold text-slate-800">يبدأ من الساعة 5 صباحاً بـ 75 نقطة، ويتناقص 5 نقاط كل ساعة حتى يختفي تماماً الساعة 8 مساءً.</p>
                 </div>
               </div>
             </Card>
@@ -122,7 +122,7 @@ export default function InstructionsPage() {
               <p className="font-bold text-slate-900 leading-relaxed">
                 المنافسة في كارينجو عادلة جداً. الترتيب لا يعتمد على إجمالي النقاط منذ البداية فقط، بل يعتمد على <span className="text-primary font-black">متوسط نقاط آخر 3 أيام</span>.
               </p>
-              <ul className="space-y-2 text-xs font-bold text-muted-foreground">
+              <ul className="space-y-2 text-xs font-bold text-slate-800">
                 <li className="flex items-center gap-2">● يسمح هذا النظام للمشتركين الجدد بمنافسة القدامى.</li>
                 <li className="flex items-center gap-2">● يتم تحديث الترتيب لحظياً بمجرد إكمال أي مهمة.</li>
                 <li className="flex items-center gap-2">● يظهر شعار "الأسطورة" لأول 3 مراكز في القائمة.</li>
@@ -133,10 +133,10 @@ export default function InstructionsPage() {
           {/* الذكاء الاصطناعي كاري */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
-              <Sparkles className="text-accent" /> <h2>المساعد الذكي "كاري" 🐱</h2>
+              <Heart className="text-accent" fill="currentColor" /> <h2>المساعد الذكي "كاري" 🐱</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-accent/20 bg-accent/5 space-y-4">
-              <div className="bg-destructive text-destructive-foreground p-4 rounded-2xl text-center font-black animate-pulse shadow-lg border border-white/20">
+              <div className="bg-destructive text-white p-4 rounded-2xl text-center font-black animate-pulse shadow-lg border border-white/20">
                 تنبيه هام: السيرفر متوقف حالياً إلى أجل غير مسمى 🛑
               </div>
               <p className="font-black text-base md:text-lg leading-relaxed text-slate-900">

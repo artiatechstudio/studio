@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, runTransaction, set } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, runTransaction, set, remove } from 'firebase/database';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -28,9 +28,9 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     return [user.uid, otherId].sort().join('_');
   }, [user, otherId]);
 
-  const chatRootRef = useMemoFirebase(() => ref(database, `chats/${chatId}`), [database, chatId]);
-  const messagesRef = useMemoFirebase(() => ref(database, `chats/${chatId}/messages`), [database, chatId]);
-  const messagesQuery = useMemoFirebase(() => query(messagesRef, limitToLast(50)), [messagesRef]);
+  const chatRootRef = useMemoFirebase(() => chatId ? ref(database, `chats/${chatId}`) : null, [database, chatId]);
+  const messagesRef = useMemoFirebase(() => chatId ? ref(database, `chats/${chatId}/messages`) : null, [database, chatId]);
+  const messagesQuery = useMemoFirebase(() => messagesRef ? query(messagesRef, limitToLast(50)) : null, [messagesRef]);
   const { data: messagesData } = useDatabase(messagesQuery);
 
   const otherUserRef = useMemoFirebase(() => ref(database, `users/${otherId}`), [database, otherId]);
@@ -51,7 +51,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!msgText.trim() || !user) return;
+    if (!msgText.trim() || !user || !messagesRef) return;
 
     playSound('click');
     const msg = {
@@ -65,13 +65,13 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   };
 
   const handleDeleteChat = async () => {
-    if (!user || !chatId) return;
+    if (!user || !chatId || !chatRootRef) return;
     const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ سيتم مسح الرسائل لدى الطرفين. 🐱⚠️");
     if (!confirmed) return;
 
     playSound('click');
     try {
-      await set(chatRootRef, null);
+      await remove(chatRootRef);
       toast({ title: "تم حذف السجل بنجاح" });
       router.push('/chat');
     } catch (error) {

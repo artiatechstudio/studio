@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, set } from 'firebase/database';
+import { ref, update, set, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Heart, Trophy, Zap, Trash2, CheckCheck, Clock, Star } from 'lucide-react';
@@ -44,7 +44,7 @@ export default function NotificationsPage() {
     
     playSound('click');
     try {
-      await set(notificationsRef, null);
+      await remove(notificationsRef);
     } catch (error) {
       console.error("Clear notifications error:", error);
     }

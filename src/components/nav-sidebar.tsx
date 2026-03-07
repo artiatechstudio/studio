@@ -77,11 +77,11 @@ export function NavSidebar() {
 
   return (
     <>
-      {/* Top Header for Mobile Only - Fixed with Stats and Notifications */}
+      {/* Top Header for Mobile Only */}
       <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-background/90 backdrop-blur-xl border-b border-border z-[60] flex items-center justify-between px-4 shadow-sm">
         <div className="flex items-center gap-2">
           <Link href="/notifications" onClick={() => playSound('click')} className="relative p-2 rounded-xl bg-secondary/50">
-            <Bell className={cn("w-5 h-5 text-primary", unreadNotifCount > 0 && "animate-tada")} />
+            <Bell className={cn("w-5 h-5 text-primary", unreadNotifCount > 0 && "animate-pulse")} />
             {unreadNotifCount > 0 && (
               <span className="absolute -top-1 -right-1 bg-accent text-white text-[8px] font-black min-w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce border border-white">
                 {unreadNotifCount}
@@ -90,7 +90,6 @@ export function NavSidebar() {
           </Link>
         </div>
 
-        {/* Dynamic Stats in the middle */}
         <div className="flex items-center gap-2">
           <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 shadow-inner">
             <Flame size={14} className="text-orange-600" fill="currentColor" />

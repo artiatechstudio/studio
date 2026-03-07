@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, CheckCircle2 } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -154,6 +154,7 @@ export default function SettingsPage() {
   }
 
   const requestStatus = userData?.premiumRequest?.status;
+  const isAdmin = userData?.name === 'admin';
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -181,7 +182,7 @@ export default function SettingsPage() {
             </div>
             <p className="text-sm font-bold opacity-90 leading-relaxed">
               {userData?.isPremium === 1 
-                ? `أنت مستخدم بريميوم! اشتراكك ينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}` 
+                ? (isAdmin ? "أنت مدير النظام! اشتراكك دائم وغير محدود المدة. 🛡️" : `أنت مستخدم بريميوم! اشتراكك ينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}`) 
                 : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات المزعجة."}
             </p>
           </div>

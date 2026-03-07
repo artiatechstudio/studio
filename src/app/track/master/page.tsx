@@ -29,6 +29,7 @@ export default function MasterTrackPage() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [todoInput, setTodoInput] = useState('');
+  const [todoMinutes, setTodoMinutes] = useState('');
   const [completingId, setCompletingId] = useState<string | null>(null);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
@@ -80,7 +81,7 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
-  // فحص المهام المنتهية (قانون الـ 24 ساعة)
+  // فحص المهام المنتهية (قانون الـ 24 ساعة أو التوقيت المحدد)
   useEffect(() => {
     if (!user || !todosData) return;
     const now = Date.now();
@@ -90,9 +91,11 @@ export default function MasterTrackPage() {
         if (todo.expiry && now > todo.expiry) {
           const penalty = 30;
           const currentPoints = userData?.points || 0;
+          const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
           
           await update(ref(database, `users/${user.uid}`), {
-            points: Math.max(0, currentPoints - penalty)
+            points: Math.max(0, currentPoints - penalty),
+            [`dailyPoints/${today}`]: currentDailyPoints - penalty
           });
           await remove(ref(database, `users/${user.uid}/todos/${todo.id}`));
           
@@ -108,7 +111,7 @@ export default function MasterTrackPage() {
       }
     };
     checkExpiry();
-  }, [user, todosData, database, userData]);
+  }, [user, todosData, database, userData, today]);
 
   const isLegend = useMemo(() => {
     if (!userData?.trackProgress) return false;
@@ -180,14 +183,27 @@ export default function MasterTrackPage() {
     }
 
     playSound('click');
-    const now = Date.now();
+    const now = new Date();
+    let expiryTime: number;
+
+    // إذا وضع المستخدم وقتاً محدداً بالدقائق
+    if (todoMinutes && parseInt(todoMinutes) > 0) {
+      expiryTime = now.getTime() + (parseInt(todoMinutes) * 60 * 1000);
+    } else {
+      // الوقت الافتراضي هو حتى منتصف الليل
+      const midnight = new Date();
+      midnight.setHours(23, 59, 59, 999);
+      expiryTime = midnight.getTime();
+    }
+
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
     update(newTodoRef, {
       id: newTodoRef.key,
       title: todoInput.trim(),
       completed: false,
-      timestamp: now,
-      expiry: now + (24 * 60 * 60 * 1000) // تفتح لمدة 24 ساعة
+      timestamp: now.getTime(),
+      expiry: expiryTime,
+      hasCustomTimer: !!(todoMinutes && parseInt(todoMinutes) > 0)
     });
 
     update(ref(database, `users/${user.uid}`), {
@@ -195,6 +211,7 @@ export default function MasterTrackPage() {
     });
 
     setTodoInput('');
+    setTodoMinutes('');
   };
 
   const handleToggleTodo = (todoId: string) => {
@@ -226,10 +243,11 @@ export default function MasterTrackPage() {
 
     playSound('click');
     const currentPoints = userData?.points || 0;
+    const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
     
     await update(ref(database, `users/${user.uid}`), {
       points: Math.max(0, currentPoints - 30),
-      [`dailyPoints/${today}`]: (userData?.dailyPoints?.[today] || 0) - 30
+      [`dailyPoints/${today}`]: currentDailyPoints - 30
     });
 
     await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
@@ -243,21 +261,33 @@ export default function MasterTrackPage() {
   };
 
   // مؤقت صغير لكل مهمة في القائمة
-  function TodoExpiryTimer({ expiry }: { expiry: number }) {
-    const [timeLeft, setTimeLeft] = useState("");
+  function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
+    const [display, setDisplay] = useState("");
+
     useEffect(() => {
+      if (!hasCustomTimer) {
+        setDisplay("حتى منتصف الليل");
+        return;
+      }
+
       const itv = setInterval(() => {
         const diff = expiry - Date.now();
-        if (diff <= 0) setTimeLeft("منتهي");
+        if (diff <= 0) setDisplay("منتهي");
         else {
           const h = Math.floor(diff / (1000 * 60 * 60));
           const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          setTimeLeft(`${h}س ${m}د`);
+          const s = Math.floor((diff % (1000 * 60)) / 1000);
+          setDisplay(`${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
         }
-      }, 60000);
+      }, 1000);
       return () => clearInterval(itv);
-    }, [expiry]);
-    return <span className="text-[8px] font-black text-orange-500 flex items-center gap-1"><Clock size={8}/> {timeLeft || "جاري..."}</span>;
+    }, [expiry, hasCustomTimer]);
+
+    return (
+      <span className="text-[8px] font-black text-orange-500 flex items-center gap-1">
+        <Clock size={8}/> {display}
+      </span>
+    );
   }
 
   return (
@@ -404,16 +434,26 @@ export default function MasterTrackPage() {
           </header>
           
           <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5 mx-2">
-            <form onSubmit={handleAddTodo} className="flex gap-2">
-              <Input 
-                placeholder="أضف مهمة شخصية..." 
-                className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs focus-visible:ring-primary"
-                value={todoInput}
-                onChange={(e) => setTodoInput(e.target.value)}
-              />
-              <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0">
-                <Plus size={20} />
-              </Button>
+            <form onSubmit={handleAddTodo} className="flex flex-col gap-2">
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="أضف مهمة شخصية..." 
+                  className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs focus-visible:ring-primary flex-1"
+                  value={todoInput}
+                  onChange={(e) => setTodoInput(e.target.value)}
+                />
+                <Input 
+                  placeholder="الوقت (د)" 
+                  type="number"
+                  className="h-11 w-20 rounded-xl bg-secondary/50 border-none font-bold text-center text-xs focus-visible:ring-primary"
+                  value={todoMinutes}
+                  onChange={(e) => setTodoMinutes(e.target.value)}
+                />
+                <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0">
+                  <Plus size={20} />
+                </Button>
+              </div>
+              <p className="text-[7px] font-bold text-muted-foreground pr-2 italic">اترك حقل الوقت فارغاً للإنجاز حتى منتصف الليل 🌙</p>
             </form>
 
             <div className="space-y-2">
@@ -440,7 +480,7 @@ export default function MasterTrackPage() {
                       <span className="font-bold text-[11px] text-primary truncate">
                         {todo.title}
                       </span>
-                      <TodoExpiryTimer expiry={todo.expiry} />
+                      <TodoExpiryTimer expiry={todo.expiry} hasCustomTimer={todo.hasCustomTimer} />
                     </div>
                   </div>
                   <Button 

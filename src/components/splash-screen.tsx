@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png بحجم كبير في منتصف الشاشة بخلفية بيضاء تماماً لمدة 2.5 ثانية.
+ * يعرض أيقونة splash.png بعرض الشاشة بالكامل في منتصف الشاشة بخلفية بيضاء تماماً لمدة 2.5 ثانية.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
@@ -16,13 +16,12 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden">
-      <div className="relative animate-pulse">
+    <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden p-4">
+      <div className="relative w-full h-full animate-pulse">
         <Image 
           src="/splash.png" 
           alt="Careingo Icon" 
-          width={250} // تم تكبير العرض من 120 إلى 250
-          height={250} // تم تكبير الارتفاع من 120 إلى 250
+          fill
           className="object-contain"
           priority
         />

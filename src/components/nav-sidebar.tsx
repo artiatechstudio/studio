@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -69,6 +69,7 @@ export function NavSidebar() {
   }, [notificationsData]);
 
   const isPremium = userData?.isPremium === 1;
+  const isAdmin = userData?.name === 'admin';
 
   const handleLogout = async () => {
     playSound('click');
@@ -81,7 +82,7 @@ export function NavSidebar() {
 
   return (
     <>
-      {/* Top Header for Mobile Only - Shown only on Home Screen */}
+      {/* Top Header for Mobile Only */}
       {isHome && (
         <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-background/90 backdrop-blur-xl border-b border-border z-[60] flex items-center justify-between px-4 shadow-sm">
           <div className="flex items-center gap-2">
@@ -109,7 +110,7 @@ export function NavSidebar() {
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-primary">كارينجو</span>
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">
-              {isPremium ? "👑" : "🐱"}
+              {isAdmin ? "🛡️" : isPremium ? "👑" : "🐱"}
             </div>
           </div>
         </div>
@@ -119,11 +120,12 @@ export function NavSidebar() {
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl overflow-y-auto">
         <div className="flex items-center gap-4 mb-10 justify-end" dir="rtl">
           <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">
-            {isPremium ? "👑" : "🐱"}
+            {isAdmin ? "🛡️" : isPremium ? "👑" : "🐱"}
           </div>
           <div className="text-right">
             <span className="text-3xl font-black text-primary tracking-tight block">كارينجو</span>
-            {isPremium && <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">Premium</span>}
+            {isAdmin && <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Super Admin</span>}
+            {isPremium && !isAdmin && <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">Premium</span>}
           </div>
         </div>
 
@@ -156,6 +158,20 @@ export function NavSidebar() {
               )}
             </Link>
           ))}
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => playSound('click')}
+              className={cn(
+                "flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all duration-300 group mt-6 border-2 border-dashed border-primary/20",
+                pathname === '/admin' ? "bg-red-600 text-white shadow-xl" : "text-red-600 hover:bg-red-50"
+              )}
+            >
+              <ShieldCheck className="w-7 h-7" />
+              <span className="font-black text-xl">الإدارة</span>
+            </Link>
+          )}
         </nav>
 
         <div className="pt-8 border-t border-border mt-auto space-y-4" dir="rtl">

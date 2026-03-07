@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, Sparkles, HeartPulse, AlertCircle } from 'lucide-react';
+import { Activity, Sparkles, HeartPulse, AlertCircle, Crown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -30,69 +30,87 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // منطق حارس الحماسة - خصم 150 نقطة عند التغيب
+  // منطق حارس الحماسة + فحص صلاحية البريميوم
   useEffect(() => {
     if (userData && user) {
       const todayStr = new Date().toLocaleDateString('en-CA');
+      const now = Date.now();
+
+      // 1. فحص انتهاء البريميوم
+      if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
+        update(ref(database, `users/${user.uid}`), {
+          isPremium: 0,
+          premiumUntil: null
+        });
+        toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
+      }
+
+      // 2. مكافأة المستخدمين النشطين بالبريميوم (أتمتة)
+      if (userData.isPremium !== 1 && (userData.points >= 5000 || userData.streak >= 15)) {
+        update(ref(database, `users/${user.uid}`), {
+          isPremium: 1,
+          premiumUntil: now + (3 * 24 * 60 * 60 * 1000) // 3 أيام هدية
+        });
+        push(ref(database, `users/${user.uid}/notifications`), {
+          type: 'bonus',
+          title: 'مكافأة أسطورية! 👑',
+          message: 'لأنك بطل متميز، حصلت على 3 أيام بريميوم مجانية. استمتع بالتجربة!',
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+        toast({ title: "مبروك! حصلت على بريميوم 🎁" });
+      }
+
+      // 3. خصم التغيب
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-      
       const lastActive = userData.lastActiveDate;
       const lastPenaltyDate = userData.lastStreakPenaltyDate;
 
-      // إذا لم يكن المستخدم نشطاً اليوم ولا أمس، وكان لديه سجل سابق
       if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
         const penalty = 150;
         const currentPoints = userData.points || 0;
-        const newPoints = Math.max(0, currentPoints - penalty);
-
         update(ref(database, `users/${user.uid}`), {
-          points: newPoints,
+          points: Math.max(0, currentPoints - penalty),
           streak: 0,
           lastStreakPenaltyDate: todayStr,
-          lastActiveDate: todayStr // تحديث التاريخ لمنع تكرار الخصم في نفس اليوم
+          lastActiveDate: todayStr
         });
 
         if (currentPoints > 0) {
           push(ref(database, `users/${user.uid}/notifications`), {
             type: 'system',
             title: 'تنبيه كسر الحماسة 🛑',
-            message: `لقد تغيبت عن التطبيق! تم تصفير حماستك وخصم ${penalty} نقطة من رصيدك.`,
+            message: `لقد تغيبت عن التطبيق! تم تصفير حماستك وخصم ${penalty} نقطة.`,
             isRead: false,
             timestamp: serverTimestamp()
           });
-          toast({ 
-            variant: "destructive", 
-            title: "كسر الحماسة!", 
-            description: `تم خصم ${penalty} نقطة لغيابك بالأمس.` 
-          });
+          toast({ variant: "destructive", title: "كسر الحماسة!", description: `تم خصم ${penalty} نقطة لغيابك.` });
         }
       }
     }
   }, [userData, user, database]);
 
-  const profile = userData || {};
-
   const progressPercent = useMemo(() => {
     const totalStages = 120;
     let completedCount = 0;
-    if (profile.trackProgress) {
-      Object.values(profile.trackProgress).forEach((track: any) => {
+    if (userData?.trackProgress) {
+      Object.values(userData.trackProgress).forEach((track: any) => {
         completedCount += (track.completedStages?.length || 0);
       });
     }
     return Math.round((completedCount / totalStages) * 100);
-  }, [profile]);
+  }, [userData]);
 
   const bmiInfo = useMemo(() => {
-    if (!profile.weight || !profile.height) return { value: "--", status: "غير محدد", color: "text-muted-foreground" };
-    const bmi = profile.weight / ((profile.height / 100) * (profile.height / 100));
+    if (!userData?.weight || !userData?.height) return { value: "--", status: "غير محدد", color: "text-muted-foreground" };
+    const bmi = userData.weight / ((userData.height / 100) * (userData.height / 100));
     const val = bmi.toFixed(1);
     if (bmi < 18.5) return { value: val, status: "نحافة", color: "text-blue-500" };
     if (bmi < 25) return { value: val, status: "مثالي", color: "text-green-500" };
     if (bmi < 30) return { value: val, status: "زيادة", color: "text-orange-500" };
     return { value: val, status: "سمنة", color: "text-red-500" };
-  }, [profile]);
+  }, [userData]);
 
   if (isUserLoading || (user && isDataLoading)) {
     return (
@@ -149,10 +167,10 @@ export default function Home() {
         <section className="space-y-4 mx-2">
           <h2 className="text-xl font-black text-primary px-2">مسارات النمو</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <TrackCard type="Fitness" currentStage={profile.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
-            <TrackCard type="Nutrition" currentStage={profile.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
-            <TrackCard type="Behavior" currentStage={profile.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
-            <TrackCard type="Study" currentStage={profile.trackProgress?.Study?.currentStage || 1} totalStages={30} />
+            <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
+            <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
+            <TrackCard type="Behavior" currentStage={userData?.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
+            <TrackCard type="Study" currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
           </div>
           
           <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">

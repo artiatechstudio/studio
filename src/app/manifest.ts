@@ -24,5 +24,6 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'any',
       },
     ],
+    categories: ['health', 'lifestyle', 'education'],
   }
 }

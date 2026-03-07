@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Avatar } from "@/components/ui/avatar";
-import { Trophy, Medal, Flame, Star, TrendingUp, Heart } from "lucide-react";
+import { Trophy, Medal, Flame, Star, TrendingUp, Heart, Skull, AlertCircle } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
@@ -15,13 +15,13 @@ export default function LeaderboardPage() {
   const { database } = useFirebase();
   
   const leadersQuery = useMemoFirebase(() => {
-    return query(ref(database, 'users'), orderByChild('points'), limitToLast(100));
+    return query(ref(database, 'users'), orderByChild('points'), limitToLast(200));
   }, [database]);
 
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
-  const leaders = useMemo(() => {
-    if (!rawData) return [];
+  const stats = useMemo(() => {
+    if (!rawData) return { leaders: [], losers: [] };
     
     const today = new Date();
     const dates = [];
@@ -31,36 +31,50 @@ export default function LeaderboardPage() {
       dates.push(d.toISOString().split('T')[0]);
     }
 
-    return Object.values(rawData)
-      .map((user: any) => {
-        const dailyPoints = user.dailyPoints || {};
-        const scores = dates.map(date => dailyPoints[date] || 0);
-        const sum = scores.reduce((a, b) => a + b, 0);
-        const avgScore = Math.round(sum / 3);
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-        let bmiColor = "text-gray-400";
-        let bmiValue = "--";
-        let bmiStatus = "غير محدد";
-        
-        if (user.weight && user.height) {
-          const bmi = user.weight / ((user.height / 100) * (user.height / 100));
-          bmiValue = bmi.toFixed(1);
-          if (bmi >= 18.5 && bmi < 25) { bmiColor = "text-green-500"; bmiStatus = "مثالي"; }
-          else if (bmi >= 25 && bmi < 30) { bmiColor = "text-orange-500"; bmiStatus = "زيادة"; }
-          else if (bmi >= 30) { bmiColor = "text-red-500"; bmiStatus = "سمنة"; }
-          else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
-        }
+    const allUsers = Object.values(rawData).map((user: any) => {
+      const dailyPoints = user.dailyPoints || {};
+      const scores = dates.map(date => dailyPoints[date] || 0);
+      const sum = scores.reduce((a, b) => a + b, 0);
+      const avgScore = Math.round(sum / 3);
 
-        return { ...user, avgScore, bmiColor, bmiValue, bmiStatus };
-      })
+      let bmiColor = "text-gray-400";
+      let bmiValue = "--";
+      let bmiStatus = "غير محدد";
+      
+      if (user.weight && user.height) {
+        const bmi = user.weight / ((user.height / 100) * (user.height / 100));
+        bmiValue = bmi.toFixed(1);
+        if (bmi >= 18.5 && bmi < 25) { bmiColor = "text-green-500"; bmiStatus = "مثالي"; }
+        else if (bmi >= 25 && bmi < 30) { bmiColor = "text-orange-500"; bmiStatus = "زيادة"; }
+        else if (bmi >= 30) { bmiColor = "text-red-500"; bmiStatus = "سمنة"; }
+        else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
+      }
+
+      const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
+      const isActiveRecently = lastActive && lastActive >= oneWeekAgo;
+
+      return { ...user, avgScore, bmiColor, bmiValue, bmiStatus, isActiveRecently };
+    });
+
+    const leaders = allUsers
       .filter((user: any) => (user.points || 0) > 0)
-      .sort((a: any, b: any) => b.avgScore - a.avgScore);
+      .sort((a: any, b: any) => b.avgScore - a.avgScore)
+      .slice(0, 100);
+
+    const losers = allUsers
+      .filter((user: any) => (user.points || 0) === 0 && user.isActiveRecently)
+      .sort((a: any, b: any) => new Date(b.registrationDate).getTime() - new Date(a.registrationDate).getTime());
+
+    return { leaders, losers };
   }, [rawData]);
 
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-6">
+      <div className="app-container py-6 space-y-8">
         <header className="space-y-2 px-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white dark:border-slate-800">
@@ -82,58 +96,100 @@ export default function LeaderboardPage() {
              <p className="font-black text-primary text-xs animate-pulse">كاري ينتظرك بشوق...</p>
           </div>
         ) : (
-          <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
-            <div className="p-3 border-b border-border bg-secondary/5 text-right">
-              <h2 className="text-[10px] font-black text-primary uppercase">المتصدرون حالياً</h2>
-            </div>
-            <div className="divide-y divide-border">
-              {leaders.length > 0 ? leaders.map((user: any, index: number) => (
-                <div 
-                  key={user.id} 
-                  className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
-                >
-                  <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
-                    <div className="flex items-center gap-1 justify-center">
-                      <Star size={10} className="text-yellow-500" fill="currentColor" />
-                      <p className="font-black text-primary text-sm">{user.avgScore}</p>
+          <div className="space-y-10">
+            {/* قسم المتصدرين */}
+            <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
+              <div className="p-3 border-b border-border bg-secondary/5 text-right flex items-center justify-between flex-row-reverse px-6">
+                <h2 className="text-[10px] font-black text-primary uppercase">المتصدرون حالياً</h2>
+                <Star size={12} className="text-yellow-500" />
+              </div>
+              <div className="divide-y divide-border">
+                {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => (
+                  <div 
+                    key={user.id} 
+                    className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
+                  >
+                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
+                      <div className="flex items-center gap-1 justify-center">
+                        <Star size={10} className="text-yellow-500" fill="currentColor" />
+                        <p className="font-black text-primary text-sm">{user.avgScore}</p>
+                      </div>
+                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
                     </div>
-                    <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
-                  </div>
 
-                  <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
-                    <div className="w-6 text-center font-black text-sm text-primary shrink-0">
-                      {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 
-                       index === 1 ? <Medal className="text-slate-400 w-6 h-6 mx-auto" /> : 
-                       index === 2 ? <Medal className="text-amber-600 w-6 h-6 mx-auto" /> : 
-                       <span className="opacity-40 text-[10px]">#{index + 1}</span>}
-                    </div>
-                    
-                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                      <Avatar className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform">
-                        <span className="text-xl">{user.avatar || "🐱"}</span>
-                      </Avatar>
-                    </Link>
+                    <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
+                      <div className="w-6 text-center font-black text-sm text-primary shrink-0">
+                        {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 
+                         index === 1 ? <Medal className="text-slate-400 w-6 h-6 mx-auto" /> : 
+                         index === 2 ? <Medal className="text-amber-600 w-6 h-6 mx-auto" /> : 
+                         <span className="opacity-40 text-[10px]">#{index + 1}</span>}
+                      </div>
+                      
+                      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+                        <Avatar className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform">
+                          <span className="text-xl">{user.avatar || "🐱"}</span>
+                        </Avatar>
+                      </Link>
 
-                    <div className="text-right overflow-hidden flex-1 px-1">
-                      <h3 className="font-black text-primary text-[11px] truncate leading-none mb-1">{user.name}</h3>
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
-                          {user.likesCount || 0} <Heart size={8} fill="currentColor" />
-                        </span>
-                        <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
-                          {user.streak || 0}ي <Flame size={8} fill="currentColor" />
-                        </span>
-                        <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
-                           <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
-                           <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>
+                      <div className="text-right overflow-hidden flex-1 px-1">
+                        <h3 className="font-black text-primary text-[11px] truncate leading-none mb-1">{user.name}</h3>
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                          <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
+                            {user.likesCount || 0} <Heart size={8} fill="currentColor" />
+                          </span>
+                          <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
+                            {user.streak || 0}ي <Flame size={8} fill="currentColor" />
+                          </span>
+                          <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
+                             <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
+                             <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
+                )) : (
+                  <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون حالياً.</div>
+                )}
+              </div>
+            </div>
+
+            {/* قسم الراسبين */}
+            <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
+              <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
+                <div className="flex items-center gap-2">
+                  <Skull size={18} />
+                  <h2 className="text-sm font-black uppercase tracking-widest">قسم الراسبين ⚠️</h2>
                 </div>
-              )) : (
-                <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون حالياً.</div>
-              )}
+                <p className="text-[8px] font-bold opacity-80">الذين فقدوا نقاطهم هذا الأسبوع</p>
+              </div>
+              <div className="p-4 space-y-3">
+                {stats.losers.length > 0 ? stats.losers.map((user: any) => (
+                  <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
+                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg">
+                      <AlertCircle size={12} className="text-red-600" />
+                      <span className="text-[10px] font-black text-red-600">0 نقطة</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 flex-row-reverse">
+                      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale">
+                          {user.avatar || "🐱"}
+                        </div>
+                      </Link>
+                      <div className="text-right">
+                        <p className="font-black text-red-900 text-xs">{user.name}</p>
+                        <p className="text-[8px] font-bold text-red-400">فقد حماسته والتزامه</p>
+                      </div>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="p-10 text-center text-red-300 font-bold text-[10px]">لا يوجد أحد في قسم الراسبين حالياً.. الجميع يقاتل! 🔥</div>
+                )}
+              </div>
+              <div className="bg-red-100 p-2 text-center">
+                <p className="text-[7px] font-black text-red-600 uppercase">الالتزام هو الفرق بين البطل والراسب</p>
+              </div>
             </div>
           </div>
         )}

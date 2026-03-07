@@ -6,14 +6,15 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref } from 'firebase/database';
-import { Activity, Sparkles, HeartPulse } from 'lucide-react';
+import { ref, update, push, serverTimestamp } from 'firebase/database';
+import { Activity, Sparkles, HeartPulse, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { AdBanner } from '@/components/ad-banner';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
+import { toast } from '@/hooks/use-toast';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -28,6 +29,47 @@ export default function Home() {
       router.replace('/login');
     }
   }, [user, isUserLoading, router]);
+
+  // منطق حارس الحماسة - خصم 150 نقطة عند التغيب
+  useEffect(() => {
+    if (userData && user) {
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+      
+      const lastActive = userData.lastActiveDate;
+      const lastPenaltyDate = userData.lastStreakPenaltyDate;
+
+      // إذا لم يكن المستخدم نشطاً اليوم ولا أمس، وكان لديه سجل سابق
+      if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
+        const penalty = 150;
+        const currentPoints = userData.points || 0;
+        const newPoints = Math.max(0, currentPoints - penalty);
+
+        update(ref(database, `users/${user.uid}`), {
+          points: newPoints,
+          streak: 0,
+          lastStreakPenaltyDate: todayStr,
+          lastActiveDate: todayStr // تحديث التاريخ لمنع تكرار الخصم في نفس اليوم
+        });
+
+        if (currentPoints > 0) {
+          push(ref(database, `users/${user.uid}/notifications`), {
+            type: 'system',
+            title: 'تنبيه كسر الحماسة 🛑',
+            message: `لقد تغيبت عن التطبيق! تم تصفير حماستك وخصم ${penalty} نقطة من رصيدك.`,
+            isRead: false,
+            timestamp: serverTimestamp()
+          });
+          toast({ 
+            variant: "destructive", 
+            title: "كسر الحماسة!", 
+            description: `تم خصم ${penalty} نقطة لغيابك بالأمس.` 
+          });
+        }
+      }
+    }
+  }, [userData, user, database]);
 
   const profile = userData || {};
 
@@ -67,7 +109,6 @@ export default function Home() {
     <div className="min-h-screen bg-background pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        {/* شريط الإحصائيات السريع (مؤشر الكتلة + الإنجاز) */}
         <div className="grid grid-cols-2 gap-3 mx-2">
           <Link href="/streak" className="block">
             <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
@@ -114,7 +155,6 @@ export default function Home() {
             <TrackCard type="Study" currentStage={profile.trackProgress?.Study?.currentStage || 1} totalStages={30} />
           </div>
           
-          {/* زر المسار العام في الاسفل بمفرده */}
           <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">
             <Card className="p-6 rounded-[2.5rem] shadow-xl border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
               <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg">

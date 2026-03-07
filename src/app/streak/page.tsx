@@ -59,7 +59,7 @@ export default function StreakPage() {
       days.push({
         date: dStr,
         dayNum: d.getDate(),
-        isCompleted: !!userData?.dailyPoints?.[dStr]
+        isCompleted: !!(userData?.dailyPoints && userData.dailyPoints[dStr])
       });
     }
     return days;
@@ -76,7 +76,7 @@ export default function StreakPage() {
       const dStr = d.toLocaleDateString('en-CA');
       week.push({
         label: dayLabels[i],
-        isCompleted: !!userData?.dailyPoints?.[dStr],
+        isCompleted: !!(userData?.dailyPoints && userData.dailyPoints[dStr]),
         isToday: dStr === todayStr
       });
     }

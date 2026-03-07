@@ -4,16 +4,17 @@
 import React, { useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, remove } from 'firebase/database';
+import { ref, update, remove, serverTimestamp, push } from 'firebase/database';
 import { deleteUser, signOut } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2 } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, CheckCircle2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,9 @@ export default function SettingsPage() {
   const [avatar, setAvatar] = useState('🐱');
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
+
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [duration, setDuration] = useState('1month');
 
   useEffect(() => {
     if (userData) {
@@ -84,13 +88,24 @@ export default function SettingsPage() {
     }
   };
 
-  const handleRequestPremium = () => {
+  const handleSendPremiumRequest = async () => {
+    if (!user || !userData) return;
     playSound('click');
-    const msg = `أهلاً مطور كارينجو! أرغب في ترقية حسابي للبريميوم. 
-اسم المستخدم: ${userData?.name}
-البريد: ${userData?.email}
-معرف الحساب: ${user?.uid}`;
-    window.open(`https://wa.me/218929196428?text=${encodeURIComponent(msg)}`, '_blank');
+    
+    try {
+      await update(ref(database, `users/${user.uid}/premiumRequest`), {
+        status: 'pending',
+        duration: duration,
+        requestedAt: Date.now(),
+        email: userData.email,
+        name: userData.name
+      });
+      
+      toast({ title: "تم إرسال طلبك! 🚀", description: "سيتم مراجعة طلبك من قبل المطور قريباً." });
+      setIsRequestOpen(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الإرسال" });
+    }
   };
 
   const handleLogout = async () => {
@@ -138,6 +153,8 @@ export default function SettingsPage() {
     );
   }
 
+  const requestStatus = userData?.premiumRequest?.status;
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
       <NavSidebar />
@@ -152,17 +169,23 @@ export default function SettingsPage() {
           </div>
         </header>
 
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500 to-amber-600 text-white overflow-hidden p-8 space-y-6 relative mx-2">
+        <Card className={cn(
+          "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 space-y-6 relative mx-2",
+          userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 to-amber-600" : "bg-gradient-to-br from-slate-700 to-slate-900"
+        )}>
           <Crown className="absolute top-4 left-4 opacity-20" size={120} />
           <div className="relative z-10 space-y-2 text-right">
             <div className="flex items-center justify-end gap-2">
               <h2 className="text-2xl font-black">عضوية كارينجو المميزة</h2>
               <Crown size={24} fill="currentColor" />
             </div>
-            <p className="text-sm font-bold opacity-90">
-              {userData?.isPremium === 1 ? "أنت الآن مستخدم بريميوم! استمتع بكافة المزايا 👑" : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات."}
+            <p className="text-sm font-bold opacity-90 leading-relaxed">
+              {userData?.isPremium === 1 
+                ? `أنت مستخدم بريميوم! اشتراكك ينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}` 
+                : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات المزعجة."}
             </p>
           </div>
+          
           <div className="grid grid-cols-2 gap-4 relative z-10">
             {[
               { t: "بدون إعلانات", i: Sparkles },
@@ -176,12 +199,52 @@ export default function SettingsPage() {
               </div>
             ))}
           </div>
+
           {userData?.isPremium !== 1 && (
-            <Button onClick={handleRequestPremium} className="w-full h-14 rounded-2xl bg-white text-amber-600 hover:bg-white/90 text-lg font-black shadow-lg relative z-10">
-              طلب ترقية الحساب 👑
-            </Button>
+            <div className="relative z-10">
+              {requestStatus === 'pending' ? (
+                <Button disabled className="w-full h-14 rounded-2xl bg-amber-100 text-amber-700 font-black flex gap-2">
+                  <Clock size={20} /> طلبك تحت الإجراء...
+                </Button>
+              ) : (
+                <Button onClick={() => setIsRequestOpen(true)} className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-lg font-black shadow-lg">
+                  اطلب اشتراك بريميوم 👑
+                </Button>
+              )}
+            </div>
           )}
         </Card>
+
+        {/* Dialog لطلب البريميوم */}
+        <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+          <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
+            <DialogHeader className="text-right">
+              <DialogTitle className="text-2xl font-black text-primary">طلب ترقية الحساب</DialogTitle>
+              <DialogDescription className="font-bold text-muted-foreground mt-2">
+                سيتم إرسال طلبك للمطور، وسيصلك إشعار فور الموافقة على اشتراكك.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="py-6 space-y-4">
+              <Label className="text-right block">اختر مدة الاشتراك المطلوبة:</Label>
+              <Select onValueChange={setDuration} defaultValue="1month">
+                <SelectTrigger className="h-14 rounded-xl bg-secondary/50 border-none font-bold">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1month">شهر واحد (تجربة)</SelectItem>
+                  <SelectItem value="2months">شهرين (التزام)</SelectItem>
+                  <SelectItem value="1year">سنة كاملة (أسطورة)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter className="flex-row-reverse gap-2">
+              <Button onClick={handleSendPremiumRequest} className="flex-1 h-12 rounded-xl bg-primary font-black">إرسال الطلب</Button>
+              <Button onClick={() => setIsRequestOpen(false)} variant="ghost" className="flex-1 h-12 rounded-xl font-bold">إلغاء</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">

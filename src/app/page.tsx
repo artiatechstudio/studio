@@ -1,13 +1,13 @@
 
 "use client"
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, Sparkles, HeartPulse, Crown, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Activity, HeartPulse, Crown, ShieldCheck, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -16,11 +16,13 @@ import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
   const router = useRouter();
+  const [showCelebration, setShowCelebration] = useState(false);
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
@@ -33,19 +35,32 @@ export default function Home() {
 
   const isAdmin = userData?.name === 'admin';
 
+  // منطق التحقق من الاشتراك والاحتفال
   useEffect(() => {
     if (userData && user && !isAdmin) {
       const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
 
+      // فحص انتهاء الاشتراك
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         update(ref(database, `users/${user.uid}`), {
           isPremium: 0,
-          premiumUntil: null
+          premiumUntil: null,
+          [`premiumRequest/status`]: 'expired'
         });
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
+      // فحص الاحتفال
+      if (userData.showPremiumCelebration) {
+        setShowCelebration(true);
+        playSound('success');
+        update(ref(database, `users/${user.uid}`), {
+          showPremiumCelebration: false
+        });
+      }
+
+      // منطق كسر الحماسة
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       const lastActive = userData.lastActiveDate;
@@ -113,27 +128,26 @@ export default function Home() {
       <div className="app-container py-6 space-y-6">
         
         {isAdmin ? (
-          <section className="bg-card rounded-[2.5rem] p-8 border border-border mx-2 shadow-xl space-y-8">
-            <div className="flex flex-col items-center text-center gap-4">
-              <div className="w-20 h-20 bg-primary text-white rounded-[2rem] flex items-center justify-center text-5xl shadow-lg border-4 border-white">🛡️</div>
+          <section className="bg-card rounded-[2rem] p-6 border border-border mx-2 shadow-lg space-y-6">
+            <div className="flex flex-col items-center text-center gap-3">
+              <div className="w-16 h-16 bg-primary text-white rounded-[1.5rem] flex items-center justify-center text-4xl shadow-md border-2 border-white">🛡️</div>
               <div>
-                <h1 className="text-3xl font-black text-primary">لوحة الإدارة العليا</h1>
-                <p className="text-sm font-bold text-muted-foreground mt-1">أهلاً بك يا مدير النظام. أنت الآن في وضع الرقابة والتحكم الكامل.</p>
+                <h1 className="text-2xl font-black text-primary">لوحة الإدارة العليا</h1>
+                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-wide">أهلاً بك يا مدير النظام ✨</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-1 gap-4">
-              <Link href="/admin" onClick={() => playSound('click')} className="block">
-                <Button className="w-full h-16 rounded-[1.5rem] bg-primary hover:bg-primary/90 text-lg font-black gap-3 shadow-xl shadow-primary/20">
-                  <ShieldCheck size={24} /> دخول لوحة التحكم
+            <div className="grid grid-cols-1 gap-3">
+              <Link href="/admin/requests" onClick={() => playSound('click')} className="block">
+                <Button className="w-full h-14 rounded-2xl bg-accent hover:bg-accent/90 text-sm font-black gap-3 shadow-lg">
+                  <Sparkles size={18} /> مراجعة طلبات الاشتراك
                 </Button>
               </Link>
-              <div className="p-6 bg-red-50 rounded-[2rem] border border-red-100">
-                <p className="text-[10px] font-black text-red-600 uppercase tracking-widest mb-2 flex items-center gap-2">⚠️ تنبيه أمني</p>
-                <p className="text-xs font-bold text-red-900/70 leading-relaxed">
-                  أنت تمتلك صلاحيات تعديل رتب المستخدمين ومنح ميزات البريميوم. تأكد من مراجعة كافة الطلبات بدقة من خلال لوحة الإدارة.
-                </p>
-              </div>
+              <Link href="/admin" onClick={() => playSound('click')} className="block">
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-primary text-primary text-sm font-black gap-3">
+                  <ShieldCheck size={18} /> دخول لوحة التحكم
+                </Button>
+              </Link>
             </div>
           </section>
         ) : (
@@ -202,6 +216,23 @@ export default function Home() {
         <div className="mx-2">
           <AdBanner label="إعلان ممول" />
         </div>
+
+        {/* حوار الاحتفال بالبريميوم */}
+        <Dialog open={showCelebration} onOpenChange={setShowCelebration}>
+          <DialogContent className="rounded-[3rem] p-10 text-center max-w-sm">
+            <DialogHeader>
+              <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
+                <Crown size={48} fill="currentColor" />
+              </div>
+              <DialogTitle className="text-3xl font-black text-primary">تهانينا يا بطل! 👑</DialogTitle>
+              <DialogDescription className="text-lg font-bold text-muted-foreground mt-4 leading-relaxed">
+                لقد تمت ترقية حسابك لعضوية **بريميوم الملكية**. استمتع الآن بكل الميزات بلا حدود!
+              </DialogDescription>
+            </DialogHeader>
+            <Button onClick={() => setShowCelebration(false)} className="w-full h-14 rounded-2xl bg-accent text-xl font-black shadow-lg mt-6">هيا لننطلق! 🚀</Button>
+          </DialogContent>
+        </Dialog>
+
       </div>
     </div>
   );

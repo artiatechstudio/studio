@@ -4,31 +4,13 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown, ShieldCheck } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown, ShieldCheck, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { ref } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
-
-const sideNavItems = [
-  { label: 'الرئيسية', icon: Home, href: '/' },
-  { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
-  { label: 'الإشعارات', icon: Bell, href: '/notifications' },
-  { label: 'الحماسة', icon: Flame, href: '/streak' },
-  { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
-  { label: 'الموارد', icon: BookMarked, href: '/resources' },
-  { label: 'الملف الشخصي', icon: User, href: '/profile' },
-];
-
-const mobileNavItems = [
-  { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
-  { label: 'الموارد', icon: BookMarked, href: '/resources' },
-  { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
-  { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
-  { label: 'أنت', icon: User, href: '/profile' },
-];
 
 export function NavSidebar() {
   const pathname = usePathname();
@@ -80,6 +62,50 @@ export function NavSidebar() {
 
   const isHome = pathname === '/';
 
+  // تحديد القوائم بناءً على الدور
+  const getSideItems = () => {
+    const base = [
+      { label: 'الرئيسية', icon: Home, href: '/' },
+      { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
+      { label: 'الإشعارات', icon: Bell, href: '/notifications' },
+    ];
+
+    if (isAdmin) {
+      return [
+        ...base,
+        { label: 'طلبات البريميوم', icon: ClipboardList, href: '/admin/requests' },
+        { label: 'لوحة التحكم', icon: ShieldCheck, href: '/admin' },
+      ];
+    }
+
+    return [
+      ...base,
+      { label: 'الحماسة', icon: Flame, href: '/streak' },
+      { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
+      { label: 'الموارد', icon: BookMarked, href: '/resources' },
+      { label: 'الملف الشخصي', icon: User, href: '/profile' },
+    ];
+  };
+
+  const getMobileItems = () => {
+    if (isAdmin) {
+      return [
+        { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
+        { label: 'الطلبات', icon: ClipboardList, href: '/admin/requests' },
+        { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
+        { label: 'الإدارة', icon: ShieldCheck, href: '/admin' },
+        { label: 'الإعدادات', icon: Settings, href: '/settings' },
+      ];
+    }
+    return [
+      { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
+      { label: 'الموارد', icon: BookMarked, href: '/resources' },
+      { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
+      { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
+      { label: 'أنت', icon: User, href: '/profile' },
+    ];
+  };
+
   return (
     <>
       {/* Top Header for Mobile Only */}
@@ -108,8 +134,8 @@ export function NavSidebar() {
               </div>
             </div>
           ) : (
-            <div className="bg-primary/10 px-3 py-1 rounded-full text-[9px] font-black text-primary border border-primary/20">
-              وضع الإدارة 🛡️
+            <div className="bg-primary/10 px-3 py-1 rounded-full text-[9px] font-black text-primary border border-primary/20 flex items-center gap-1">
+              <ShieldCheck size={10} /> وضع الإدارة
             </div>
           )}
 
@@ -131,12 +157,12 @@ export function NavSidebar() {
           <div className="text-right">
             <span className="text-3xl font-black text-primary tracking-tight block">كارينجو</span>
             {isAdmin && <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Super Admin</span>}
-            {isPremium && !isAdmin && <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">Premium</span>}
+            {isPremium && !isAdmin && <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">Premium Member</span>}
           </div>
         </div>
 
         <nav className="flex-1 space-y-3" dir="rtl">
-          {sideNavItems.map((item) => (
+          {getSideItems().map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -164,20 +190,6 @@ export function NavSidebar() {
               )}
             </Link>
           ))}
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              onClick={() => playSound('click')}
-              className={cn(
-                "flex items-center gap-5 px-6 py-4 rounded-[1.5rem] transition-all duration-300 group mt-6 border-2 border-dashed border-primary/20",
-                pathname === '/admin' ? "bg-red-600 text-white shadow-xl" : "text-red-600 hover:bg-red-50"
-              )}
-            >
-              <ShieldCheck className="w-7 h-7" />
-              <span className="font-black text-xl">الإدارة</span>
-            </Link>
-          )}
         </nav>
 
         <div className="pt-8 border-t border-border mt-auto space-y-4" dir="rtl">
@@ -209,7 +221,7 @@ export function NavSidebar() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[2.5rem]">
-        {mobileNavItems.map((item) => (
+        {getMobileItems().map((item) => (
           <Link
             key={item.href}
             href={item.href}

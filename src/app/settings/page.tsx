@@ -10,10 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -43,6 +44,9 @@ export default function SettingsPage() {
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [duration, setDuration] = useState('1month');
 
+  // ثيم التطبيق
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
   useEffect(() => {
     if (userData) {
       setName(userData.name || '');
@@ -53,7 +57,25 @@ export default function SettingsPage() {
       setAvatar(userData.avatar || '🐱');
       setBio(userData.bio || '');
     }
+    // جلب الثيم الحالي
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
+    setTheme(savedTheme);
   }, [userData]);
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    if (newTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    playSound('click');
+    toast({ title: newTheme === 'dark' ? "تم تفعيل الوضع الليلي 🌙" : "تم تفعيل الوضع المضيء ☀️" });
+  };
+
+  const isAdmin = userData?.name === 'admin';
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -75,7 +97,7 @@ export default function SettingsPage() {
     playSound('click');
     try {
       await update(ref(database, `users/${user.uid}`), {
-        name,
+        name: isAdmin ? 'admin' : name, // منع تغيير اسم الأدمن برمجياً أيضاً
         age: a,
         gender,
         height: h,
@@ -162,7 +184,6 @@ export default function SettingsPage() {
   }
 
   const requestStatus = userData?.premiumRequest?.status;
-  const isAdmin = userData?.name === 'admin';
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -177,6 +198,29 @@ export default function SettingsPage() {
             <p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي وتجربة التطبيق</p>
           </div>
         </header>
+
+        {/* كارت الثيم */}
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
+          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right flex flex-row items-center justify-between flex-row-reverse">
+            <CardTitle className="text-lg font-black text-primary flex items-center gap-3">
+              مظهر التطبيق <Sparkles size={20} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 flex items-center justify-between">
+            <div className="text-right">
+              <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">
+                الوضع {theme === 'dark' ? 'الداكن' : 'المضيء'}
+                {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
+              </p>
+              <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق لراحة العين</p>
+            </div>
+            <Switch 
+              checked={theme === 'dark'} 
+              onCheckedChange={toggleTheme} 
+              className="scale-125 data-[state=checked]:bg-primary" 
+            />
+          </CardContent>
+        </Card>
 
         {/* كارت البريميوم */}
         <Card className={cn(
@@ -253,7 +297,7 @@ export default function SettingsPage() {
             </div>
 
             <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label className="flex items-center gap-2"><PenLine size={16} /> نبذة قصيرة (بحد أقصى 30 حرفاً)</Label>
+              <Label className="flex items-center gap-2 justify-end"><PenLine size={16} /> نبذة قصيرة (بحد أقصى 30 حرفاً)</Label>
               <Input 
                 value={bio} 
                 maxLength={30}
@@ -265,15 +309,23 @@ export default function SettingsPage() {
             </div>
             
             <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label>الاسم الكامل</Label>
-              <Input value={name} onChange={e => setName(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
+              <Label className="text-right block w-full">الاسم الكامل {isAdmin && "(لا يمكن تغييره للمدير)"}</Label>
+              <Input 
+                value={name} 
+                onChange={e => setName(e.target.value)} 
+                disabled={isAdmin}
+                className={cn(
+                  "rounded-xl bg-secondary/30 border-none h-12 font-bold text-right",
+                  isAdmin && "opacity-50 cursor-not-allowed"
+                )} 
+              />
             </div>
             <div className="space-y-2">
-              <Label>العمر</Label>
+              <Label className="text-right block w-full">العمر</Label>
               <Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <div className="space-y-2">
-              <Label>الجنس</Label>
+              <Label className="text-right block w-full">الجنس</Label>
               <Select onValueChange={(val) => { playSound('click'); setGender(val); }} value={gender}>
                 <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right">
                   <SelectValue />
@@ -285,11 +337,11 @@ export default function SettingsPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>الطول (سم)</Label>
+              <Label className="text-right block w-full">الطول (سم)</Label>
               <Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <div className="space-y-2">
-              <Label>الوزن (كجم)</Label>
+              <Label className="text-right block w-full">الوزن (كجم)</Label>
               <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
             </div>
             <Button 

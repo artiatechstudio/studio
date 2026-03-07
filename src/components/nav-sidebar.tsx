@@ -36,7 +36,7 @@ export function NavSidebar() {
   const { database } = useFirebase();
   const auth = useAuth();
 
-  // نظام إشعارات الدردشة البسيط
+  // نظام إشعارات الدردشة الذكي
   const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
   const { data: chatsData } = useDatabase(chatsRef);
 
@@ -46,13 +46,17 @@ export function NavSidebar() {
     let count = 0;
     Object.keys(chatsData).forEach(chatId => {
       if (chatId.includes(user.uid)) {
-        const messages: any = Object.values(chatsData[chatId].messages || {});
-        if (messages.length > 0) {
-          const lastMsg = messages[messages.length - 1];
-          // إذا كانت آخر رسالة من شخص آخر ولم أرها (محاكاة بسيطة)
-          if (lastMsg.senderId !== user.uid) {
-            count++;
-          }
+        const chat = chatsData[chatId];
+        const messages: any[] = Object.values(chat.messages || {});
+        if (messages.length === 0) return;
+
+        // العثور على طابع زمن آخر رسالة
+        const lastMsg = messages.reduce((prev, curr) => (curr.timestamp > prev.timestamp ? curr : prev), messages[0]);
+        const lastSeen = chat.lastSeen?.[user.uid] || 0;
+
+        // إذا كانت الرسالة من شخص آخر وهي أحدث من آخر وقت دخول لي للدردشة
+        if (lastMsg.senderId !== user.uid && lastMsg.timestamp > lastSeen) {
+          count++;
         }
       }
     });
@@ -91,7 +95,6 @@ export function NavSidebar() {
               <item.icon className={cn("w-7 h-7", pathname === item.href ? "text-white" : "group-hover:scale-110")} />
               <span className="font-black text-xl">{item.label}</span>
               
-              {/* Notification Badge for Desktop */}
               {item.label === 'الدردشة' && unreadCount > 0 && (
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white">
                   {unreadCount}
@@ -149,7 +152,6 @@ export function NavSidebar() {
             )}>
               <item.icon className={cn(item.isCenter ? "w-7 h-7" : "w-6 h-6", pathname === item.href && "stroke-[3px]")} />
               
-              {/* Notification Badge for Mobile */}
               {item.label === 'الدردشة' && unreadCount > 0 && (
                 <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
                   {unreadCount}

@@ -4,17 +4,16 @@
 import React, { useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, remove, serverTimestamp, push } from 'firebase/database';
-import { deleteUser, signOut } from 'firebase/auth';
+import { ref, update, remove } from 'firebase/database';
+import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -36,6 +35,11 @@ export default function SettingsPage() {
   const [avatar, setAvatar] = useState('🐱');
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
+
+  // حقول كلمة المرور
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [changingPass, setChangingPass] = useState(false);
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [duration, setDuration] = useState('1month');
@@ -85,6 +89,31 @@ export default function SettingsPage() {
       toast({ variant: "destructive", title: "خطأ", description: "فشل في تحديث البيانات." });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleUpdatePassword = async () => {
+    if (!user || !currentPassword || !newPassword) return;
+    if (newPassword.length < 6) {
+      toast({ variant: "destructive", title: "كلمة مرور ضعيفة", description: "يجب أن تكون 6 أحرف على الأقل." });
+      return;
+    }
+
+    setChangingPass(true);
+    playSound('click');
+    try {
+      const credential = EmailAuthProvider.credential(user.email!, currentPassword);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPassword);
+      
+      toast({ title: "تم تغيير كلمة المرور! 🔐", description: "يرجى استخدام الكلمة الجديدة في المرة القادمة." });
+      setCurrentPassword('');
+      setNewPassword('');
+      playSound('success');
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "خطأ في التحديث", description: "تأكد من كلمة المرور الحالية." });
+    } finally {
+      setChangingPass(false);
     }
   };
 
@@ -170,6 +199,7 @@ export default function SettingsPage() {
           </div>
         </header>
 
+        {/* كارت البريميوم */}
         <Card className={cn(
           "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 space-y-6 relative mx-2",
           userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 to-amber-600" : "bg-gradient-to-br from-slate-700 to-slate-900"
@@ -216,32 +246,7 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        {/* روابط التواصل والدعم */}
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right">
-            <CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">
-              التواصل والدعم الفني <MessageSquare size={20} />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <a href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2 hover:bg-green-100">
-                <Phone size={18} /> واتساب الدعم
-              </Button>
-            </a>
-            <a href="https://careingo.app" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2 hover:bg-blue-100">
-                <Globe size={18} /> الموقع الرسمي
-              </Button>
-            </a>
-            <a href="https://twitter.com/careingo" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2 hover:bg-slate-100">
-                <Twitter size={18} /> منصة X
-              </Button>
-            </a>
-          </CardContent>
-        </Card>
-
+        {/* كارت المعلومات الشخصية */}
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
             <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">
@@ -315,6 +320,72 @@ export default function SettingsPage() {
             >
               <Save size={20} className="ml-2" /> {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* كارت الأمان وكلمة المرور */}
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
+          <CardHeader className="bg-orange-500/5 p-6 border-b border-border text-right">
+            <CardTitle className="text-lg font-black text-orange-600 flex items-center justify-end gap-3">
+              الأمان وكلمة المرور <ShieldCheck size={20} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الحالية <Lock size={14}/></Label>
+                <Input 
+                  type="password" 
+                  placeholder="أدخل كلمتك القديمة للتأكد"
+                  className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الجديدة <Save size={14}/></Label>
+                <Input 
+                  type="password" 
+                  placeholder="6 أحرف على الأقل"
+                  className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                />
+              </div>
+              <Button 
+                onClick={handleUpdatePassword}
+                disabled={changingPass || !currentPassword || !newPassword}
+                className="w-full h-14 rounded-2xl bg-orange-600 hover:bg-orange-700 text-lg font-black shadow-lg mt-2"
+              >
+                {changingPass ? "جاري التحديث..." : "تحديث كلمة المرور 🔐"}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* كارت روابط التواصل */}
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
+          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right">
+            <CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">
+              التواصل والدعم الفني <MessageSquare size={20} />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <a href="https://wa.me/966500000000" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2 hover:bg-green-100">
+                <Phone size={18} /> واتساب الدعم
+              </Button>
+            </a>
+            <a href="https://careingo.app" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2 hover:bg-blue-100">
+                <Globe size={18} /> الموقع الرسمي
+              </Button>
+            </a>
+            <a href="https://twitter.com/careingo" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2 hover:bg-slate-100">
+                <Twitter size={18} /> منصة X
+              </Button>
+            </a>
           </CardContent>
         </Card>
 

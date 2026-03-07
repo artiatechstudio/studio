@@ -110,7 +110,12 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label>كلمة المرور</Label>
+              <div className="flex items-center justify-between">
+                <Label>كلمة المرور</Label>
+                <Link href="/forgot-password" title="استعادة كلمة المرور" className="text-[10px] font-black text-primary hover:underline">
+                  نسيت كلمة المرور؟
+                </Link>
+              </div>
               <Input 
                 type="password" 
                 className="h-14 rounded-2xl bg-secondary/50 border-none font-bold text-right"

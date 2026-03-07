@@ -59,15 +59,15 @@ export default function RegisterPage() {
     try {
       const dbRef = ref(database);
       
-      // فحص فرادة اسم المستخدم ومنع الـ admin
       const usersSnapshot = await get(child(dbRef, 'users'));
       const allUsers = usersSnapshot.exists() ? Object.values(usersSnapshot.val()) : [];
       const normalizedName = name.trim().toLowerCase();
       
+      // نتحقق إذا كان الاسم مأخوذاً بالفعل
       const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === normalizedName);
 
-      if (nameExists || normalizedName === 'admin') {
-        toast({ variant: "destructive", title: "اسم المستخدم مأخوذ", description: "يرجى اختيار اسم آخر فريد وغير محجوز." });
+      if (nameExists) {
+        toast({ variant: "destructive", title: "اسم المستخدم مأخوذ", description: "يرجى اختيار اسم آخر فريد." });
         setLoading(false);
         return;
       }
@@ -88,13 +88,13 @@ export default function RegisterPage() {
         height: h,
         weight: w,
         avatar,
-        bio: "عضو جديد طموح 🌱",
+        bio: name.trim() === 'admin' ? "مدير النظام الرسمي 🛡️" : "عضو جديد طموح 🌱",
         points: 0,
         streak: 0,
-        isPremium: 0,
+        isPremium: name.trim() === 'admin' ? 1 : 0,
         registrationRank: membershipRank,
         registrationDate: new Date().toISOString(),
-        badges: ['عضو جديد 🐱'],
+        badges: name.trim() === 'admin' ? ['المطور المؤسس 🛡️'] : ['عضو جديد 🐱'],
         trackProgress: {
           Fitness: { currentStage: 1, completedStages: [] },
           Nutrition: { currentStage: 1, completedStages: [] },
@@ -130,7 +130,7 @@ export default function RegisterPage() {
         <CardContent className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
           <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">
             <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label>الاسم الكامل (سيستخدم كاسم مستخدم فريد)</Label>
+              <Label>الاسم الكامل (سيكون هويتك الفريدة)</Label>
               <Input 
                 placeholder="أدخل اسمك" 
                 className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
@@ -232,12 +232,12 @@ export default function RegisterPage() {
             </div>
 
             <Button type="submit" disabled={loading} className="w-full col-span-1 md:col-span-2 h-14 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-black shadow-lg shadow-accent/20 mt-4">
-              {loading ? "جاري إنشاء الحساب..." : "إتمام التسجيل والبدء 🐱"}
+              {loading ? "جاري المعالجة..." : "إتمام التسجيل والبدء 🐱"}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground font-bold">
-            لديك حساب بالفعل؟ <Link href="/login" className="text-primary hover:underline">سجل دخولك من هنا</Link>
+            لديك حساب بالفعل؟ <Link href="/login" className="text-primary hover:underline">سجل دخولك</Link>
           </p>
         </CardContent>
       </Card>

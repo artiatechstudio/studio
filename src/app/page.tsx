@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, Sparkles, HeartPulse, AlertCircle, Crown } from 'lucide-react';
+import { Activity, Sparkles, HeartPulse, ShieldCheck, Crown, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -15,6 +15,7 @@ import { AdBanner } from '@/components/ad-banner';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import { Button } from '@/components/ui/button';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -30,9 +31,11 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  // منطق حارس الحماسة + فحص صلاحية البريميوم
+  const isAdmin = userData?.name === 'admin';
+
+  // منطق حارس الحماسة + فحص صلاحية البريميوم (فقط للمستخدمين العاديين)
   useEffect(() => {
-    if (userData && user) {
+    if (userData && user && !isAdmin) {
       const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
 
@@ -45,16 +48,16 @@ export default function Home() {
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
-      // 2. مكافأة المستخدمين النشطين بالبريميوم (أتمتة)
+      // 2. مكافأة المستخدمين النشطين بالبريميوم
       if (userData.isPremium !== 1 && (userData.points >= 5000 || userData.streak >= 15)) {
         update(ref(database, `users/${user.uid}`), {
           isPremium: 1,
-          premiumUntil: now + (3 * 24 * 60 * 60 * 1000) // 3 أيام هدية
+          premiumUntil: now + (3 * 24 * 60 * 60 * 1000) 
         });
         push(ref(database, `users/${user.uid}/notifications`), {
           type: 'bonus',
           title: 'مكافأة أسطورية! 👑',
-          message: 'لأنك بطل متميز، حصلت على 3 أيام بريميوم مجانية. استمتع بالتجربة!',
+          message: 'لأنك بطل متميز، حصلت على 3 أيام بريميوم مجانية.',
           isRead: false,
           timestamp: serverTimestamp()
         });
@@ -81,7 +84,7 @@ export default function Home() {
           push(ref(database, `users/${user.uid}/notifications`), {
             type: 'system',
             title: 'تنبيه كسر الحماسة 🛑',
-            message: `لقد تغيبت عن التطبيق! تم تصفير حماستك وخصم ${penalty} نقطة.`,
+            message: `لقد تغيبت عن التطبيق! تم خصم ${penalty} نقطة.`,
             isRead: false,
             timestamp: serverTimestamp()
           });
@@ -89,7 +92,7 @@ export default function Home() {
         }
       }
     }
-  }, [userData, user, database]);
+  }, [userData, user, database, isAdmin]);
 
   const progressPercent = useMemo(() => {
     const totalStages = 120;
@@ -127,64 +130,88 @@ export default function Home() {
     <div className="min-h-screen bg-background pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        <div className="grid grid-cols-2 gap-3 mx-2">
-          <Link href="/streak" className="block">
-            <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-              <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-                <Activity size={20} />
-              </div>
-              <div className="overflow-hidden flex-1">
-                <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-black text-primary">{progressPercent}%</span>
-                  <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
+        
+        {/* شريط الإحصائيات (يختفي للآدمن) */}
+        {!isAdmin && (
+          <div className="grid grid-cols-2 gap-3 mx-2">
+            <Link href="/streak" className="block">
+              <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
+                <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
+                  <Activity size={20} />
+                </div>
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-black text-primary">{progressPercent}%</span>
+                    <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
+                      <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card>
-          </Link>
-          <Link href="/profile" className="block">
-            <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-              <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0">
-                <HeartPulse size={20} />
-              </div>
-              <div className="overflow-hidden flex-1">
-                <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
-                <div className="flex items-center gap-2">
-                  <span className={cn("text-lg font-black", bmiInfo.color)}>{bmiInfo.value}</span>
-                  <span className={cn("text-[8px] font-black uppercase opacity-60", bmiInfo.color)}>{bmiInfo.status}</span>
+              </Card>
+            </Link>
+            <Link href="/profile" className="block">
+              <Card className="p-4 rounded-[2rem] shadow-lg border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
+                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0">
+                  <HeartPulse size={20} />
                 </div>
-              </div>
-            </Card>
-          </Link>
-        </div>
-
-        <section className="bg-primary/5 rounded-[2.5rem] p-6 border border-primary/10 mx-2 shadow-inner">
-          <Mascot />
-        </section>
-
-        <section className="space-y-4 mx-2">
-          <h2 className="text-xl font-black text-primary px-2">مسارات النمو</h2>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
-            <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
-            <TrackCard type="Behavior" currentStage={userData?.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
-            <TrackCard type="Study" currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
+                <div className="overflow-hidden flex-1">
+                  <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("text-lg font-black", bmiInfo.color)}>{bmiInfo.value}</span>
+                    <span className={cn("text-[8px] font-black uppercase opacity-60", bmiInfo.color)}>{bmiInfo.status}</span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
           </div>
-          
-          <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">
-            <Card className="p-6 rounded-[2.5rem] shadow-xl border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
-              <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg">
-                <Sparkles size={28} />
-              </div>
+        )}
+
+        {/* واجهة الآدمن المبسطة */}
+        {isAdmin ? (
+          <section className="bg-primary/5 rounded-[2.5rem] p-10 border border-primary/10 mx-2 shadow-inner space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 bg-primary text-white rounded-3xl flex items-center justify-center text-5xl shadow-xl">🛡️</div>
               <div className="text-right">
-                <p className="text-xl font-black text-primary leading-tight">المسار العام</p>
-                <p className="text-xs font-bold text-primary/60">تحديات الأساطير والتدريب الحر 🔥</p>
+                <h1 className="text-3xl font-black text-primary">مرحباً يا مدير كاري!</h1>
+                <p className="font-bold text-muted-foreground">أنت في وضع الإدارة الآن. تحكم بذكاء وحكمة.</p>
               </div>
-            </Card>
-          </Link>
-        </section>
+            </div>
+            <Link href="/admin" onClick={() => playSound('click')}>
+              <Button className="w-full h-16 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black gap-3 shadow-xl">
+                فتح لوحة التحكم العليا <ArrowRight className="rotate-180" />
+              </Button>
+            </Link>
+          </section>
+        ) : (
+          <>
+            <section className="bg-primary/5 rounded-[2.5rem] p-6 border border-primary/10 mx-2 shadow-inner">
+              <Mascot />
+            </section>
+
+            <section className="space-y-4 mx-2">
+              <h2 className="text-xl font-black text-primary px-2">مسارات النمو</h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Behavior" currentStage={userData?.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Study" currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
+              </div>
+              
+              <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">
+                <Card className="p-6 rounded-[2.5rem] shadow-xl border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
+                  <div className="w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-lg">
+                    <Sparkles size={28} />
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xl font-black text-primary leading-tight">المسار العام</p>
+                    <p className="text-xs font-bold text-primary/60">تحديات الأساطير والتدريب الحر 🔥</p>
+                  </div>
+                </Card>
+              </Link>
+            </section>
+          </>
+        )}
 
         <div className="mx-2">
           <AdBanner label="إعلان ممول" />

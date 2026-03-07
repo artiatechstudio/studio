@@ -34,30 +34,33 @@ export default function LeaderboardPage() {
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    const allUsers = Object.values(rawData).map((user: any) => {
-      const dailyPoints = user.dailyPoints || {};
-      const scores = dates.map(date => dailyPoints[date] || 0);
-      const sum = scores.reduce((a, b) => a + b, 0);
-      const avgScore = Math.round(sum / 3);
+    // نقوم بتصفية الآدمن تماماً من الإحصائيات التنافسية
+    const allUsers = Object.values(rawData)
+      .filter((u: any) => u.name !== 'admin')
+      .map((user: any) => {
+        const dailyPoints = user.dailyPoints || {};
+        const scores = dates.map(date => dailyPoints[date] || 0);
+        const sum = scores.reduce((a, b) => a + b, 0);
+        const avgScore = Math.round(sum / 3);
 
-      let bmiColor = "text-gray-400";
-      let bmiValue = "--";
-      let bmiStatus = "غير محدد";
-      
-      if (user.weight && user.height) {
-        const bmi = user.weight / ((user.height / 100) * (user.height / 100));
-        bmiValue = bmi.toFixed(1);
-        if (bmi >= 18.5 && bmi < 25) { bmiColor = "text-green-500"; bmiStatus = "مثالي"; }
-        else if (bmi >= 25 && bmi < 30) { bmiColor = "text-orange-500"; bmiStatus = "زيادة"; }
-        else if (bmi >= 30) { bmiColor = "text-red-500"; bmiStatus = "سمنة"; }
-        else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
-      }
+        let bmiColor = "text-gray-400";
+        let bmiValue = "--";
+        let bmiStatus = "غير محدد";
+        
+        if (user.weight && user.height) {
+          const bmi = user.weight / ((user.height / 100) * (user.height / 100));
+          bmiValue = bmi.toFixed(1);
+          if (bmi >= 18.5 && bmi < 25) { bmiColor = "text-green-500"; bmiStatus = "مثالي"; }
+          else if (bmi >= 25 && bmi < 30) { bmiColor = "text-orange-500"; bmiStatus = "زيادة"; }
+          else if (bmi >= 30) { bmiColor = "text-red-500"; bmiStatus = "سمنة"; }
+          else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
+        }
 
-      const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
-      const isActiveRecently = lastActive && lastActive >= oneWeekAgo;
+        const lastActive = user.lastActiveDate ? new Date(user.lastActiveDate) : null;
+        const isActiveRecently = lastActive && lastActive >= oneWeekAgo;
 
-      return { ...user, avgScore, bmiColor, bmiValue, bmiStatus, isActiveRecently };
-    });
+        return { ...user, avgScore, bmiColor, bmiValue, bmiStatus, isActiveRecently };
+      });
 
     const leaders = allUsers
       .filter((user: any) => (user.points || 0) > 0)

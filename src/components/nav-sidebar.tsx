@@ -96,16 +96,22 @@ export function NavSidebar() {
             </Link>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 shadow-inner">
-              <Flame size={14} className="text-orange-600" fill="currentColor" />
-              <span className="text-[10px] font-black text-orange-600">{userData?.streak || 0}</span>
-            </Link>
-            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-100 shadow-inner">
-              <Star size={14} className="text-yellow-600" fill="currentColor" />
-              <span className="text-[10px] font-black text-yellow-600">{userData?.points || 0}</span>
+          {!isAdmin ? (
+            <div className="flex items-center gap-2">
+              <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 shadow-inner">
+                <Flame size={14} className="text-orange-600" fill="currentColor" />
+                <span className="text-[10px] font-black text-orange-600">{userData?.streak || 0}</span>
+              </Link>
+              <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-100 shadow-inner">
+                <Star size={14} className="text-yellow-600" fill="currentColor" />
+                <span className="text-[10px] font-black text-yellow-600">{userData?.points || 0}</span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-primary/10 px-3 py-1 rounded-full text-[9px] font-black text-primary border border-primary/20">
+              وضع الإدارة 🛡️
+            </div>
+          )}
 
           <div className="flex items-center gap-2">
             <span className="text-xs font-black text-primary">كارينجو</span>

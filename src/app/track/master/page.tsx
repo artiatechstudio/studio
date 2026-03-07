@@ -1,16 +1,17 @@
 
 "use client"
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, get } from 'firebase/database';
+import { ref, update, push, serverTimestamp, remove, get } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -27,13 +28,19 @@ export default function MasterTrackPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [todoInput, setTodoInput] = useState('');
+  const [completingId, setCompletingId] = useState<string | null>(null);
+
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
+
+  const todosRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/todos`) : null, [user, database]);
+  const { data: todosData } = useDatabase(todosRef);
 
   const isLegend = useMemo(() => {
     if (!userData?.trackProgress) return false;
     const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
-    return tracks.every(t => userData.trackProgress[t]?.completedStages?.length >= 30);
+    return tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
   }, [userData]);
 
   const handleStart = () => {
@@ -55,7 +62,7 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
-  const handleComplete = async () => {
+  const handleCompleteChallenge = async () => {
     if (!user || !currentChallenge) return;
     playSound('success');
     
@@ -73,6 +80,45 @@ export default function MasterTrackPage() {
     setStep('done');
   };
 
+  const handleAddTodo = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!todoInput.trim() || !user) return;
+    playSound('click');
+    const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
+    update(newTodoRef, {
+      id: newTodoRef.key,
+      title: todoInput.trim(),
+      completed: false,
+      timestamp: serverTimestamp()
+    });
+    setTodoInput('');
+  };
+
+  const handleToggleTodo = (todoId: string) => {
+    if (!user || completingId) return;
+    playSound('click');
+    setCompletingId(todoId);
+    
+    // منح نقاط رمزية (5 نقاط)
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const currentPoints = userData?.points || 0;
+    const dailyPoints = userData?.dailyPoints?.[todayStr] || 0;
+
+    update(ref(database, `users/${user.uid}`), {
+      points: currentPoints + 5,
+      [`dailyPoints/${todayStr}`]: dailyPoints + 5
+    });
+
+    toast({ title: "أحسنت! +5 نقاط حماسة 🌟" });
+    playSound('success');
+
+    // تأثير الاختفاء الشبحي: الانتظار ثانية ثم الحذف من الداتابيز
+    setTimeout(() => {
+      remove(ref(database, `users/${user.uid}/todos/${todoId}`));
+      setCompletingId(null);
+    }, 1000);
+  };
+
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
@@ -80,9 +126,9 @@ export default function MasterTrackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-32" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-6">
+      <div className="app-container py-6 space-y-8">
         <header className="flex items-center justify-between bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
@@ -119,7 +165,7 @@ export default function MasterTrackPage() {
                     key={t}
                     variant={selectedType === t ? 'default' : 'outline'}
                     onClick={() => { playSound('click'); setSelectedType(t); }}
-                    className="h-14 rounded-2xl font-black"
+                    className={cn("h-14 rounded-2xl font-black", selectedType === t ? "shadow-lg scale-[1.02]" : "")}
                   >
                     {t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'تغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}
                   </Button>
@@ -135,7 +181,7 @@ export default function MasterTrackPage() {
                     key={d}
                     variant={selectedDifficulty === d ? 'default' : 'outline'}
                     onClick={() => { playSound('click'); setSelectedDifficulty(d); }}
-                    className="flex-1 h-14 rounded-2xl font-black"
+                    className={cn("flex-1 h-14 rounded-2xl font-black", selectedDifficulty === d ? "shadow-lg scale-[1.02]" : "")}
                   >
                     {d}
                   </Button>
@@ -168,7 +214,7 @@ export default function MasterTrackPage() {
               </div>
 
               <div className="flex flex-col gap-3">
-                <Button onClick={handleComplete} className="h-16 rounded-2xl bg-accent text-xl font-black shadow-lg">
+                <Button onClick={handleCompleteChallenge} className="h-16 rounded-2xl bg-accent text-xl font-black shadow-lg">
                   أنهيت المهمة 🔥
                 </Button>
                 <Button onClick={() => setStep('setup')} variant="ghost" className="text-destructive font-black">
@@ -189,6 +235,71 @@ export default function MasterTrackPage() {
             <Button onClick={() => setStep('setup')} className="w-full h-14 rounded-2xl font-black">تحدي جديد 🐱</Button>
           </Card>
         )}
+
+        {/* قائمة المهام المخصصة الدائمة */}
+        <section className="mx-2 space-y-4 pt-10 border-t border-border/50">
+          <header className="flex items-center justify-between px-2">
+            <h2 className="text-xl font-black text-primary flex items-center gap-2">
+              <ListChecks size={24} /> قائمة مهامي الدائمة
+            </h2>
+            <span className="text-[10px] font-bold text-muted-foreground bg-secondary px-3 py-1 rounded-full">كل مهمة = +5 نقاط 🌟</span>
+          </header>
+          
+          <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card space-y-6">
+            <form onSubmit={handleAddTodo} className="flex gap-2">
+              <Input 
+                placeholder="أضف مهمة شخصية لليوم..." 
+                className="h-12 rounded-2xl bg-secondary/50 border-none font-bold text-right focus-visible:ring-primary"
+                value={todoInput}
+                onChange={(e) => setTodoInput(e.target.value)}
+              />
+              <Button type="submit" size="icon" className="h-12 w-12 rounded-2xl bg-primary shadow-lg shadow-primary/20">
+                <Plus size={24} />
+              </Button>
+            </form>
+
+            <div className="space-y-3">
+              {todosData ? Object.values(todosData).sort((a:any, b:any) => b.timestamp - a.timestamp).map((todo: any) => (
+                <div 
+                  key={todo.id} 
+                  className={cn(
+                    "flex items-center justify-between p-4 bg-secondary/20 rounded-2xl group border border-transparent hover:border-primary/10 transition-all duration-1000",
+                    completingId === todo.id ? "opacity-0 scale-95 blur-sm" : "opacity-100"
+                  )}
+                >
+                  <div className="flex items-center gap-4">
+                    <button 
+                      onClick={() => handleToggleTodo(todo.id)}
+                      disabled={!!completingId}
+                      className={cn(
+                        "w-8 h-8 rounded-xl flex items-center justify-center transition-all",
+                        completingId === todo.id ? "bg-green-500 text-white" : "bg-white border-2 border-primary/20 text-transparent"
+                      )}
+                    >
+                      <CheckSquare size={18} />
+                    </button>
+                    <span className={cn("font-bold text-sm text-primary")}>
+                      {todo.title}
+                    </span>
+                  </div>
+                  <Button 
+                    onClick={() => remove(ref(database, `users/${user!.uid}/todos/${todo.id}`))} 
+                    variant="ghost" 
+                    size="icon" 
+                    className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 size={18} />
+                  </Button>
+                </div>
+              )) : (
+                <div className="text-center py-10 opacity-30">
+                  <ListChecks size={48} className="mx-auto mb-2" />
+                  <p className="font-black text-sm italic">لا توجد مهام حالياً. أضف شيئاً لتنجزه! 🐱</p>
+                </div>
+              )}
+            </div>
+          </Card>
+        </section>
       </div>
     </div>
   );

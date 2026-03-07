@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, Trophy } from 'lucide-react';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
@@ -56,7 +56,7 @@ export default function StreakPage() {
       const dStr = d.toLocaleDateString('en-CA');
       week.push({
         label: dayLabels[i],
-        isCompleted: !!(userData?.dailyPoints && userData.dailyPoints[dStr]),
+        isCompleted: !!(userData?.dailyPoints?.[dStr]),
         isToday: dStr === todayStr
       });
     }
@@ -73,7 +73,7 @@ export default function StreakPage() {
       days.push({
         date: dStr,
         dayNum: d.getDate(),
-        isCompleted: !!(userData?.dailyPoints && userData.dailyPoints[dStr])
+        isCompleted: !!(userData?.dailyPoints?.[dStr])
       });
     }
     return days;

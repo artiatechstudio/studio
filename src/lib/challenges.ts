@@ -10,11 +10,11 @@ export interface Challenge {
   points: number;
 }
 
-// دالة لتوليد نقاط بناءً على الصعوبة
+// دالة لتوليد نقاط بناءً على الصعوبة الجديدة المطلوبة
 const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
-  if (diff === 'سهل') return 70;
-  if (diff === 'متوسط') return 120;
-  return 180;
+  if (diff === 'سهل') return 50;
+  if (diff === 'متوسط') return 70;
+  return 100;
 };
 
 const fitnessChallenges: Challenge[] = [
@@ -156,17 +156,19 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   Study: studyChallenges,
 };
 
-// الـ 90 تحدي الإضافية للمسار العام
+// الـ 90 تحدي الإضافية للمسار العام (متنوعة الصعوبة)
 export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [
-  { title: "تحدي الأساطير: صيام الدوبامين", description: "يوم كامل بدون أي وسيلة ترفيه رقمية.", time: 0, difficulty: 'صعب', points: 200 },
-  { title: "تحدي الأساطير: 100 ضغط", description: "أكمل 100 تمرين ضغط خلال اليوم.", time: 30, difficulty: 'صعب', points: 180 },
-  { title: "تحدي الأساطير: القراءة التصويرية", description: "تصفح كتاباً كاملاً واستخرج لب أفكاره.", time: 40, difficulty: 'متوسط', points: 120 },
-  { title: "تحدي الأساطير: مشي 10كم", description: "مشي لمسافة 10 كيلومترات في الطبيعة.", time: 120, difficulty: 'صعب', points: 200 },
-  { title: "تحدي الأساطير: يوم السوائل", description: "يوم كامل يعتمد على العصائر والشوربات الصحية.", time: 0, difficulty: 'متوسط', points: 100 },
-  // ... سيتم توليد الباقي عشوائياً في الكود لتوفير المساحة، لكن الفكرة هي التنوع
+  { title: "تحدي الأساطير: صيام الدوبامين", description: "يوم كامل بدون أي وسيلة ترفيه رقمية لتعزيز الصفاء الذهني.", time: 0, difficulty: 'صعب', points: 100 },
+  { title: "تحدي الأساطير: 100 ضغط", description: "أكمل 100 تمرين ضغط خلال اليوم (مقسمة كما تشاء).", time: 30, difficulty: 'صعب', points: 100 },
+  { title: "تحدي الأساطير: القراءة التصويرية", description: "تصفح كتاباً كاملاً واستخرج لب أفكاره الأساسية في 40 دقيقة.", time: 40, difficulty: 'متوسط', points: 70 },
+  { title: "تحدي الأساطير: مشي 10كم", description: "مشي لمسافة 10 كيلومترات في الطبيعة لتعزيز قدرة التحمل.", time: 120, difficulty: 'صعب', points: 100 },
+  { title: "تحدي الأساطير: يوم السوائل", description: "يوم كامل يعتمد على العصائر والشوربات الصحية فقط لتنظيف الجسم.", time: 0, difficulty: 'متوسط', points: 70 },
+  { title: "تحدي الأساطير: الصمت المطبق", description: "ساعة واحدة من الصمت التام دون حديث أو تواصل إلكتروني.", time: 60, difficulty: 'سهل', points: 50 },
+  { title: "تحدي الأساطير: ترتيب الذاكرة", description: "استرجاع وحفظ 20 كلمة عشوائية في 5 دقائق.", time: 5, difficulty: 'سهل', points: 50 },
+  { title: "تحدي الأساطير: تمرين الكوبرا", description: "تمدد بوضعية الكوبرا لـ 10 دقائق موزعة.", time: 10, difficulty: 'سهل', points: 50 },
+  // ... سيتم توليد الباقي ديناميكياً لتوفير المساحة، لكن الفكرة هي التنوع في الصعوبة.
 ];
 
-// دالة لجلب المسبح الكامل للتحديات
 export const getMasterPool = (type: TrackKey, difficulty: string): Challenge[] => {
   const basePool = STATIC_CHALLENGES[type].filter(c => c.difficulty === difficulty);
   const extraPool = ADDITIONAL_MASTER_CHALLENGES.filter(c => c.difficulty === difficulty);

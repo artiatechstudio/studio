@@ -28,7 +28,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     return [user.uid, otherId].sort().join('_');
   }, [user, otherId]);
 
-  const chatRootRef = useMemoFirebase(() => chatId ? ref(database, `chats/${chatId}`) : null, [database, chatId]);
   const messagesRef = useMemoFirebase(() => chatId ? ref(database, `chats/${chatId}/messages`) : null, [database, chatId]);
   const messagesQuery = useMemoFirebase(() => messagesRef ? query(messagesRef, limitToLast(50)) : null, [messagesRef]);
   const { data: messagesData } = useDatabase(messagesQuery);
@@ -65,13 +64,13 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   };
 
   const handleDeleteChat = async () => {
-    if (!user || !chatId || !chatRootRef) return;
+    if (!user || !chatId) return;
     const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ سيتم مسح الرسائل لدى الطرفين. 🐱⚠️");
     if (!confirmed) return;
 
     playSound('click');
     try {
-      await remove(chatRootRef);
+      await remove(ref(database, `chats/${chatId}`));
       toast({ title: "تم حذف السجل بنجاح" });
       router.push('/chat');
     } catch (error) {
@@ -104,7 +103,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   }, [messagesData]);
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden pt-14 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
       <NavSidebar />
       
       <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-4 mt-4 sticky top-4 z-30">

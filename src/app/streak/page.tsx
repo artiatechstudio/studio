@@ -27,12 +27,12 @@ export default function StreakPage() {
   const membershipRank = useMemo(() => {
     if (!allUsersData || !user) return 0;
     const usersArray = Object.values(allUsersData) as any[];
-    const sortedUsers = usersArray.sort((a, b) => {
+    const sortedUsers = usersArray.sort((a: any, b: any) => {
       const dateA = new Date(a.registrationDate || 0).getTime();
       const dateB = new Date(b.registrationDate || 0).getTime();
       return dateA - dateB;
     });
-    const idx = sortedUsers.findIndex(u => u.id === user.uid);
+    const idx = sortedUsers.findIndex((u: any) => u.id === user.uid);
     return idx >= 0 ? idx + 1 : 0;
   }, [allUsersData, user]);
 

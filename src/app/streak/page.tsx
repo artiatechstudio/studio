@@ -199,7 +199,7 @@ export default function StreakPage() {
                 أنت العضو رقم <span className="text-primary font-black">{membershipRank || '--'}</span> في مجتمعنا.
               </p>
             </div>
-          </div>
+          </Card>
         </div>
 
         <footer className="text-center opacity-20 font-black text-[8px] pt-4 uppercase">

@@ -23,7 +23,7 @@ export default function StreakPage() {
     return ref(database, `users/${user.uid}`);
   }, [user, database]);
 
-  const { data: userData, isLoading } = useDatabase(userRef);
+  const { data: userData, isLoading: isUserDataLoading } = useDatabase(userRef);
 
   const allUsersRef = useMemoFirebase(() => {
     if (!database) return null;
@@ -35,7 +35,7 @@ export default function StreakPage() {
   const membershipRank = useMemo(() => {
     if (!allUsersData || !user) return 0;
     const usersArray = Object.values(allUsersData) as any[];
-    const sortedUsers = usersArray.sort((a: any, b: any) => {
+    const sortedUsers = [...usersArray].sort((a: any, b: any) => {
       const dateA = new Date(a.registrationDate || 0).getTime();
       const dateB = new Date(b.registrationDate || 0).getTime();
       return dateA - dateB;
@@ -83,7 +83,7 @@ export default function StreakPage() {
     return week;
   }, [userData, todayStr]);
 
-  if (isUserLoading || isLoading) {
+  if (isUserLoading || isUserDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6">
@@ -184,7 +184,7 @@ export default function StreakPage() {
             <div className="text-right">
               <h4 className="font-black text-xs text-primary">حالة اليوم</h4>
               <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
-                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم تبدأ بعد؟ كاري ينتظرك بشوق!"}
+                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم بدأت بعد؟ كاري ينتظرك بشوق!"}
               </p>
             </div>
           </Card>

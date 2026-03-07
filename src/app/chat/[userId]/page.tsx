@@ -107,7 +107,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       
-      {/* Header */}
       <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-4 mt-4 sticky top-4 z-30">
         <div className="flex items-center gap-4">
           <Link href={`/user/${otherId}`} onClick={() => playSound('click')} className="shrink-0">
@@ -137,7 +136,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
         </div>
       </header>
 
-      {/* Messages Area */}
       <div className="flex-1 overflow-hidden flex flex-col relative">
         <div 
           ref={scrollRef}
@@ -160,7 +158,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           })}
         </div>
 
-        {/* Input Form */}
         <div className="absolute bottom-[100px] md:bottom-6 left-4 right-4 z-40">
           <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 

@@ -1,11 +1,8 @@
+
 'use server';
 /**
  * @fileOverview This file implements a Genkit flow for the AI helper character
  * to provide contextual encouragement or tips to the user.
- *
- * - aiHelperContextualResponse - A function that fetches a contextual message from the AI helper.
- * - AIHelperContextualResponseInput - The input type for the aiHelperContextualResponse function.
- * - AIHelperContextualResponseOutput - The return type for the aiHelperContextualResponse function.
  */
 
 import {ai} from '@/ai/genkit';
@@ -45,14 +42,22 @@ export type AIHelperContextualResponseOutput = z.infer<
 export async function aiHelperContextualResponse(
   input: AIHelperContextualResponseInput
 ): Promise<AIHelperContextualResponseOutput> {
-  return aiHelperContextualResponseFlow(input);
+  try {
+    return await aiHelperContextualResponseFlow(input);
+  } catch (error) {
+    console.error('AI Helper Flow Error:', error);
+    // Fallback message if AI fails or API key is invalid
+    return {
+      message: `أهلاً بك يا ${input.userName}! كاري فخور بتقدمك في مسار ${input.currentTrack}. استمر في السعي نحو أهدافك، فكل خطوة صغيرة تصنع فارقاً كبيراً! 🐱🔥`
+    };
+  }
 }
 
 const prompt = ai.definePrompt({
   name: 'aiHelperContextualResponsePrompt',
   input: {schema: AIHelperContextualResponseInputSchema},
   output: {schema: AIHelperContextualResponseOutputSchema},
-  prompt: `You are an encouraging AI helper character named Careingo, inspired by Duolingo's mascot. Your goal is to motivate and provide helpful tips to users on their personal growth journey. Be cartoonish, friendly, and celebratory.
+  prompt: `You are an encouraging AI helper character named Careingo, inspired by Duolingo's mascot. Your goal is to motivate and provide helpful tips to users on their personal growth journey. Be cartoonish, friendly, and celebratory. Use Arabic language.
 
 Here's the user's current progress:
 User Name: {{{userName}}}
@@ -61,18 +66,7 @@ Current Stage: {{{currentStage}}}
 Daily Task Completed Today for this track: {{{isCompletedToday}}}
 Current Completion Streak: {{{completionStreak}}} days
 
-Based on this information, generate a short, positive message. The message should be no more than 3-4 sentences.
-
-If 'Daily Task Completed Today for this track' is true:
-  - Congratulate the user on their completion and encourage them to maintain their streak.
-  - You can mention their current track and stage to make it specific.
-  - You can celebrate their streak if it's high (e.g., "a fantastic streak of X days!").
-If 'Daily Task Completed Today for this track' is false:
-  - Offer gentle encouragement to start or complete their task for the day.
-  - Provide a simple, actionable tip related to motivation or getting started with their {{currentTrack}} task.
-  - You can mention their current track and stage to make it specific.
-
-Keep the message concise and uplifting. Focus on either celebration/encouragement for completion or gentle nudging/tips for uncompleted tasks.`,
+Based on this information, generate a short, positive message in Arabic. The message should be no more than 3 sentences.`,
 });
 
 const aiHelperContextualResponseFlow = ai.defineFlow(

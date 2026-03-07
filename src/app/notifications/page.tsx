@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, set, remove } from 'firebase/database';
+import { ref, update, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Heart, Trophy, Zap, Trash2, CheckCheck, Clock, Star } from 'lucide-react';
@@ -12,6 +12,7 @@ import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import { toast } from '@/hooks/use-toast';
 
 export default function NotificationsPage() {
   const { user } = useUser();
@@ -34,7 +35,12 @@ export default function NotificationsPage() {
     Object.keys(notificationsData).forEach(id => {
       updates[`users/${user.uid}/notifications/${id}/isRead`] = true;
     });
-    await update(ref(database), updates);
+    try {
+      await update(ref(database), updates);
+      toast({ title: "تم تحديد الكل كمقروء" });
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشلت العملية" });
+    }
   };
 
   const handleClearAll = async () => {
@@ -45,8 +51,9 @@ export default function NotificationsPage() {
     playSound('click');
     try {
       await remove(notificationsRef);
+      toast({ title: "تم مسح كافة الإشعارات" });
     } catch (error) {
-      console.error("Clear notifications error:", error);
+      toast({ variant: "destructive", title: "فشل الحذف" });
     }
   };
 
@@ -96,12 +103,12 @@ export default function NotificationsPage() {
               <Card 
                 key={n.id} 
                 className={cn(
-                  "rounded-3xl border-none shadow-md overflow-hidden transition-all hover:scale-[1.01]",
+                  "rounded-3xl border-none shadow-md overflow-hidden transition-all hover:scale-[1.01] cursor-pointer",
                   n.isRead ? "bg-card opacity-70" : "bg-white border-r-8 border-accent"
                 )}
-                onClick={() => {
+                onClick={async () => {
                   if (!n.isRead && user) {
-                    update(ref(database, `users/${user.uid}/notifications/${n.id}`), { isRead: true });
+                    await update(ref(database, `users/${user.uid}/notifications/${n.id}`), { isRead: true });
                   }
                 }}
               >
@@ -135,7 +142,7 @@ export default function NotificationsPage() {
 
         <section className="bg-primary/5 p-6 rounded-[2.5rem] border border-primary/10 mx-2 space-y-4">
           <div className="flex items-center gap-2 text-primary font-black text-xs">
-            <Star size={14} className="text-yellow-500" fill="currentColor" />
+            < Star size={14} className="text-yellow-500" fill="currentColor" />
             نصيحة كاري للإشعارات
           </div>
           <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">

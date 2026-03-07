@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Trophy, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
@@ -14,15 +14,15 @@ export default function StreakPage() {
   const { database } = useFirebase();
   const [todayStr, setTodayStr] = useState<string>("");
 
+  useEffect(() => {
+    setTodayStr(new Date().toLocaleDateString('en-CA'));
+  }, []);
+
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
   const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
   const { data: allUsersData } = useDatabase(allUsersRef);
-
-  useEffect(() => {
-    setTodayStr(new Date().toLocaleDateString('en-CA'));
-  }, []);
 
   const membershipRank = useMemo(() => {
     if (!allUsersData || !user) return 0;
@@ -111,7 +111,7 @@ export default function StreakPage() {
           </div>
         </header>
 
-        <section className="px-1 sm:px-2">
+        <section className="px-1">
           <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-4 sm:p-6 overflow-hidden">
             <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2 px-2">
               زخم الأسبوع الحالي <Flame size={18} className="text-orange-500" />

@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, Star, Trophy } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
@@ -88,16 +88,16 @@ export default function StreakPage() {
       <div className="min-h-screen flex items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
+        <p className="text-primary font-black text-xl animate-pulse">كاري يجمع بياناتك...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-72 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2 mt-2">
+        <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1 text-right">
@@ -182,7 +182,7 @@ export default function StreakPage() {
             <div className="text-right">
               <h4 className="font-black text-xs text-primary">حالة اليوم</h4>
               <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
-                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم بدأت بعد؟ كاري ينتظرك بشوق!"}
+                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم تبدأ بعد؟ كاري ينتظرك بشوق!"}
               </p>
             </div>
           </Card>

@@ -5,7 +5,7 @@ import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Play, XCircle, FastForward, Star } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Play, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -14,7 +14,6 @@ import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, get, push, serverTimestamp } from 'firebase/database';
 import { playSound } from '@/lib/sounds';
 import { useRouter } from 'next/navigation';
-import { cn } from '@/lib/utils';
 
 export default function StageDetailPage({ params }: { params: Promise<{ type: string, stageId: string }> }) {
   const resolvedParams = use(params);
@@ -55,9 +54,12 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     if (progressData) {
       const isDone = progressData.completedStages?.includes(stageId);
       setCompleted(!!isDone);
+      
       const todayStr = new Date().toLocaleDateString('en-CA');
-      const hasCompletedToday = progressData.lastCompletedDate === todayStr;
-      if (hasCompletedToday && !isDone && stageId > 1) {
+      const hasCompletedTodayInThisTrack = progressData.lastCompletedDate === todayStr;
+      
+      // منطق القفل: إذا أكمل اليوم شيئاً في هذا المسار، وليست هذه المرحلة هي التي أكملها الآن
+      if (hasCompletedTodayInThisTrack && !isDone && stageId > 1) {
         setOnCooldown(true);
       }
       setLoading(false);
@@ -104,8 +106,17 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
       const pointsEarned = 100 + calculateBonus();
-      completedStages.push(stageId);
-      const nextStage = Math.max(currentProgress.currentStage, stageId + 1);
+      
+      if (!completedStages.includes(stageId)) {
+        completedStages.push(stageId);
+      }
+
+      // إصلاح منطق التقدم: لا ترفع المرحلة الحالية إلا إذا أكملت المرحلة المطلوبة فعلياً
+      // وإذا كان هناك فجوة، لا تقفز.
+      let nextStage = currentProgress.currentStage;
+      if (stageId === currentProgress.currentStage) {
+        nextStage = stageId + 1;
+      }
 
       const userRef = ref(database, `users/${user.uid}`);
       const userSnap = await get(userRef);
@@ -164,9 +175,9 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             <Timer size={36} />
           </div>
           <h1 className="text-xl font-black text-primary">وقت الاستراحة!</h1>
-          <p className="text-sm font-bold text-muted-foreground">أكملت مرحلة في هذا المسار اليوم. نراك غداً عند منتصف الليل!</p>
-          <Mascot customMessage="النمو الحقيقي بالاستمرار اليومي. 🐱🌙" />
-          <Button onClick={() => router.back()} size="lg" className="w-full rounded-xl font-black">العودة</Button>
+          <p className="text-sm font-bold text-muted-foreground">أكملت مرحلة في هذا المسار اليوم. نراك غداً عند منتصف الليل لفتح التحدي القادم!</p>
+          <Mascot customMessage="النمو الحقيقي بالاستمرار اليومي الهادئ. 🐱🌙" />
+          <Button onClick={() => router.back()} size="lg" className="w-full rounded-xl font-black">العودة للمسار</Button>
         </div>
       </div>
     );
@@ -188,13 +199,13 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-             <p className="text-primary font-black text-sm">جاري التحميل...</p>
+             <p className="text-primary font-black text-sm">جاري تحميل بيانات المهمة...</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-4">
             <header className="text-right space-y-1">
               <div className="flex items-center justify-end gap-2 mb-1">
-                <div className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[8px] font-black uppercase">اليوم {stageId}</div>
+                <div className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[8px] font-black uppercase">المستوى {stageId}</div>
               </div>
               <h1 className="text-xl font-black text-primary leading-tight">{challenge.title}</h1>
             </header>
@@ -227,11 +238,11 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                           <p className="text-4xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-2">
-                          <Button onClick={handleComplete} disabled={isUpdating} className="h-12 rounded-xl bg-accent text-xs font-black">
-                            أنهيت مبكراً 🔥
+                          <Button onClick={handleComplete} disabled={isUpdating} className="h-12 rounded-xl bg-accent text-xs font-black shadow-lg">
+                            أنهيت المهمة 🔥
                           </Button>
                           <Button onClick={cancelChallenge} variant="outline" className="h-12 rounded-xl border-destructive text-destructive text-xs font-black">
-                            إلغاء المهمة
+                            إلغاء الموقت
                           </Button>
                         </div>
                       </div>
@@ -243,7 +254,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                       <CheckCircle size={28} />
                     </div>
                     <h3 className="text-lg font-black text-green-700">مذهل يا بطل!</h3>
-                    <p className="text-green-600 font-bold text-xs">لقد حافظت على حماسك اليوم.</p>
+                    <p className="text-green-600 font-bold text-xs">لقد حافظت على حماسك اليوم وأنجزت المطلوب.</p>
                   </div>
                 )}
               </CardContent>
@@ -252,7 +263,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             <div className="space-y-4">
               <Card className="rounded-[1.5rem] bg-card p-4 border border-border shadow-md">
                 <h3 className="text-xs font-black text-primary flex items-center justify-end gap-2 mb-3">
-                  مكافأة الإنجاز
+                  مكافأة الإنجاز اليومي
                   <Trophy size={14} className="text-yellow-500" />
                 </h3>
                 <div className="grid grid-cols-2 gap-2">

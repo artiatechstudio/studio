@@ -5,7 +5,7 @@ import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Play } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
@@ -58,8 +58,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const todayStr = new Date().toLocaleDateString('en-CA');
       const hasCompletedTodayInThisTrack = progressData.lastCompletedDate === todayStr;
       
-      // لا تسمح بفتح المرحلة إذا تم إكمال مرحلة في هذا المسار اليوم (قانون الـ 24 ساعة)
-      // إلا إذا كانت المرحلة مكتملة مسبقاً (للمراجعة)
+      // قانون الـ 24 ساعة
       if (hasCompletedTodayInThisTrack && !isDone && stageId > 1) {
         setOnCooldown(true);
       }
@@ -71,28 +70,12 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
+      timerRef.current = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
     } else if (timeLeft === 0 && timerActive) {
       setTimerActive(false);
-      if (timerRef.current) clearInterval(timerRef.current);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
-
-  const startChallenge = () => {
-    playSound('click');
-    setTimerActive(true);
-    setTimeLeft((challenge?.time || 5) * 60);
-    toast({ title: "بدأ التحدي!" });
-  };
-
-  const cancelChallenge = () => {
-    playSound('click');
-    setTimerActive(false);
-    setTimeLeft(0);
-  };
 
   const handleComplete = useCallback(async () => {
     if (!user || !database || isUpdating || completed || onCooldown) return;
@@ -106,13 +89,14 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
-      const pointsEarned = 100 + calculateBonus();
+      const basePoints = challenge?.points || 100;
+      const pointsEarned = basePoints + calculateBonus();
       
       if (!completedStages.includes(stageId)) {
         completedStages.push(stageId);
       }
 
-      // منطق التقدم: لا ترفع المرحلة الحالية إلا إذا أكملت المرحلة المطلوبة فعلياً
+      // لا ترفع المرحلة الحالية إلا إذا أكملت المرحلة المفتوحة فعلياً
       let nextStage = currentProgress.currentStage;
       if (stageId === currentProgress.currentStage) {
         nextStage = stageId + 1;
@@ -140,43 +124,37 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         }
       });
 
-      const notifRef = ref(database, `users/${user.uid}/notifications`);
-      push(notifRef, {
+      push(ref(database, `users/${user.uid}/notifications`), {
         type: 'achievement',
-        title: 'إنجاز جديد مذهل! 🏆',
-        message: `لقد أكملت اليوم ${stageId} في مسار ${trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}. استمر يا بطل!`,
+        title: 'إنجاز رائع! 🏆',
+        message: `لقد أكملت اليوم ${stageId} في مسار ${trackKey}. حصلت على ${pointsEarned} نقطة!`,
         isRead: false,
         timestamp: serverTimestamp()
       });
 
       setCompleted(true);
-      setTimerActive(false);
       playSound('success');
-      toast({ title: "تم الإنجاز! 🎉", description: `حصلت على ${pointsEarned} نقطة.` });
+      toast({ title: "تم الإنجاز! 🎉" });
     } catch (e) {
       toast({ variant: "destructive", title: "خطأ في الحفظ" });
     } finally {
       setIsUpdating(false);
     }
-  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus]);
+  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus, challenge]);
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
   if (onCooldown) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center" dir="rtl">
-        <div className="max-w-xs space-y-6">
-          <div className="w-16 h-16 bg-orange-100 text-orange-600 rounded-2xl flex items-center justify-center mx-auto shadow-lg animate-float">
-            <Timer size={36} />
-          </div>
-          <h1 className="text-xl font-black text-primary">وقت الاستراحة!</h1>
-          <p className="text-sm font-bold text-muted-foreground">أكملت مرحلة في هذا المسار اليوم. نراك غداً لفتح التحدي القادم!</p>
-          <Button onClick={() => router.back()} size="lg" className="w-full rounded-xl font-black">العودة للمسار</Button>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
+        <Timer size={64} className="text-orange-500 mb-4 animate-float" />
+        <h1 className="text-2xl font-black text-primary">وقت الراحة!</h1>
+        <p className="font-bold text-muted-foreground mt-2">أكملت مرحلة في هذا المسار اليوم. عد غداً!</p>
+        <Button onClick={() => router.back()} className="mt-6 rounded-xl font-black">رجوع</Button>
       </div>
     );
   }
@@ -186,94 +164,71 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       <NavSidebar />
       <div className="app-container py-4 space-y-4">
         <div className="flex justify-end">
-          <Link href={`/track/${resolvedParams.type}`} onClick={() => playSound('click')}>
-            <Button variant="ghost" size="sm" className="rounded-full gap-1 text-primary font-bold">
-              رجوع للمسار
-              <ArrowLeft size={14} />
-            </Button>
-          </Link>
+          <Button onClick={() => router.back()} variant="ghost" size="sm" className="rounded-full gap-1 text-primary font-bold">
+            رجوع للمسار
+            <ArrowLeft size={14} />
+          </Button>
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
-             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-4">
-            <header className="text-right space-y-1">
-              <div className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-[8px] font-black inline-block uppercase">المستوى {stageId}</div>
-              <h1 className="text-xl font-black text-primary leading-tight">{challenge.title}</h1>
-            </header>
+        <header className="text-right space-y-1">
+          <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black inline-block uppercase tracking-wider">المستوى {stageId}</div>
+          <h1 className="text-2xl font-black text-primary leading-tight">{challenge.title}</h1>
+        </header>
 
-            <Card className="rounded-[1.5rem] overflow-hidden bg-card border border-border text-right shadow-lg">
-              <CardHeader className="bg-primary text-white p-4">
-                <div className="flex items-center justify-between flex-row-reverse">
-                  <CardTitle className="text-sm font-bold">مهمة اليوم</CardTitle>
-                  <div className="flex gap-2 text-[10px] font-black opacity-90">
-                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full"><Clock size={10} /> {challenge.time}د</span>
-                    <span className="flex items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full"><Zap size={10} /> {challenge.difficulty}</span>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-5 space-y-6">
-                <div className="text-sm leading-relaxed text-muted-foreground font-bold whitespace-pre-wrap">
-                  {challenge.description}
-                </div>
-                
-                {!completed ? (
-                  <div className="space-y-4">
-                    {!timerActive ? (
-                      <Button onClick={startChallenge} className="w-full h-14 rounded-xl bg-primary text-base font-black shadow-lg">
-                        ابدأ التحدي 🐱
-                      </Button>
-                    ) : (
-                      <div className="space-y-4">
-                        <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10 text-center">
-                          <p className="text-[10px] font-black text-primary uppercase">الوقت المتبقي</p>
-                          <p className="text-4xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <Button onClick={handleComplete} disabled={isUpdating} className="h-12 rounded-xl bg-accent text-xs font-black shadow-lg">
-                            أنهيت المهمة 🔥
-                          </Button>
-                          <Button onClick={cancelChallenge} variant="outline" className="h-12 rounded-xl border-destructive text-destructive text-xs font-black">
-                            إلغاء
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+        <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl">
+          <CardHeader className="bg-primary text-white p-6">
+            <div className="flex items-center justify-between flex-row-reverse">
+              <CardTitle className="text-lg font-black">المهمة الحالية</CardTitle>
+              <div className="flex gap-2">
+                <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black">{challenge.difficulty}</span>
+                <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-black">{challenge.time}د</span>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="p-8 space-y-8">
+            <p className="text-lg font-bold text-muted-foreground leading-relaxed">{challenge.description}</p>
+            
+            {!completed ? (
+              <div className="space-y-6">
+                {timerActive ? (
+                  <div className="space-y-6">
+                    <div className="bg-primary/5 p-8 rounded-[2rem] text-center space-y-2 border border-primary/10">
+                      <p className="text-xs font-black text-primary uppercase">الوقت المتبقي</p>
+                      <p className="text-6xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
+                    </div>
+                    <Button onClick={handleComplete} disabled={isUpdating} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">
+                      أنهيت المهمة 🔥
+                    </Button>
                   </div>
                 ) : (
-                  <div className="bg-green-500/5 border border-green-500/20 p-6 rounded-2xl flex flex-col items-center gap-3 text-center">
-                    <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center text-white shadow-md">
-                      <CheckCircle size={28} />
-                    </div>
-                    <h3 className="text-lg font-black text-green-700">مذهل يا بطل!</h3>
-                    <p className="text-green-600 font-bold text-xs">حافظ على اشتعال الشعلة غداً.</p>
-                  </div>
+                  <Button onClick={() => { playSound('click'); setTimerActive(true); setTimeLeft(challenge.time * 60); }} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl shadow-primary/20">
+                    ابدأ التحدي 🐱🚀
+                  </Button>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-[1.5rem] bg-card p-4 border border-border shadow-md">
-              <h3 className="text-xs font-black text-primary flex items-center justify-end gap-2 mb-3">
-                مكافأة الإنجاز اليومي
-                <Trophy size={14} className="text-yellow-500" />
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-secondary/30 p-2 rounded-xl text-center">
-                  <span className="font-black text-primary text-base">100</span>
-                  <p className="text-[8px] font-bold text-muted-foreground">نقطة أساسية</p>
-                </div>
-                <div className="bg-accent/10 p-2 rounded-xl text-center border border-accent/10">
-                  <span className="font-black text-accent text-base">+{bonusValue}</span>
-                  <p className="text-[8px] font-bold text-accent">بونص تبكير</p>
-                </div>
               </div>
-            </Card>
-            <Mascot messageOnly />
+            ) : (
+              <div className="bg-green-500/10 border border-green-500/20 p-8 rounded-[2.5rem] text-center space-y-4">
+                <CheckCircle size={64} className="text-green-500 mx-auto" />
+                <h3 className="text-2xl font-black text-green-700">عمل مذهل!</h3>
+                <p className="text-green-600 font-bold">تم إنجاز المهمة بنجاح.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-[2rem] bg-card p-6 border border-border shadow-lg">
+          <h3 className="text-sm font-black text-primary flex items-center justify-end gap-2 mb-4">مكافأة الإنجاز <Trophy size={18} className="text-yellow-500" /></h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-secondary/30 p-4 rounded-2xl text-center">
+              <span className="font-black text-primary text-2xl">{challenge.points}</span>
+              <p className="text-[10px] font-bold text-muted-foreground">نقاط المستوى</p>
+            </div>
+            <div className="bg-accent/10 p-4 rounded-2xl text-center border border-accent/10">
+              <span className="font-black text-accent text-2xl">+{bonusValue}</span>
+              <p className="text-[10px] font-bold text-accent">بونص تبكير</p>
+            </div>
           </div>
-        )}
+        </Card>
       </div>
     </div>
   );

@@ -58,6 +58,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const todayStr = new Date().toLocaleDateString('en-CA');
       const hasCompletedTodayInThisTrack = progressData.lastCompletedDate === todayStr;
       
+      // لا تسمح بفتح المرحلة إذا تم إكمال مرحلة في هذا المسار اليوم (قانون الـ 24 ساعة)
+      // إلا إذا كانت المرحلة مكتملة مسبقاً (للمراجعة)
       if (hasCompletedTodayInThisTrack && !isDone && stageId > 1) {
         setOnCooldown(true);
       }

@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown, ShieldCheck, ClipboardList } from 'lucide-react';
@@ -20,6 +20,11 @@ export function NavSidebar() {
   const { user } = useUser();
   const { database } = useFirebase();
   const auth = useAuth();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
@@ -36,12 +41,14 @@ export function NavSidebar() {
     Object.keys(chatsData).forEach(chatId => {
       if (chatId.includes(user.uid)) {
         const chat = chatsData[chatId];
-        const messages: any[] = Object.values(chat.messages || {});
-        const lastSeen = chat.lastSeen?.[user.uid] || 0;
-        const unreadInThisChat = messages.filter(m => 
-          m.senderId !== user.uid && m.timestamp > lastSeen
-        ).length;
-        totalUnread += unreadInThisChat;
+        if (chat && chat.messages) {
+          const messages: any[] = Object.values(chat.messages);
+          const lastSeen = chat.lastSeen?.[user.uid] || 0;
+          const unreadInThisChat = messages.filter(m => 
+            m.senderId !== user.uid && m.timestamp > lastSeen
+          ).length;
+          totalUnread += unreadInThisChat;
+        }
       }
     });
     return totalUnread;
@@ -52,7 +59,7 @@ export function NavSidebar() {
     return Object.values(notificationsData).filter((n: any) => !n.isRead).length;
   }, [notificationsData]);
 
-  const isAdmin = user?.uid === ADMIN_UID || userData?.name === 'admin';
+  const isAdmin = user?.uid === ADMIN_UID;
   const isPremium = userData?.isPremium === 1 || isAdmin;
 
   const handleLogout = async () => {
@@ -106,6 +113,8 @@ export function NavSidebar() {
       { label: 'أنت', icon: User, href: '/profile' },
     ];
   };
+
+  if (!mounted) return null;
 
   return (
     <>

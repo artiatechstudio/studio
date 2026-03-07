@@ -36,7 +36,7 @@ export default function Home() {
     }
   }, [user, isUserLoading, router]);
 
-  const isAdmin = user?.uid === ADMIN_UID || userData?.name === 'admin';
+  const isAdmin = user?.uid === ADMIN_UID;
   const isPremium = userData?.isPremium === 1 || isAdmin;
 
   useEffect(() => {
@@ -48,7 +48,6 @@ export default function Home() {
       const updates: any = {};
       let needsUpdate = false;
 
-      // 1. فحص انتهاء البريميوم
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
@@ -57,7 +56,6 @@ export default function Home() {
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
-      // 2. إظهار احتفالية الترقية
       if (userData.showPremiumCelebration) {
         setShowCelebration(true);
         playSound('success');
@@ -65,8 +63,6 @@ export default function Home() {
         needsUpdate = true;
       }
 
-      // 3. فحص كسر الحماسة (Penalty)
-      // ميزة بريميوم: حصانة من كسر الحماسة (Streak Freeze)
       if (!isPremium) {
         const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toLocaleDateString('en-CA');
@@ -95,7 +91,6 @@ export default function Home() {
           }
         }
       } else {
-        // للمشتركين: حتى لو غابوا، لا يتم تصفير الـ Streak تلقائياً كجزء من الحصانة
         if (userData.lastActiveDate && userData.lastActiveDate !== todayStr) {
            updates.lastActiveDate = todayStr;
            needsUpdate = true;
@@ -109,13 +104,12 @@ export default function Home() {
   }, [userData, user, database, isAdmin, isPremium]);
 
   const progressPercent = useMemo(() => {
+    if (!userData?.trackProgress) return 0;
     const totalStages = 120;
     let completedCount = 0;
-    if (userData?.trackProgress) {
-      Object.values(userData.trackProgress).forEach((track: any) => {
-        completedCount += (track.completedStages?.length || 0);
-      });
-    }
+    Object.values(userData.trackProgress).forEach((track: any) => {
+      completedCount += (track.completedStages?.length || 0);
+    });
     return Math.round((completedCount / totalStages) * 100);
   }, [userData]);
 

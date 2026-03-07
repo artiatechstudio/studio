@@ -21,7 +21,6 @@ import { cn } from '@/lib/utils';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
-// معرف الإدارة الثابت للأمان العالي
 const ADMIN_UID = "gHZ9n7s2b9X8fJ2kP3s5t8YxVOE2";
 
 export default function SettingsPage() {
@@ -51,8 +50,10 @@ export default function SettingsPage() {
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [isMuted, setIsMuted] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     if (userData) {
       setName(userData.name || '');
       setAge(userData.age?.toString() || '');
@@ -62,9 +63,9 @@ export default function SettingsPage() {
       setAvatar(userData.avatar || '🐱');
       setBio(userData.bio || '');
     }
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
+    const savedTheme = typeof window !== 'undefined' ? (localStorage.getItem('theme') as 'light' | 'dark' || 'light') : 'light';
     setTheme(savedTheme);
-    const savedMute = localStorage.getItem('careingo_muted') === 'true';
+    const savedMute = typeof window !== 'undefined' ? (localStorage.getItem('careingo_muted') === 'true') : false;
     setIsMuted(savedMute);
   }, [userData]);
 
@@ -88,7 +89,7 @@ export default function SettingsPage() {
     toast({ title: checked ? "تم كتم الأصوات 🔇" : "تم تفعيل الأصوات 🔊" });
   };
 
-  const isAdmin = user?.uid === ADMIN_UID || userData?.name === 'admin';
+  const isAdmin = user?.uid === ADMIN_UID;
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -177,7 +178,7 @@ export default function SettingsPage() {
     }
   };
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
+  if (!mounted || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const requestStatus = userData?.premiumRequest?.status;
 

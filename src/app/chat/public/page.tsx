@@ -1,186 +1,165 @@
+
 "use client"
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, push, serverTimestamp, query, limitToLast, remove } from 'firebase/database';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Globe, Send, ArrowLeft, Crown, Trash2, Clock, Sparkles } from 'lucide-react';
+import { Send, ArrowLeft, MessageSquare, Trash2, Globe, Crown } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
-import { toast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 export default function PublicChatPage() {
   const { user } = useUser();
   const { database } = useFirebase();
-  const [inputText, setInputText] = useState('');
+  const [msgText, setMsgText] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const publicChatsRef = useMemoFirebase(() => ref(database, 'publicChats'), [database]);
-  const publicChatsQuery = useMemoFirebase(() => query(publicChatsRef, limitToLast(100)), [publicChatsRef]);
-  const { data: chatsData, isLoading } = useDatabase(publicChatsQuery);
+  const publicMessagesRef = useMemoFirebase(() => ref(database, 'publicChat'), [database]);
+  const publicMessagesQuery = useMemoFirebase(() => query(publicMessagesRef, limitToLast(50)), [publicMessagesRef]);
+  const { data: messagesData, isLoading } = useDatabase(publicMessagesQuery);
 
-  const currentUserRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
-  const { data: myData } = useDatabase(currentUserRef);
-
-  const messages = useMemo(() => {
-    if (!chatsData) return [];
-    return Object.entries(chatsData)
-      .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
-  }, [chatsData]);
+  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
+  const { data: myData } = useDatabase(userRef);
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messagesData]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputText.trim() || !user || !myData) return;
+    if (!msgText.trim() || !user || !myData) return;
 
     playSound('click');
     const msg = {
       senderId: user.uid,
-      senderName: myData.name,
-      senderAvatar: myData.avatar,
-      isPremium: myData.isPremium === 1 || myData.name === 'admin',
-      text: inputText.trim(),
+      name: myData.name,
+      avatar: myData.avatar,
+      isPremium: myData.isPremium || 0,
+      text: msgText.trim(),
       timestamp: serverTimestamp()
     };
 
-    push(publicChatsRef, msg);
-    setInputText('');
+    push(publicMessagesRef, msg);
+    setMsgText('');
   };
 
-  const handleDeleteMessage = async (msgId: string) => {
-    if (!user) return;
+  const handleDeleteMessage = (msgId: string) => {
     playSound('click');
-    try {
-      await remove(ref(database, `publicChats/${msgId}`));
-      toast({ title: "تم حذف المنشور" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل الحذف" });
-    }
+    remove(ref(database, `publicChat/${msgId}`));
   };
 
-  const isAdmin = myData?.name === 'admin';
+  const messages = useMemo(() => {
+    if (!messagesData) return [];
+    return Object.entries(messagesData)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+  }, [messagesData]);
+
+  const isMyPremium = myData?.isPremium === 1 || myData?.name === 'admin';
 
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
       <NavSidebar />
       
-      <header className="flex items-center justify-between bg-gradient-to-r from-accent to-pink-500 p-4 rounded-3xl shadow-lg border border-white/20 mx-4 mt-4 sticky top-4 z-30">
+      <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-4 mt-4 sticky top-4 z-30">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl border border-white/30 shadow-inner">
+          <div className="w-12 h-12 bg-accent text-white rounded-full flex items-center justify-center text-2xl shadow-lg">
             🌍
           </div>
-          <div className="text-right text-white">
-            <h2 className="font-black leading-none text-lg">المجتمع العام</h2>
-            <p className="text-[10px] font-bold mt-1 flex items-center gap-1 opacity-80">
-              <Sparkles size={10} /> ساحة الإلهام المشتركة
+          <div className="text-right">
+            <h2 className="font-black text-primary leading-none text-lg">الدردشة العامة</h2>
+            <p className="text-[10px] text-muted-foreground font-bold mt-1 flex items-center gap-1">
+              <Globe size={10} /> مجتمع كارينجو المفتوح
             </p>
           </div>
         </div>
         <Link href="/chat">
-          <Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-white/10">
+          <Button variant="ghost" size="icon" className="rounded-full">
             <ArrowLeft className="rotate-180" />
           </Button>
         </Link>
       </header>
 
-      {/* صندوق كتابة المنشور في الأعلى */}
-      <div className="mx-4 mt-4 z-20">
-        <Card className="rounded-2xl border-none shadow-xl bg-card p-3 border-2 border-accent/10">
-          <form onSubmit={handleSendMessage} className="flex gap-2">
+      <div className="flex-1 overflow-hidden flex flex-col relative">
+        <div className="p-4 z-20">
+          <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 
-              placeholder="بماذا تفكر؟ انشر إلهامك هنا..." 
-              className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs focus-visible:ring-accent"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
+              placeholder="شارك إلهامك مع الجميع..." 
+              className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right focus-visible:ring-primary text-base"
+              value={msgText}
+              onChange={(e) => setMsgText(e.target.value)}
             />
             <Button 
               type="submit" 
               size="icon" 
-              disabled={!inputText.trim()}
-              className="h-12 w-12 rounded-xl bg-accent hover:bg-accent/90 shadow-lg shrink-0"
+              className="h-12 w-12 rounded-xl bg-primary hover:bg-primary/90 shadow-lg shrink-0"
             >
               <Send className="rotate-180" />
             </Button>
           </form>
-        </Card>
-      </div>
+        </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col relative mt-2">
         <div 
           ref={scrollRef}
-          className="flex-1 p-4 space-y-4 overflow-y-auto scroll-smooth pb-32"
+          className="flex-1 p-6 space-y-6 overflow-y-auto scroll-smooth pb-40"
         >
           {isLoading ? (
-            <div className="flex justify-center p-10"><div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin" /></div>
+            <div className="flex justify-center p-20"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
           ) : messages.length === 0 ? (
-            <div className="text-center py-20 opacity-30 font-black text-xl">كن أول من ينشر في المجتمع! 🌟</div>
-          ) : messages.map((m) => {
+            <div className="text-center py-20 opacity-30 font-black text-xl">كن أول من ينشر هنا! 🐱🌟</div>
+          ) : messages.map((m: any) => {
             const isMine = m.senderId === user?.uid;
-            const canDelete = isMine || isAdmin;
-            const isAvatarUrl = m.senderAvatar && m.senderAvatar.startsWith('http');
+            const isAdmin = myData?.name === 'admin';
+            const msgIsPremium = m.isPremium === 1 || m.name === 'admin';
+            const isAvatarUrl = m.avatar && m.avatar.startsWith('http');
 
             return (
               <div key={m.id} className={cn("flex flex-col", isMine ? "items-end" : "items-start")}>
-                <div className={cn(
-                  "max-w-[90%] p-4 rounded-3xl font-bold text-sm shadow-md space-y-2 relative group",
-                  isMine ? "bg-accent text-white rounded-tr-none" : "bg-white text-primary rounded-tl-none border border-border"
-                )}>
-                  <div className="flex items-center gap-2 mb-1">
-                    {!isMine && (
-                      <Link href={`/user/${m.senderId}`} className="shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center text-sm overflow-hidden">
-                          {isAvatarUrl ? <Image src={m.senderAvatar} alt="V" width={32} height={32} className="object-cover w-full h-full" /> : (m.senderAvatar || "🐱")}
-                        </div>
-                      </Link>
-                    )}
-                    <div className="flex flex-col text-right">
-                      <div className="flex items-center gap-1">
-                        <span className={cn("text-[10px] font-black truncate max-w-[100px]", isMine ? "text-white/90" : "text-primary")}>
-                          {m.senderName}
-                        </span>
-                        {m.isPremium && <Crown size={10} className={isMine ? "text-white" : "text-yellow-500"} fill="currentColor" />}
-                      </div>
-                      <span className={cn("text-[7px] font-bold opacity-60 flex items-center gap-1 justify-end")}>
-                        <Clock size={8} /> {m.timestamp ? formatDistanceToNow(m.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
-                      </span>
-                    </div>
-                    {isMine && (
-                      <Link href={`/user/${m.senderId}`} className="shrink-0 ml-1">
-                        <div className="w-8 h-8 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-sm overflow-hidden">
-                          {isAvatarUrl ? <Image src={m.senderAvatar} alt="V" width={32} height={32} className="object-cover w-full h-full" /> : (m.senderAvatar || "🐱")}
-                        </div>
-                      </Link>
-                    )}
-                  </div>
-                  
-                  <p className="text-right whitespace-pre-wrap break-words leading-relaxed text-xs">
-                    {m.text}
-                  </p>
-
-                  {canDelete && (
-                    <button 
-                      onClick={() => handleDeleteMessage(m.id)}
-                      className={cn(
-                        "absolute -bottom-2 -left-2 w-6 h-6 rounded-full bg-red-500 text-white flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-opacity",
-                        isAdmin && !isMine && "bg-slate-800"
+                <div className={cn("flex items-end gap-2 max-w-[85%]", isMine ? "flex-row-reverse" : "flex-row")}>
+                  <Link href={`/user/${m.senderId}`} className="shrink-0">
+                    <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shrink-0 shadow-sm overflow-hidden">
+                      {isAvatarUrl ? (
+                        <Image src={m.avatar} alt={m.name} width={40} height={40} className="object-cover w-full h-full" unoptimized />
+                      ) : (
+                        m.avatar || "🐱"
                       )}
-                    >
-                      <Trash2 size={10} />
-                    </button>
-                  )}
+                    </div>
+                  </Link>
+                  <div className="flex flex-col gap-1">
+                    <div className={cn("flex items-center gap-1", isMine ? "justify-end" : "justify-start")}>
+                      <span className="text-[10px] font-black text-muted-foreground">{m.name}</span>
+                      {msgIsPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                    </div>
+                    <div className={cn(
+                      "p-4 rounded-3xl font-bold text-sm shadow-md relative group",
+                      isMine ? "bg-primary text-white rounded-br-none" : "bg-white text-primary rounded-bl-none border border-border"
+                    )}>
+                      {m.text}
+                      {(isMine || isAdmin) && (
+                        <button 
+                          onClick={() => handleDeleteMessage(m.id)}
+                          className={cn(
+                            "absolute -top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-red-500 text-white rounded-full shadow-lg",
+                            isMine ? "-left-2" : "-right-2"
+                          )}
+                        >
+                          <Trash2 size={10} />
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-[8px] font-bold text-muted-foreground/50 px-2">
+                      {m.timestamp ? formatDistanceToNow(m.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+                    </span>
+                  </div>
                 </div>
               </div>
             );

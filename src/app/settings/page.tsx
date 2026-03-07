@@ -1,8 +1,9 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { useUser, useFirebase, useDatabase, useMemoFirebase, useStorage } from '@/firebase';
+import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, remove } from 'firebase/database';
 import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
@@ -15,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX, Camera, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX, Camera, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -132,12 +133,13 @@ export default function SettingsPage() {
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 2 ميجابايت." });
+      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 2 ميجابايت لضمان سرعة الرفع." });
       return;
     }
 
     setIsUploading(true);
     playSound('click');
+    toast({ title: "جاري بدء الرفع...", description: "يرجى الانتظار قليلاً، لا تغلق الصفحة ⏳" });
 
     try {
       const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
@@ -149,11 +151,11 @@ export default function SettingsPage() {
       });
       
       setAvatar(downloadUrl);
-      toast({ title: "تم رفع الصورة بنجاح! 📸" });
+      toast({ title: "تم رفع الصورة بنجاح! 📸", description: "تم تحديث مظهرك الملكي بنجاح." });
       playSound('success');
     } catch (e) {
       console.error(e);
-      toast({ variant: "destructive", title: "فشل الرفع" });
+      toast({ variant: "destructive", title: "فشل الرفع", description: "تأكد من اتصالك بالإنترنت وحاول مجدداً." });
     } finally {
       setIsUploading(false);
     }
@@ -317,21 +319,22 @@ export default function SettingsPage() {
           <CardContent className="p-6 space-y-8">
             <div className="flex flex-col items-center gap-6">
                <div className="relative group">
-                 <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800">
+                 <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 relative">
                    {isAvatarUrl ? (
-                     <Image src={avatar} alt="Avatar" width={160} height={160} className="object-cover w-full h-full" />
+                     <Image src={avatar} alt="Avatar" width={160} height={160} className="object-cover w-full h-full" unoptimized />
                    ) : (
                      <span className="text-7xl md:text-8xl">{avatar}</span>
                    )}
                    {isUploading && (
-                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm">
+                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm z-20">
                        <Loader2 className="text-white animate-spin" size={32} />
                      </div>
                    )}
                  </div>
                  <button 
                    onClick={() => fileInputRef.current?.click()}
-                   className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 hover:scale-110 transition-transform"
+                   disabled={isUploading}
+                   className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 hover:scale-110 transition-transform z-30"
                  >
                    <Camera size={20} />
                  </button>

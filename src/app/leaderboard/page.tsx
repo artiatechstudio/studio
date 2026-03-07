@@ -10,6 +10,7 @@ import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
+import Image from 'next/image';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
@@ -24,17 +25,16 @@ export default function LeaderboardPage() {
     if (!rawData) return { leaders: [], losers: [] };
     
     const today = new Date();
-    const todayStr = today.toLocaleDateString('en-CA');
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
-
     const dates = [];
     for (let i = 0; i < 3; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       dates.push(d.toISOString().split('T')[0]);
     }
+
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const threeDaysAgoStr = threeDaysAgo.toISOString().split('T')[0];
 
     const allUsers = Object.values(rawData)
       .filter((u: any) => u.name !== 'admin')
@@ -65,7 +65,6 @@ export default function LeaderboardPage() {
       .sort((a: any, b: any) => b.avgScore - a.avgScore)
       .slice(0, 100);
 
-    // منطق جدار العار: من كسر حماسته في آخر 3 أيام
     const losers = allUsers
       .filter((user: any) => user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr)
       .sort((a: any, b: any) => b.lastStreakPenaltyDate.localeCompare(a.lastStreakPenaltyDate));
@@ -109,54 +108,61 @@ export default function LeaderboardPage() {
               <Star size={12} className="text-yellow-500" />
             </div>
             <div className="divide-y divide-border">
-              {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => (
-                <div 
-                  key={user.id} 
-                  className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
-                >
-                  <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
-                    <div className="flex items-center gap-1 justify-center">
-                      <Star size={10} className="text-yellow-500" fill="currentColor" />
-                      <p className="font-black text-primary text-sm">{user.avgScore}</p>
-                    </div>
-                    <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
-                  </div>
-
-                  <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
-                    <div className="w-6 text-center font-black text-sm text-primary shrink-0">
-                      {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 
-                       index === 1 ? <Medal className="text-slate-400 w-6 h-6 mx-auto" /> : 
-                       index === 2 ? <Medal className="text-amber-600 w-6 h-6 mx-auto" /> : 
-                       <span className="opacity-40 text-[10px]">#{index + 1}</span>}
-                    </div>
-                    
-                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                      <Avatar className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform">
-                        <span className="text-xl">{user.avatar || "🐱"}</span>
-                      </Avatar>
-                    </Link>
-
-                    <div className="text-right overflow-hidden flex-1 px-1">
-                      <div className="flex items-center justify-end gap-1 mb-1">
-                        <h3 className="font-black text-primary text-[11px] truncate leading-none">{user.name}</h3>
-                        {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+              {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => {
+                const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+                return (
+                  <div 
+                    key={user.id} 
+                    className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
+                  >
+                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
+                      <div className="flex items-center gap-1 justify-center">
+                        <Star size={10} className="text-yellow-500" fill="currentColor" />
+                        <p className="font-black text-primary text-sm">{user.avgScore}</p>
                       </div>
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
-                          {user.likesCount || 0} <Heart size={8} fill="currentColor" />
-                        </span>
-                        <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
-                          {user.streak || 0}ي <Flame size={8} fill="currentColor" />
-                        </span>
-                        <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
-                           <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
-                           <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>
+                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
+                    </div>
+
+                    <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
+                      <div className="w-6 text-center font-black text-sm text-primary shrink-0">
+                        {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 
+                         index === 1 ? <Medal className="text-slate-400 w-6 h-6 mx-auto" /> : 
+                         index === 2 ? <Medal className="text-amber-600 w-6 h-6 mx-auto" /> : 
+                         <span className="opacity-40 text-[10px]">#{index + 1}</span>}
+                      </div>
+                      
+                      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+                        <Avatar className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white hover:scale-105 transition-transform overflow-hidden">
+                          {isAvatarUrl ? (
+                            <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full" unoptimized />
+                          ) : (
+                            <span className="text-xl">{user.avatar || "🐱"}</span>
+                          )}
+                        </Avatar>
+                      </Link>
+
+                      <div className="text-right overflow-hidden flex-1 px-1">
+                        <div className="flex items-center justify-end gap-1 mb-1">
+                          <h3 className="font-black text-primary text-[11px] truncate leading-none">{user.name}</h3>
+                          {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                        </div>
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                          <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
+                            {user.likesCount || 0} <Heart size={8} fill="currentColor" />
+                          </span>
+                          <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
+                            {user.streak || 0}ي <Flame size={8} fill="currentColor" />
+                          </span>
+                          <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
+                             <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
+                             <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )) : (
+                );
+              }) : (
                 <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون حالياً.</div>
               )}
             </div>
@@ -171,29 +177,36 @@ export default function LeaderboardPage() {
               <p className="text-[8px] font-bold opacity-80">من كسر حماسته في آخر 3 أيام</p>
             </div>
             <div className="p-4 space-y-3">
-              {stats.losers.length > 0 ? stats.losers.map((user: any) => (
-                <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
-                  <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg">
-                    <AlertCircle size={12} className="text-red-600" />
-                    <span className="text-[10px] font-black text-red-600">0 نقطة</span>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 flex-row-reverse">
-                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                      <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale">
-                        {user.avatar || "🐱"}
+              {stats.losers.length > 0 ? stats.losers.map((user: any) => {
+                const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+                return (
+                  <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
+                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg">
+                      <AlertCircle size={12} className="text-red-600" />
+                      <span className="text-[10px] font-black text-red-600">0 نقطة</span>
+                    </div>
+                    
+                    <div className="flex items-center gap-3 flex-row-reverse">
+                      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden">
+                          {isAvatarUrl ? (
+                            <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full opacity-50" unoptimized />
+                          ) : (
+                            user.avatar || "🐱"
+                          )}
+                        </div>
+                      </Link>
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <p className="font-black text-red-900 text-xs">{user.name}</p>
+                          {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                        </div>
+                        <p className="text-[8px] font-bold text-red-400">فقد الالتزام والحماسة</p>
                       </div>
-                    </Link>
-                    <div className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <p className="font-black text-red-900 text-xs">{user.name}</p>
-                        {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-                      </div>
-                      <p className="text-[8px] font-bold text-red-400">فقد الالتزام والحماسة</p>
                     </div>
                   </div>
-                </div>
-              )) : (
+                );
+              }) : (
                 <div className="p-10 text-center text-red-300 font-bold text-[10px]">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>
               )}
             </div>

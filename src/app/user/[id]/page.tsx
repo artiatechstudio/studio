@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { use, useMemo } from 'react';
+import React, { useMemo, use } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
 import { ref, runTransaction, push, serverTimestamp } from 'firebase/database';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
+import Image from 'next/image';
 
 export default function UserPublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -105,6 +106,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
     : '--';
 
   const isLikedByMe = userData.likedBy?.[currentUser?.uid || ''];
+  const isAvatarUrl = userData.avatar && userData.avatar.startsWith('http');
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-4 md:pt-0" dir="rtl">
@@ -116,14 +118,18 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                <ArrowLeft size={16} className="rotate-180" />
             </Button>
           </div>
-          <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0">
-            <span className="text-5xl md:text-6xl">{userData.avatar || "🐱"}</span>
+          <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
+            {isAvatarUrl ? (
+              <Image src={userData.avatar} alt="Profile" width={150} height={150} className="object-cover w-full h-full" unoptimized />
+            ) : (
+              <span className="text-5xl md:text-6xl">{userData.avatar || "🐱"}</span>
+            )}
           </Avatar>
           <div className="flex-1 text-center md:text-right space-y-2 z-10 overflow-hidden w-full">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2">
               <div className="flex items-center gap-1 justify-center md:justify-start">
                 <h1 className="text-xl md:text-3xl font-black text-primary leading-tight truncate max-w-[200px]">{userData.name}</h1>
-                {userData.isPremium === 1 && <Crown size={16} className="text-yellow-500 shrink-0" fill="currentColor" />}
+                {(userData.isPremium === 1 || userData.name === 'admin') && <Crown size={16} className="text-yellow-500 shrink-0" fill="currentColor" />}
               </div>
               <Button onClick={handleToggleLike} variant="ghost" className={cn("bg-red-50 px-3 py-1 h-7 rounded-full text-[10px] font-black border border-red-100 flex items-center gap-1", isLikedByMe ? "text-red-600" : "text-gray-400 grayscale")}>
                  {userData.likesCount || 0} <Heart size={12} fill={isLikedByMe ? "currentColor" : "none"} />

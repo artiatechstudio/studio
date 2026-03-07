@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, Star } from 'lucide-react';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function StreakPage() {
@@ -85,12 +85,10 @@ export default function StreakPage() {
 
   if (isUserLoading || isUserDataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-6">
-           <div className="text-8xl animate-bounce">🐱</div>
-           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-           <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-background gap-6">
+        <div className="text-8xl animate-bounce">🐱</div>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
       </div>
     );
   }

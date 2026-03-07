@@ -4,11 +4,11 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, runTransaction, set, remove } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, runTransaction, set } from 'firebase/database';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, Trash2, Heart } from 'lucide-react';
+import { Send, ArrowLeft, Heart } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -63,21 +63,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setMsgText('');
   };
 
-  const handleDeleteChat = async () => {
-    if (!user || !chatId) return;
-    const confirmed = window.confirm("هل أنت متأكد من حذف سجل هذه الدردشة نهائياً؟ سيتم مسح الرسائل لدى الطرفين. 🐱⚠️");
-    if (!confirmed) return;
-
-    playSound('click');
-    try {
-      await remove(ref(database, `chats/${chatId}`));
-      toast({ title: "تم حذف السجل بنجاح" });
-      router.push('/chat');
-    } catch (error) {
-      toast({ variant: "destructive", title: "فشل الحذف", description: "حاول مجدداً لاحقاً" });
-    }
-  };
-
   const handleLikeProfile = () => {
     if (!user || !otherId) return;
     playSound('success');
@@ -124,9 +109,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           <Button onClick={handleLikeProfile} variant="ghost" size="icon" className="rounded-full text-red-500 hover:bg-red-50">
             <Heart size={20} fill={otherUserData?.likedBy?.[user?.uid || ''] ? "currentColor" : "none"} />
           </Button>
-          <Button onClick={handleDeleteChat} variant="ghost" size="icon" className="rounded-full text-muted-foreground hover:bg-destructive/5">
-            <Trash2 size={20} />
-          </Button>
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="rounded-full">
               <ArrowLeft className="rotate-180" />
@@ -157,7 +139,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           })}
         </div>
 
-        <div className="absolute bottom-[100px] md:bottom-6 left-4 right-4 z-40">
+        <div className="absolute bottom-6 left-4 right-4 z-40">
           <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 
               placeholder="اكتب رسالتك..." 

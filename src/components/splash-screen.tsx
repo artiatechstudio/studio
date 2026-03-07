@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * تم رفع الشعار للأعلى قليلاً مع إزالة أي نصوص إضافية لتصميم نظيف.
+ * تم رفع الشعار للأعلى قليلاً مع إزالة أي نصوص إضافية لتصميم نظيف واحترافي.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {

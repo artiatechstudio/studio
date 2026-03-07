@@ -12,9 +12,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -42,7 +43,8 @@ export default function SettingsPage() {
   const [changingPass, setChangingPass] = useState(false);
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
-  const [duration, setDuration] = useState('1month');
+  const [selectedPlan, setSelectedType] = useState('1month');
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
   // ثيم التطبيق
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -57,7 +59,6 @@ export default function SettingsPage() {
       setAvatar(userData.avatar || '🐱');
       setBio(userData.bio || '');
     }
-    // جلب الثيم الحالي
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
     setTheme(savedTheme);
   }, [userData]);
@@ -79,25 +80,18 @@ export default function SettingsPage() {
 
   const handleUpdateProfile = async () => {
     if (!user) return;
-    
     const h = parseInt(height);
     const w = parseInt(weight);
     const a = parseInt(age);
-
     if (h < 50 || h > 250 || w < 10 || w > 500 || a < 5 || a > 100) {
-      toast({ 
-        variant: "destructive", 
-        title: "بيانات غير منطقية", 
-        description: "يرجى إدخال طول (50-250) ووزن (10-500) وعمر (5-100) حقيقيين." 
-      });
+      toast({ variant: "destructive", title: "بيانات غير منطقية" });
       return;
     }
-
     setSaving(true);
     playSound('click');
     try {
       await update(ref(database, `users/${user.uid}`), {
-        name: isAdmin ? 'admin' : name, // منع تغيير اسم الأدمن برمجياً أيضاً
+        name: isAdmin ? 'admin' : name,
         age: a,
         gender,
         height: h,
@@ -105,9 +99,9 @@ export default function SettingsPage() {
         avatar,
         bio: bio.slice(0, 30)
       });
-      toast({ title: "تم التحديث!", description: "تم حفظ بياناتك الشخصية بنجاح." });
+      toast({ title: "تم التحديث!" });
     } catch (e) {
-      toast({ variant: "destructive", title: "خطأ", description: "فشل في تحديث البيانات." });
+      toast({ variant: "destructive", title: "خطأ" });
     } finally {
       setSaving(false);
     }
@@ -115,73 +109,63 @@ export default function SettingsPage() {
 
   const handleUpdatePassword = async () => {
     if (!user || !currentPassword || !newPassword) return;
-    if (newPassword.length < 6) {
-      toast({ variant: "destructive", title: "كلمة مرور ضعيفة", description: "يجب أن تكون 6 أحرف على الأقل." });
-      return;
-    }
-
     setChangingPass(true);
     playSound('click');
     try {
       const credential = EmailAuthProvider.credential(user.email!, currentPassword);
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword);
-      
-      toast({ title: "تم تغيير كلمة المرور! 🔐", description: "يرجى استخدام الكلمة الجديدة في المرة القادمة." });
+      toast({ title: "تم تغيير كلمة المرور! 🔐" });
       setCurrentPassword('');
       setNewPassword('');
-      playSound('success');
     } catch (error: any) {
-      toast({ variant: "destructive", title: "خطأ في التحديث", description: "تأكد من كلمة المرور الحالية." });
+      toast({ variant: "destructive", title: "خطأ في التحديث" });
     } finally {
       setChangingPass(false);
     }
   };
 
-  const handleLogout = async () => {
+  const handleSendPremiumRequest = async () => {
+    if (!user) return;
+    setIsSubmittingRequest(true);
     playSound('click');
     try {
-      await signOut(auth);
-      router.replace('/login');
-      toast({ title: "تم تسجيل الخروج" });
+      await update(ref(database, `users/${user.uid}/premiumRequest`), {
+        status: 'pending',
+        duration: selectedPlan,
+        requestedAt: Date.now()
+      });
+      toast({ title: "تم إرسال الطلب بنجاح! 🚀", description: "سيقوم الإدارة بمراجعة طلبك وتفعيله قريباً." });
+      setIsRequestOpen(false);
     } catch (e) {
-      console.error(e);
+      toast({ variant: "destructive", title: "فشل إرسال الطلب" });
+    } finally {
+      setIsSubmittingRequest(false);
     }
+  };
+
+  const handleLogout = async () => {
+    playSound('click');
+    await signOut(auth);
+    router.replace('/login');
   };
 
   const handleDeleteAccount = async () => {
     playSound('click');
-    if (userData?.name === 'admin') {
-      toast({ variant: "destructive", title: "لا يمكن حذف حساب الإدارة!" });
-      return;
-    }
-    const confirmed = window.confirm("تحذير نهائي! سيتم حذف كافة بياناتك وتقدمك. هل أنت متأكد؟ 🐱⚠️");
+    if (userData?.name === 'admin') return;
+    const confirmed = window.confirm("تحذير نهائي! هل أنت متأكد؟ 🐱⚠️");
     if (!user || !confirmed) return;
-    
     try {
-      const uid = user.uid;
-      await remove(ref(database, `users/${uid}`));
+      await remove(ref(database, `users/${user.uid}`));
       await signOut(auth);
       await deleteUser(user);
-      
-      toast({ title: "تم حذف الحساب نهائياً" });
       router.replace('/login');
     } catch (e: any) {
-      toast({ 
-        variant: "destructive", 
-        title: "خطأ في الحذف", 
-        description: "يرجى تسجيل الخروج والدخول مرة أخرى للتحقق من هويتك قبل الحذف." 
-      });
+      toast({ variant: "destructive", title: "خطأ في الحذف" });
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const requestStatus = userData?.premiumRequest?.status;
 
@@ -190,267 +174,112 @@ export default function SettingsPage() {
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-10">
         <header className="flex items-center gap-4 text-right mx-2">
-          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0">
-            <Settings size={32} />
-          </div>
-          <div>
-            <h1 className="text-2xl font-black text-primary">الإعدادات</h1>
-            <p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي وتجربة التطبيق</p>
-          </div>
+          <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0"><Settings size={32} /></div>
+          <div><h1 className="text-2xl font-black text-primary">الإعدادات</h1><p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي</p></div>
         </header>
 
-        {/* كارت الثيم */}
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right flex flex-row items-center justify-between flex-row-reverse">
-            <CardTitle className="text-lg font-black text-primary flex items-center gap-3">
-              مظهر التطبيق <Sparkles size={20} />
-            </CardTitle>
+            <CardTitle className="text-lg font-black text-primary flex items-center gap-3">مظهر التطبيق <Sparkles size={20} /></CardTitle>
           </CardHeader>
           <CardContent className="p-6 flex items-center justify-between">
             <div className="text-right">
-              <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">
-                الوضع {theme === 'dark' ? 'الداكن' : 'المضيء'}
-                {theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}
-              </p>
-              <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق لراحة العين</p>
+              <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">الوضع {theme === 'dark' ? 'الداكن' : 'المضيء'}{theme === 'dark' ? <Moon size={16} /> : <Sun size={16} />}</p>
+              <p className="text-[10px] text-muted-foreground font-bold">تغيير مظهر التطبيق</p>
             </div>
-            <Switch 
-              checked={theme === 'dark'} 
-              onCheckedChange={toggleTheme} 
-              className="scale-125 data-[state=checked]:bg-primary" 
-            />
+            <Switch checked={theme === 'dark'} onCheckedChange={toggleTheme} className="scale-125 data-[state=checked]:bg-primary" />
           </CardContent>
         </Card>
 
-        {/* كارت البريميوم */}
-        <Card className={cn(
-          "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 space-y-6 relative mx-2",
-          userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 to-amber-600" : "bg-gradient-to-br from-slate-700 to-slate-900"
-        )}>
+        <Card className={cn("border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 space-y-6 relative mx-2", userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 to-amber-600" : "bg-gradient-to-br from-slate-700 to-slate-900")}>
           <Crown className="absolute top-4 left-4 opacity-20" size={120} />
           <div className="relative z-10 space-y-2 text-right">
-            <div className="flex items-center justify-end gap-2">
-              <h2 className="text-2xl font-black">عضوية كارينجو المميزة</h2>
-              <Crown size={24} fill="currentColor" />
-            </div>
+            <div className="flex items-center justify-end gap-2"><h2 className="text-2xl font-black">عضوية Careingo المميزة</h2><Crown size={24} fill="currentColor" /></div>
             <p className="text-sm font-bold opacity-90 leading-relaxed">
-              {userData?.isPremium === 1 
-                ? (isAdmin ? "أنت مدير النظام! اشتراكك دائم وغير محدود المدة. 🛡️" : `أنت مستخدم بريميوم! اشتراكك ينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}`) 
-                : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات المزعجة."}
+              {userData?.isPremium === 1 ? (isAdmin ? "أنت مدير النظام! اشتراكك دائم. 🛡️" : `أنت مستخدم بريميوم! ينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}`) : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات."}
             </p>
           </div>
-          
           <div className="grid grid-cols-2 gap-4 relative z-10">
-            {[
-              { t: "بدون إعلانات", i: Sparkles },
-              { t: "نشر غير محدود", i: Globe },
-              { t: "تحديات مفتوحة", i: Trophy },
-              { t: "توثيق ملكي", i: Crown },
-            ].map((m, i) => (
-              <div key={i} className="flex items-center gap-2 justify-end bg-white/10 p-2 rounded-xl border border-white/20">
-                <span className="text-[10px] font-black">{m.t}</span>
-                <m.i size={14} />
-              </div>
+            {[{ t: "بدون إعلانات", i: Sparkles }, { t: "نشر غير محدود", i: Globe }, { t: "تحديات مفتوحة", i: Trophy }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
+              <div key={i} className="flex items-center gap-2 justify-end bg-white/10 p-2 rounded-xl border border-white/20"><span className="text-[10px] font-black">{m.t}</span><m.i size={14} /></div>
             ))}
           </div>
-
           {userData?.isPremium !== 1 && (
             <div className="relative z-10">
               {requestStatus === 'pending' ? (
-                <Button disabled className="w-full h-14 rounded-2xl bg-amber-100 text-amber-700 font-black flex gap-2">
-                  <Clock size={20} /> طلبك تحت الإجراء...
-                </Button>
+                <Button disabled className="w-full h-14 rounded-2xl bg-amber-100 text-amber-700 font-black flex gap-2"><Clock size={20} /> طلبك تحت الإجراء...</Button>
               ) : (
-                <Button onClick={() => setIsRequestOpen(true)} className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-lg font-black shadow-lg">
-                  اطلب اشتراك بريميوم 👑
-                </Button>
+                <Button onClick={() => { playSound('click'); setIsRequestOpen(true); }} className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-lg font-black shadow-lg">اطلب اشتراك بريميوم 👑</Button>
               )}
             </div>
           )}
         </Card>
 
-        {/* كارت المعلومات الشخصية */}
+        <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+          <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
+            <DialogHeader><DialogTitle className="text-2xl font-black text-primary text-right">اختر باقة النمو</DialogTitle><DialogDescription className="text-right font-bold">باقات بسيطة لتجربة ملكية كاملة</DialogDescription></DialogHeader>
+            <div className="space-y-4 py-4">
+              {[
+                { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 دينار' },
+                { id: '1month', label: 'شهر كامل (اقتصادي)', price: '4 دينار' },
+                { id: '6months', label: '6 أشهر (احترافي)', price: '20 دينار' }
+              ].map((plan) => (
+                <div key={plan.id} onClick={() => { playSound('click'); setSelectedType(plan.id); }} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20")}>
+                  <div className="flex items-center gap-3">{selectedPlan === plan.id ? <CheckCircle2 className="text-primary" /> : <div className="w-6 h-6 rounded-full border-2 border-border" />}<span className="font-black text-sm">{plan.label}</span></div>
+                  <span className="bg-secondary px-3 py-1 rounded-full text-xs font-black text-primary">{plan.price}</span>
+                </div>
+              ))}
+            </div>
+            <DialogFooter><Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-12 rounded-xl font-black text-lg">{isSubmittingRequest ? "جاري الإرسال..." : "تأكيد وإرسال الطلب 🐱"}</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
-            <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">
-              تعديل المعلومات الشخصية <UserIcon size={20} />
-            </CardTitle>
-          </CardHeader>
+          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تعديل المعلومات الشخصية <UserIcon size={20} /></CardTitle></CardHeader>
           <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2 col-span-1 md:col-span-2 flex flex-col items-center gap-4 mb-4">
-               <Label className="text-center">اختر رفيقك (الأفاتار)</Label>
-               <div className="text-6xl bg-secondary/50 p-6 rounded-[2rem] shadow-inner mb-2">{avatar}</div>
-               <Select onValueChange={(val) => { playSound('click'); setAvatar(val); }} value={avatar}>
-                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold w-40 text-xl">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <div className="grid grid-cols-4 gap-2 p-2">
-                    {AVATAR_EMOJIS.map(emoji => (
-                      <SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center p-2">
-                        {emoji}
-                      </SelectItem>
-                    ))}
-                  </div>
-                </SelectContent>
-              </Select>
+               <Label>اختر رفيقك</Label><div className="text-6xl bg-secondary/50 p-6 rounded-[2rem] shadow-inner mb-2">{avatar}</div>
+               <Select onValueChange={setAvatar} value={avatar}><SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold w-40 text-xl"><SelectValue /></SelectTrigger><SelectContent><div className="grid grid-cols-4 gap-2 p-2">{AVATAR_EMOJIS.map(emoji => (<SelectItem key={emoji} value={emoji} className="text-2xl cursor-pointer hover:bg-secondary rounded-lg justify-center p-2">{emoji}</SelectItem>))}</div></SelectContent></Select>
             </div>
-
-            <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label className="flex items-center gap-2 justify-end"><PenLine size={16} /> نبذة قصيرة (بحد أقصى 30 حرفاً)</Label>
-              <Input 
-                value={bio} 
-                maxLength={30}
-                placeholder="أخبرنا بشيء عنك..."
-                onChange={e => setBio(e.target.value)} 
-                className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" 
-              />
-              <p className="text-[10px] text-muted-foreground text-left">{bio.length}/30</p>
-            </div>
-            
-            <div className="space-y-2 col-span-1 md:col-span-2">
-              <Label className="text-right block w-full">الاسم الكامل {isAdmin && "(لا يمكن تغييره للمدير)"}</Label>
-              <Input 
-                value={name} 
-                onChange={e => setName(e.target.value)} 
-                disabled={isAdmin}
-                className={cn(
-                  "rounded-xl bg-secondary/30 border-none h-12 font-bold text-right",
-                  isAdmin && "opacity-50 cursor-not-allowed"
-                )} 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-right block w-full">العمر</Label>
-              <Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-right block w-full">الجنس</Label>
-              <Select onValueChange={(val) => { playSound('click'); setGender(val); }} value={gender}>
-                <SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">ذكر</SelectItem>
-                  <SelectItem value="female">أنثى</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-right block w-full">الطول (سم)</Label>
-              <Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-right block w-full">الوزن (كجم)</Label>
-              <Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" />
-            </div>
-            <Button 
-              onClick={handleUpdateProfile} 
-              disabled={saving}
-              className="col-span-1 md:col-span-2 h-14 rounded-2xl bg-primary hover:bg-primary/90 text-lg font-black shadow-lg shadow-primary/20 mt-4"
-            >
-              <Save size={20} className="ml-2" /> {saving ? "جاري الحفظ..." : "حفظ التغييرات"}
-            </Button>
+            <div className="space-y-2 col-span-1 md:col-span-2"><Label className="flex items-center gap-2 justify-end"><PenLine size={16} /> نبذة قصيرة</Label><Input value={bio} maxLength={30} onChange={e => setBio(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+            <div className="space-y-2 col-span-1 md:col-span-2"><Label className="text-right block w-full">الاسم الكامل {isAdmin && "(لا يمكن تغييره للمدير)"}</Label><Input value={name} onChange={e => setName(e.target.value)} disabled={isAdmin} className={cn("rounded-xl bg-secondary/30 border-none h-12 font-bold text-right", isAdmin && "opacity-50")} /></div>
+            <div className="space-y-2"><Label className="text-right block w-full">العمر</Label><Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+            <div className="space-y-2"><Label className="text-right block w-full">الجنس</Label><Select onValueChange={setGender} value={gender}><SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select></div>
+            <div className="space-y-2"><Label className="text-right block w-full">الطول</Label><Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+            <div className="space-y-2"><Label className="text-right block w-full">الوزن</Label><Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+            <Button onClick={handleUpdateProfile} disabled={saving} className="col-span-1 md:col-span-2 h-14 rounded-2xl bg-primary text-lg font-black">{saving ? "جاري الحفظ..." : "حفظ التغييرات"}</Button>
           </CardContent>
         </Card>
 
-        {/* كارت الأمان وكلمة المرور */}
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-orange-500/5 p-6 border-b border-border text-right">
-            <CardTitle className="text-lg font-black text-orange-600 flex items-center justify-end gap-3">
-              الأمان وكلمة المرور <ShieldCheck size={20} />
-            </CardTitle>
-          </CardHeader>
+          <CardHeader className="bg-orange-500/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-orange-600 flex items-center justify-end gap-3">الأمان وكلمة المرور <ShieldCheck size={20} /></CardTitle></CardHeader>
           <CardContent className="p-6 space-y-6">
             <div className="space-y-4">
-              <div className="space-y-2">
-                <Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الحالية <Lock size={14}/></Label>
-                <Input 
-                  type="password" 
-                  placeholder="أدخل كلمتك القديمة للتأكد"
-                  className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"
-                  value={currentPassword}
-                  onChange={e => setCurrentPassword(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الجديدة <Save size={14}/></Label>
-                <Input 
-                  type="password" 
-                  placeholder="6 أحرف على الأقل"
-                  className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"
-                  value={newPassword}
-                  onChange={e => setNewPassword(e.target.value)}
-                />
-              </div>
-              <Button 
-                onClick={handleUpdatePassword}
-                disabled={changingPass || !currentPassword || !newPassword}
-                className="w-full h-14 rounded-2xl bg-orange-600 hover:bg-orange-700 text-lg font-black shadow-lg mt-2"
-              >
-                {changingPass ? "جاري التحديث..." : "تحديث كلمة المرور 🔐"}
-              </Button>
+              <div className="space-y-2"><Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الحالية <Lock size={14}/></Label><Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 text-right" /></div>
+              <div className="space-y-2"><Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الجديدة <Save size={14}/></Label><Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 text-right" /></div>
+              <Button onClick={handleUpdatePassword} disabled={changingPass || !currentPassword || !newPassword} className="w-full h-14 rounded-2xl bg-orange-600 font-black">{changingPass ? "جاري التحديث..." : "تحديث كلمة المرور 🔐"}</Button>
             </div>
           </CardContent>
         </Card>
 
-        {/* كارت روابط التواصل */}
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right">
-            <CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">
-              التواصل والدعم الفني <MessageSquare size={20} />
-            </CardTitle>
-          </CardHeader>
+          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">التواصل والدعم الفني <MessageSquare size={20} /></CardTitle></CardHeader>
           <CardContent className="p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <a href="https://wa.me/218929196425" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                <Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2 hover:bg-green-100">
-                  <Phone size={18} /> واتساب الدعم
-                </Button>
-              </a>
-              <a href="https://artiatechstudio.com.ly" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2 hover:bg-blue-100">
-                  <Globe size={18} /> الموقع الرسمي
-                </Button>
-              </a>
-              <a href="https://x.com/artiatechstudio" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                <Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2 hover:bg-slate-100">
-                  <Twitter size={18} /> منصة X
-                </Button>
-              </a>
-              <a href="https://instagram.com/artiatechstudio" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                <Button variant="outline" className="w-full h-14 rounded-2xl border-pink-100 bg-pink-50/30 text-pink-700 font-black gap-2 hover:bg-pink-100">
-                  <Instagram size={18} /> إنستغرام
-                </Button>
-              </a>
-              <a href="https://youtube.com/@artiatechstudio" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                <Button variant="outline" className="w-full h-14 rounded-2xl border-red-100 bg-red-50/30 text-red-700 font-black gap-2 hover:bg-red-100">
-                  <Youtube size={18} /> يوتيوب
-                </Button>
-              </a>
-              <a href="https://www.facebook.com/share/1cJCMxmp9f/" target="_blank" rel="noopener noreferrer" onClick={() => playSound('click')}>
-                <Button variant="outline" className="w-full h-14 rounded-2xl border-blue-200 bg-blue-50/50 text-blue-800 font-black gap-2 hover:bg-blue-100">
-                  <Facebook size={18} /> فيسبوك
-                </Button>
-              </a>
+              <a href="https://wa.me/218929196425" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2"><Phone size={18} /> واتساب</Button></a>
+              <a href="https://artiatechstudio.com.ly" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2"><Globe size={18} /> الموقع الرسمي</Button></a>
+              <a href="https://x.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2"><Twitter size={18} /> منصة X</Button></a>
+              <a href="https://instagram.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-pink-100 bg-pink-50/30 text-pink-700 font-black gap-2"><Instagram size={18} /> إنستغرام</Button></a>
+              <a href="https://youtube.com/@artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-red-100 bg-red-50/30 text-red-700 font-black gap-2"><Youtube size={18} /> يوتيوب</Button></a>
+              <a href="https://www.facebook.com/share/1cJCMxmp9f/" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-200 bg-blue-50/50 text-blue-800 font-black gap-2"><Facebook size={18} /> فيسبوك</Button></a>
             </div>
-            <a href="mailto:artiateech@gmail.com" onClick={() => playSound('click')} className="block w-full">
-              <Button variant="ghost" className="w-full h-12 rounded-2xl bg-secondary/50 text-muted-foreground font-bold gap-2">
-                <Mail size={16} /> {userData?.email || 'artiateech@gmail.com'}
-              </Button>
-            </a>
+            <a href="mailto:artiateech@gmail.com" className="block w-full"><Button variant="ghost" className="w-full h-12 rounded-2xl bg-secondary/50 text-muted-foreground font-bold">{userData?.email || 'artiateech@gmail.com'}</Button></a>
           </CardContent>
         </Card>
 
         <div className="pt-6 flex flex-col gap-3 mx-2">
-          <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
-            <LogOut className="ml-2" /> تسجيل الخروج
-          </Button>
-          {userData?.name !== 'admin' && (
-            <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black hover:bg-destructive/10">
-              <Trash2 className="ml-2" /> حذف الحساب نهائياً
-            </Button>
-          )}
+          <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black"><LogOut className="ml-2" /> تسجيل الخروج</Button>
+          {userData?.name !== 'admin' && <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black"><Trash2 className="ml-2" /> حذف الحساب نهائياً</Button>}
         </div>
       </div>
     </div>

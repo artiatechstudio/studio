@@ -4,42 +4,12 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
 
 export default function InstructionsPage() {
-  const badgeCategories = [
-    {
-      title: "أوسمة الالتزام (Streaks)",
-      items: [
-        { name: "البداية الواثقة", criteria: "إكمال 3 أيام متتالية", icon: "🌱" },
-        { name: "المحارب الأسبوعي", criteria: "إكمال 7 أيام متتالية", icon: "⚔️" },
-        { name: "باني العادات", criteria: "إكمال 21 يوماً متتالياً", icon: "🏗️" },
-        { name: "أسطورة الشهر", criteria: "إكمال 30 يوماً متتالياً", icon: "🏆" },
-        { name: "أسطورة الانضباط", criteria: "إكمال 60 يوماً متتالياً", icon: "🗿" }
-      ]
-    },
-    {
-      title: "أوسمة النقاط (Wealth)",
-      items: [
-        { name: "جامع النقاط", criteria: "الوصول لـ 1,000 نقطة", icon: "💎" },
-        { name: "النخبة", criteria: "الوصول لـ 5,000 نقطة", icon: "🥇" },
-        { name: "المليونير الصحي", criteria: "الوصول لـ 10,000 نقطة", icon: "💰" },
-        { name: "سلطان كاري", criteria: "الوصول لـ 50,000 نقطة", icon: "👑" }
-      ]
-    },
-    {
-      title: "أوسمة التبكير (Early Bird)",
-      items: [
-        { name: "نجم الفجر", criteria: "إنجاز مهمة في الساعة 5 صباحاً", icon: "🌅" },
-        { name: "صياد الشمس", criteria: "إنجاز 10 مهام قبل الساعة 7 صباحاً", icon: "☀️" },
-        { name: "قاهر النوم", criteria: "إنجاز 30 مهام قبل الساعة 6 صباحاً", icon: "🦅" }
-      ]
-    }
-  ];
-
   return (
     <div className="min-h-screen bg-background md:pr-64 pb-40" dir="rtl">
       <NavSidebar />
@@ -66,81 +36,53 @@ export default function InstructionsPage() {
         </header>
 
         <section className="space-y-12">
-          {/* 1. نظام النقاط */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
               <Star className="text-yellow-500" fill="currentColor" /> <h2>1. نظام النقاط المتقدم</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-8">
-              <p className="font-bold text-slate-700 leading-relaxed text-sm">يتم حساب تقدمك في "Careingo" بناءً على نظام نقاط دقيق يكافئ الالتزام والتبكير:</p>
+              <p className="font-bold text-slate-700 leading-relaxed text-sm">يتم حساب تقدمك بناءً على نظام نقاط دقيق يكافئ الالتزام والتبكير:</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-green-50 p-6 rounded-3xl border border-green-100 text-center">
-                  <p className="text-2xl font-black text-green-600">50</p>
-                  <p className="text-[10px] font-black uppercase text-green-800">مهمة سهلة</p>
-                </div>
-                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 text-center">
-                  <p className="text-2xl font-black text-blue-600">70</p>
-                  <p className="text-[10px] font-black uppercase text-blue-800">مهمة متوسطة</p>
-                </div>
-                <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-center">
-                  <p className="text-2xl font-black text-red-600">100</p>
-                  <p className="text-[10px] font-black uppercase text-red-800">مهمة صعبة</p>
-                </div>
+                <div className="bg-green-50 p-6 rounded-3xl border border-green-100 text-center"><p className="text-2xl font-black text-green-600">50</p><p className="text-[10px] font-black uppercase text-green-800">مهمة سهلة</p></div>
+                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 text-center"><p className="text-2xl font-black text-blue-600">70</p><p className="text-[10px] font-black uppercase text-blue-800">مهمة متوسطة</p></div>
+                <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-center"><p className="text-2xl font-black text-red-600">100</p><p className="text-[10px] font-black uppercase text-red-800">مهمة صعبة</p></div>
               </div>
-              
               <div className="space-y-4 bg-primary/5 p-6 rounded-3xl border border-primary/10">
                 <h4 className="font-black text-primary text-lg flex items-center gap-2"><TimerIcon className="text-accent" /> بونص التبكير (Early Bird)</h4>
-                <p className="text-xs font-bold text-slate-700 leading-relaxed">
-                  نحن نقدس ساعات الفجر. بونص التبكير هو قوة دفع إضافية تبدأ من الساعة **5:00 صباحاً** وتمنحك **75 نقطة** كاملة، ثم تتناقص بمعدل **5 نقاط كل ساعة**. 
-                  <br /><span className="text-accent font-black">مثال:</span> إذا أنجزت مهمتك في السادسة صباحاً ستحصل على 70 نقطة بونص، وإذا أنجزتها في الثامنة مساءً ستحصل على 0 بونص.
-                </p>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">يبدأ من الساعة 5:00 صباحاً ويمنحك 75 نقطة، ويتناقص بمعدل 5 نقاط كل ساعة حتى يختفي في 8:00 مساءً.</p>
               </div>
             </Card>
           </div>
 
-          {/* 5. المسار العام */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
               <Swords className="text-primary" /> <h2>2. قانون المسار العام (Master Track)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-dashed border-2 border-primary/30 bg-primary/5 space-y-6">
-              <div className="space-y-4">
-                <h4 className="font-black text-primary text-xl flex items-center gap-2"><Sparkles size={20}/> ما هو المسار العام؟</h4>
-                <p className="text-xs font-bold text-slate-700 leading-relaxed">
-                  بمجرد إتمامك للمراحل الـ 30 الأساسية في أي مسار، فأنت لم تنتهِ بعد. هناك **90 مرحلة أسطورية إضافية** تفتح للأبطال الحقيقيين في المسار العام للتدريب الحر والمستمر.
-                </p>
-              </div>
-              <div className="space-y-4 bg-white/50 p-5 rounded-2xl border border-primary/10">
-                <h4 className="font-black text-primary text-sm flex items-center gap-2"><Trophy size={16}/> النقاط الأسطورية:</h4>
-                <p className="text-[10px] font-bold text-slate-600 leading-relaxed">
-                  لا يتم احتساب نقاط في المسار العام إلا لمن استطاع **ختم المسارات الأربعة الأساسية** (اللياقة، التغذية، السلوك، الدراسة) بالكامل. بمجرد ختم الـ 120 مرحلة الأساسية، ستتحول كل مهمة في المسار العام إلى "منجم نقاط" يرفع ترتيبك العالمي بسرعة جنونية.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
-                <AlertCircle className="text-amber-600 shrink-0" size={18} />
-                <p className="text-[9px] font-bold text-amber-800">
-                  المسار العام متاح للجميع للتدريب، ولكن "النقاط الأسطورية" هي جائزة مخصصة فقط لمن أثبت جدارته بختم كافة المسارات الأساسية أولاً.
-                </p>
-              </div>
+              <p className="text-xs font-bold text-slate-700 leading-relaxed">هناك 90 مرحلة أسطورية إضافية تفتح للأبطال في المسار العام. لا يتم احتساب نقاط هنا إلا لمن ختم المسارات الأربعة الأساسية أولاً.</p>
             </Card>
           </div>
 
-          {/* 3. عضوية بريميوم */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
-              <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية Careingo الملكية (Premium)</h2>
+              <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية Careingo الملكية والأسعار</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-yellow-100 bg-yellow-50/20 space-y-6">
-              <p className="font-bold text-slate-900 text-sm">عضوية البريميوم هي لأولئك الذين يريدون الانطلاق بلا قيود:</p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200">
-                  <h5 className="font-black text-yellow-800 text-sm flex items-center gap-2"><Sparkles size={16}/> تجربة بدون إعلانات</h5>
-                  <p className="text-[10px] font-bold opacity-70 mt-1">وداعاً للإعلانات المزعجة في شاشة الرئيسية والمسارات.</p>
-                </div>
-                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200">
-                  <h5 className="font-black text-yellow-800 text-sm flex items-center gap-2"><Crown size={16}/> توثيق الهوية الملكي</h5>
-                  <p className="text-[10px] font-bold opacity-70 mt-1">ظهور التاج الذهبي بجانب اسمك في كافة أنحاء التطبيق.</p>
-                </div>
+              <p className="font-bold text-slate-900 text-sm">باقات الاشتراك المتاحة (بالدينار الليبي):</p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-sm">أسبوع واحد</h5><p className="text-2xl font-black text-primary mt-1">1 د.ل</p></div>
+                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-sm">شهر كامل</h5><p className="text-2xl font-black text-primary mt-1">4 د.ل</p></div>
+                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-sm">6 أشهر</h5><p className="text-2xl font-black text-primary mt-1">20 د.ل</p></div>
+              </div>
+              <div className="space-y-3 pt-4">
+                {[
+                  "تجربة خالية تماماً من الإعلانات.",
+                  "ظهور التاج الملكي بجانب اسمك وتوثيق حسابك.",
+                  "دردشة غير محدودة مع المساعد الذكي كاري.",
+                  "الأولوية في مراجعة التحديات والمهام الخاصة."
+                ].map((txt, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs font-bold text-slate-700"><CheckCircle2 size={14} className="text-green-600" /> {txt}</div>
+                ))}
               </div>
             </Card>
           </div>

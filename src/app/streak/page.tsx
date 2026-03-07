@@ -115,21 +115,21 @@ export default function StreakPage() {
         </header>
 
         <div className="px-2">
-          <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-6">
-            <h3 className="text-lg font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
+          <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
               زخم الأسبوع الحالي <Flame size={20} className="text-orange-500" />
             </h3>
-            <div className="flex justify-around items-center gap-2">
+            <div className="flex justify-between items-center gap-1 sm:gap-2">
               {currentWeek.map((day, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                <div key={i} className="flex flex-col items-center gap-1.5 flex-1 min-w-0 text-center">
                   <div className={cn(
-                    "w-12 h-12 rounded-full flex items-center justify-center transition-all border-2",
+                    "w-8 h-8 sm:w-11 sm:h-11 rounded-full flex items-center justify-center transition-all border-2 shrink-0",
                     day.isCompleted ? "bg-orange-500 border-orange-400 text-white shadow-lg" : 
                     day.isToday ? "bg-secondary border-primary/30 text-primary" : "bg-secondary border-transparent text-muted-foreground/30"
                   )}>
-                    {day.isCompleted ? <Flame size={20} fill="currentColor" /> : <span className="text-xs font-black">{day.label[0]}</span>}
+                    {day.isCompleted ? <Flame size={14} className="sm:w-5 sm:h-5" fill="currentColor" /> : <span className="text-[10px] sm:text-xs font-black">{day.label[0]}</span>}
                   </div>
-                  <span className={cn("text-[10px] font-black", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
+                  <span className={cn("text-[8px] sm:text-[10px] font-black truncate w-full text-center px-0.5", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
                     {day.label}
                   </span>
                 </div>
@@ -190,7 +190,7 @@ export default function StreakPage() {
         </div>
 
         <footer className="text-center opacity-30 font-black text-[10px] pt-8 uppercase tracking-widest">
-          CAREINGO GROWTH ECOSYSTEM 2026
+          Careingo GROWTH ECOSYSTEM 2026
         </footer>
       </div>
     </div>

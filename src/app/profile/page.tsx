@@ -144,7 +144,6 @@ export default function ProfilePage() {
                     )}>
                       {badge.name}
                     </p>
-                    {/* Tooltip on Hover */}
                     <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-32 p-2 bg-slate-900 text-white rounded-lg text-[8px] font-bold text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
                       {badge.description}
                       {!isEarned && <p className="text-accent mt-1">لم يُنجز بعد 🔒</p>}
@@ -175,7 +174,7 @@ export default function ProfilePage() {
                  <DialogHeader><DialogTitle className="text-2xl font-black text-primary">تحميل تطبيق Careingo</DialogTitle></DialogHeader>
                  <div className="flex flex-col items-center gap-6 mt-4">
                    <div className="bg-white p-4 rounded-3xl border-4 border-accent shadow-inner">
-                      <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://careingo.app`} alt="App QR" width={200} height={200} />
+                      <Image src="/qr.png" alt="App QR" width={200} height={200} className="object-contain" />
                    </div>
                    <p className="text-xs font-bold text-muted-foreground">امسح الرمز لمشاركة التطبيق مع من تحب 🐱</p>
                    <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-xl font-black">إغلاق</Button>

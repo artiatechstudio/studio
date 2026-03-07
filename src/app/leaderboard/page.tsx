@@ -96,7 +96,7 @@ export default function LeaderboardPage() {
         {isLoading ? (
           <div className="text-center p-12">
              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-             <p className="font-black text-primary text-xs animate-pulse">كاري ينتظرك بشوق...</p>
+             <p className="font-black text-primary text-xl animate-pulse tracking-widest uppercase">Careingo</p>
           </div>
         ) : (
           <div className="space-y-10">

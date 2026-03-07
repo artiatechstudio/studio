@@ -83,7 +83,7 @@ export default function StreakPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
-        <p className="text-primary font-black text-xl animate-pulse">كاري يجمع بياناتك...</p>
+        <p className="text-primary font-black text-xl animate-pulse tracking-widest uppercase">Careingo</p>
       </div>
     );
   }

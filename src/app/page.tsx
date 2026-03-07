@@ -115,7 +115,8 @@ export default function Home() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
-        <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-primary font-black text-xl animate-pulse tracking-widest uppercase">Careingo</p>
       </div>
     );
   }

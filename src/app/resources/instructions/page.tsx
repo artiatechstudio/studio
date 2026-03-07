@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -89,7 +90,7 @@ export default function InstructionsPage() {
               <Sparkles className="text-accent" /> <h2>المساعد الذكي "كاري" 🐱</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-accent/20 bg-accent/5 space-y-4">
-              <p className="font-bold text-base md:text-lg leading-relaxed text-accent-foreground">
+              <p className="font-bold text-base md:text-lg leading-relaxed text-primary">
                 كاري ليس مجرد أيقونة، إنه رفيقك المدعوم بأحدث تقنيات الذكاء الاصطناعي (Gemini 1.5):
               </p>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">

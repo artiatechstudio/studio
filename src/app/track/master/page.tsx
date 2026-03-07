@@ -6,12 +6,12 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, X, CheckSquare, AlertTriangle, Crown, Infinity, Clock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, X, CheckSquare, AlertTriangle, Crown, Infinity, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, remove, get } from 'firebase/database';
+import { ref, update, push, serverTimestamp, remove } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -81,7 +81,7 @@ export default function MasterTrackPage() {
 
   // منطق حذف المهام المنتهية وخصم النقاط آلياً
   useEffect(() => {
-    if (!user || !todosData || !database) return;
+    if (!user || !todosData || !database || !userData) return;
     
     const checkAndPenalize = async () => {
       const now = Date.now();
@@ -90,20 +90,17 @@ export default function MasterTrackPage() {
       for (const [id, todo] of entries as [string, any][]) {
         if (todo.expiry && now >= todo.expiry) {
           const penalty = 30;
-          const currentTotalPoints = userData?.points || 0;
-          const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
+          const currentTotalPoints = userData.points || 0;
+          const currentDailyPoints = userData.dailyPoints?.[today] || 0;
+
+          const updates: any = {};
+          updates[`users/${user.uid}/todos/${id}`] = null;
+          updates[`users/${user.uid}/points`] = Math.max(0, currentTotalPoints - penalty);
+          updates[`users/${user.uid}/dailyPoints/${today}`] = currentDailyPoints - penalty;
 
           try {
-            // حذف المهمة فوراً من الداتابيز
-            await remove(ref(database, `users/${user.uid}/todos/${id}`));
+            await update(ref(database), updates);
             
-            // خصم النقاط
-            await update(ref(database, `users/${user.uid}`), {
-              points: Math.max(0, currentTotalPoints - penalty),
-              [`dailyPoints/${today}`]: currentDailyPoints - penalty
-            });
-
-            // إرسال إشعار
             push(ref(database, `users/${user.uid}/notifications`), {
               type: 'system',
               title: 'انتهى وقت المهمة! 🛑',
@@ -114,30 +111,19 @@ export default function MasterTrackPage() {
 
             toast({ variant: "destructive", title: "انتهى الوقت!", description: "تم خصم 30 نقطة لعدم الإتمام." });
           } catch (e) {
-            console.error("Auto-delete error:", e);
+            console.error(e);
           }
         }
       }
     };
 
-    const interval = setInterval(checkAndPenalize, 5000); // فحص كل 5 ثوانٍ
+    const interval = setInterval(checkAndPenalize, 5000);
     return () => clearInterval(interval);
   }, [user, todosData, database, userData, today]);
 
-  const isLegend = useMemo(() => {
-    if (!userData?.trackProgress) return false;
-    const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
-    return tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
-  }, [userData]);
-
-  const cleanTitle = (title: string) => title.replace(/^اليوم\s+\d+:\s*/, '');
-
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
-    if (pool.length === 0) {
-      toast({ title: "عذراً", description: "لا توجد تحديات كافية لهذا الاختيار." });
-      return;
-    }
+    if (pool.length === 0) return;
     
     if (!isPremium && masterCountToday >= 5) {
       toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لتحديات غير محدودة! 👑" });
@@ -164,11 +150,14 @@ export default function MasterTrackPage() {
   };
 
   const handleCompleteChallenge = async () => {
-    if (!user || !currentChallenge) return;
+    if (!user || !currentChallenge || !userData) return;
     playSound('success');
     
     localStorage.removeItem('master_timer_end');
     localStorage.removeItem('master_current_challenge');
+
+    const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
+    const isLegend = userData?.trackProgress && tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
 
     if (isLegend) {
       const points = currentChallenge.points || 50;
@@ -176,9 +165,9 @@ export default function MasterTrackPage() {
         points: (userData.points || 0) + points,
         [`dailyPoints/${today}`]: (userData.dailyPoints?.[today] || 0) + points
       });
-      toast({ title: "إنجاز أسطوري! 🎉", description: `حصلت على ${points} نقطة لمستواك المتقدم.` });
+      toast({ title: "إنجاز أسطوري! 🎉", description: `حصلت على ${points} نقطة.` });
     } else {
-      toast({ title: "أحسنت التدريب! 🐱", description: "استمر حتى تنهي المسارات الأربعة للحصول على نقاط رسمية." });
+      toast({ title: "أحسنت التدريب! 🐱", description: "أكمل المسارات الأساسية أولاً للحصول على نقاط هنا." });
     }
     setStep('done');
     setTimerActive(false);
@@ -189,16 +178,16 @@ export default function MasterTrackPage() {
     if (!todoInput.trim() || !user) return;
 
     if (!isPremium && todoCountToday >= 5) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لمهام لا نهائية يومياً! 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لمهام لا نهائية! 👑" });
       return;
     }
 
     playSound('click');
-    const now = new Date();
+    const now = Date.now();
     let expiryTime: number;
 
     if (todoMinutes && parseInt(todoMinutes) > 0) {
-      expiryTime = now.getTime() + (parseInt(todoMinutes) * 60 * 1000);
+      expiryTime = now + (parseInt(todoMinutes) * 60 * 1000);
     } else {
       const midnight = new Date();
       midnight.setHours(23, 59, 59, 999);
@@ -210,7 +199,7 @@ export default function MasterTrackPage() {
       id: newTodoRef.key,
       title: todoInput.trim(),
       completed: false,
-      timestamp: now.getTime(),
+      timestamp: now,
       expiry: expiryTime,
       hasCustomTimer: !!(todoMinutes && parseInt(todoMinutes) > 0)
     });
@@ -224,43 +213,48 @@ export default function MasterTrackPage() {
   };
 
   const handleToggleTodo = (todoId: string) => {
-    if (!user || completingId) return;
+    if (!user || completingId || !userData) return;
     playSound('click');
     setCompletingId(todoId);
     
-    const currentPoints = userData?.points || 0;
-    const dailyPoints = userData?.dailyPoints?.[today] || 0;
+    const currentPoints = userData.points || 0;
+    const dailyPoints = userData.dailyPoints?.[today] || 0;
 
-    update(ref(database, `users/${user.uid}`), {
-      points: currentPoints + 5,
-      [`dailyPoints/${today}`]: dailyPoints + 5
-    });
+    const updates: any = {};
+    updates[`users/${user.uid}/points`] = currentPoints + 5;
+    updates[`users/${user.uid}/dailyPoints/${today}`] = dailyPoints + 5;
+    updates[`users/${user.uid}/todos/${todoId}`] = null;
 
-    toast({ title: "أحسنت! +5 نقاط 🌟" });
-    playSound('success');
-
-    setTimeout(() => {
-      remove(ref(database, `users/${user.uid}/todos/${todoId}`));
-      setCompletingId(null);
+    setTimeout(async () => {
+      try {
+        await update(ref(database), updates);
+        toast({ title: "أحسنت! +5 نقاط 🌟" });
+        playSound('success');
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setCompletingId(null);
+      }
     }, 800);
   };
 
   const handleDeleteTodo = async (todoId: string) => {
-    if (!user || !database) return;
-    const confirmDelete = window.confirm("إلغاء المهمة يعتبر تراجعاً وسيخصم 30 نقطة! هل أنت متأكد؟ 🛑");
+    if (!user || !database || !userData) return;
+    const confirmDelete = window.confirm("إلغاء المهمة سيخصم 30 نقطة! هل أنت متأكد؟ 🛑");
     if (!confirmDelete) return;
 
     playSound('click');
-    const currentPoints = userData?.points || 0;
-    const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
+    const currentPoints = userData.points || 0;
+    const dailyPoints = userData.dailyPoints?.[today] || 0;
     
+    const updates: any = {};
+    updates[`users/${user.uid}/todos/${todoId}`] = null;
+    updates[`users/${user.uid}/points`] = Math.max(0, currentPoints - 30);
+    updates[`users/${user.uid}/dailyPoints/${today}`] = dailyPoints - 30;
+
     try {
-      await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
-      await update(ref(database, `users/${user.uid}`), {
-        points: Math.max(0, currentPoints - 30),
-        [`dailyPoints/${today}`]: currentDailyPoints - 30
-      });
-      toast({ variant: "destructive", title: "تم الإلغاء", description: "خصم 30 نقطة لعدم الالتزام 🛑" });
+      await update(ref(database), updates);
+      toast({ variant: "destructive", title: "تم الإلغاء", description: "تم خصم 30 نقطة 🛑" });
     } catch (e) {
       toast({ variant: "destructive", title: "فشل الحذف" });
     }
@@ -335,15 +329,6 @@ export default function MasterTrackPage() {
                </div>
             </div>
 
-            {!isLegend && (
-              <div className="bg-orange-50 border-r-4 border-orange-500 p-4 rounded-2xl flex items-start gap-3">
-                <ShieldAlert className="text-orange-600 shrink-0" size={18} />
-                <p className="text-[10px] font-bold text-orange-900 leading-relaxed text-right">
-                  تنبيه: لا يتم منح نقاط رسمية هنا إلا بعد إتمام الـ 120 يوماً في المسارات الأساسية. يمكنك استخدامه للتدريب الحر حالياً!
-                </p>
-              </div>
-            )}
-
             <div className="space-y-3">
               <h3 className="font-black text-primary text-xs opacity-60 text-right">1. نوع المهمة</h3>
               <div className="grid grid-cols-2 gap-2">
@@ -386,8 +371,8 @@ export default function MasterTrackPage() {
           <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl mx-2">
             <CardHeader className="bg-primary text-white p-5">
               <div className="flex items-center justify-between flex-row-reverse gap-4">
-                <CardTitle className="text-lg font-black leading-tight flex-1 text-right">
-                  {cleanTitle(currentChallenge.title)}
+                <CardTitle className="text-lg font-black leading-tight flex-1 text-right whitespace-normal">
+                  {currentChallenge.title.replace(/^اليوم\s+\d+:\s*/, '')}
                 </CardTitle>
                 <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{currentChallenge.difficulty}</span>
               </div>
@@ -396,7 +381,7 @@ export default function MasterTrackPage() {
               <p className="text-base font-bold text-muted-foreground leading-relaxed text-right">{currentChallenge.description}</p>
               
               <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
-                <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي (مستمر في الخلفية)</p>
+                <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي</p>
                 <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
               </div>
 
@@ -447,11 +432,15 @@ export default function MasterTrackPage() {
           <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5 mx-2">
             <form onSubmit={handleAddTodo} className="flex flex-col gap-2">
               <div className="flex gap-2">
-                <Input 
+                <textarea 
                   placeholder="أضف مهمة شخصية..." 
-                  className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] focus-visible:ring-primary flex-1"
+                  className="flex-1 min-h-[44px] p-2.5 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] focus:ring-2 focus:ring-primary/20 resize-none outline-none overflow-hidden"
                   value={todoInput}
                   onChange={(e) => setTodoInput(e.target.value)}
+                  onInput={(e) => {
+                    (e.target as any).style.height = 'auto';
+                    (e.target as any).style.height = (e.target as any).scrollHeight + 'px';
+                  }}
                 />
                 <Input 
                   placeholder="د" 
@@ -500,7 +489,7 @@ export default function MasterTrackPage() {
                     size="icon" 
                     className="text-red-600 hover:bg-red-50 h-8 w-8 shrink-0 rounded-lg font-black text-sm"
                   >
-                    <X size={16} />
+                    X
                   </Button>
                 </div>
               )) : (

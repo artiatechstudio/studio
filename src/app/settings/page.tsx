@@ -183,13 +183,25 @@ export default function SettingsPage() {
     if (!user) return;
     setIsSubmittingRequest(true);
     playSound('click');
+
+    // تحديد كود التحويل بناءً على الباقة المختارة لشبكة ليبيانا
+    let ussdCode = "";
+    if (selectedPlan === '7days') ussdCode = "*122*0922813618*1000*1#";
+    else if (selectedPlan === '1month') ussdCode = "*122*0922813618*3000*1#";
+    else if (selectedPlan === '6months') ussdCode = "*122*0922813618*15000*1#";
+
     try {
+      // 1. فتح واجهة الاتصال أولاً بالكود المطلوب (مع ترميز علامة # لتصبح %23)
+      window.location.href = `tel:${ussdCode.replace('#', '%23')}`;
+
+      // 2. تحديث قاعدة البيانات لتسجيل الطلب
       await update(ref(database, `users/${user.uid}/premiumRequest`), {
         status: 'pending',
         duration: selectedPlan,
         requestedAt: Date.now()
       });
-      toast({ title: "تم إرسال الطلب بنجاح! 🚀", description: "سيقوم الإدارة بمراجعة طلبك وتفعيله قريباً." });
+
+      toast({ title: "جاري المعالجة... ⏳", description: "طلبك تحت الإجراء حالياً، سيتم التفعيل يدوياً بعد التأكد من التحويل." });
       setIsRequestOpen(false);
     } catch (e) {
       toast({ variant: "destructive", title: "فشل إرسال الطلب" });
@@ -289,7 +301,7 @@ export default function SettingsPage() {
               {[
                 { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 د.ل' },
                 { id: '1month', label: 'شهر كامل (اقتصادي)', price: '3 د.ل' },
-                { id: '6months', label: '6 أشهر (احترافي)', price: '18 د.ل' }
+                { id: '6months', label: '6 أشهر (احترافي)', price: '15 د.ل' }
               ].map((plan) => (
                 <div key={plan.id} onClick={() => { playSound('click'); setSelectedType(plan.id); }} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20")}>
                   <div className="flex items-center gap-3">{selectedPlan === plan.id ? <CheckCircle2 className="text-primary" /> : <div className="w-6 h-6 rounded-full border-2 border-border" />}<span className="font-black text-sm">{plan.label}</span></div>
@@ -299,16 +311,17 @@ export default function SettingsPage() {
             </div>
             
             <div className="bg-primary/5 p-4 rounded-2xl space-y-2 border border-primary/10 mb-4">
-               <p className="text-[10px] font-black text-primary flex items-center gap-2"><Wallet size={12}/> آلية الدفع المتاحة:</p>
+               <p className="text-[10px] font-black text-primary flex items-center gap-2"><Wallet size={12}/> آلية الدفع (ليبيانا فقط):</p>
                <p className="text-[9px] font-bold text-muted-foreground leading-relaxed">
-                 - نقداً في مدينة سبها (المركز الرئيسي).<br/>
-                 - تحويل رصيد ليبيانا أو مدار (عبر الواتساب).
+                 - سيتم فتح لوحة الاتصال تلقائياً بكود التحويل.<br/>
+                 - يرجى تأكيد عملية الاتصال لإتمام تحويل الرصيد.<br/>
+                 - سيتم تفعيل حسابك يدوياً من قبل الإدارة بعد المراجعة.
                </p>
             </div>
 
             <DialogFooter>
               <Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-12 rounded-xl font-black text-lg">
-                {isSubmittingRequest ? "جاري الإرسال..." : "تأكيد وإرسال الطلب 🐱"}
+                {isSubmittingRequest ? "جاري الإرسال..." : "تأكيد الطلب والتحويل 🐱"}
               </Button>
             </DialogFooter>
           </DialogContent>

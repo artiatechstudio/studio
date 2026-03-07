@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -76,7 +77,7 @@ export default function InstructionsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">أسبوع واحد</h5><p className="text-2xl font-black text-primary mt-1">1 د.ل</p></div>
                   <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">شهر كامل</h5><p className="text-2xl font-black text-primary mt-1">3 د.ل</p></div>
-                  <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">6 أشهر</h5><p className="text-2xl font-black text-primary mt-1">18 د.ل</p></div>
+                  <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">6 أشهر</h5><p className="text-2xl font-black text-primary mt-1">15 د.ل</p></div>
                 </div>
               </div>
 
@@ -105,12 +106,12 @@ export default function InstructionsPage() {
               <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10 space-y-4">
                 <h4 className="font-black text-primary text-sm flex items-center gap-2"><Wallet size={16} /> كيفية الدفع والتفعيل:</h4>
                 <p className="text-xs font-bold text-slate-700 leading-relaxed">
-                  نحن ندعم وسائل الدفع المحلية لضمان سهولة الانضمام:
+                  نحن ندعم وسيلة الدفع المباشرة لضمان سهولة الانضمام:
                 </p>
                 <div className="space-y-2 pr-2">
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> الدفع نقداً في مقر الاستوديو بمدينة سبها.</div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> تحويل رصيد (ليبيانا أو مدار) إلى الرقم الرسمي للإدارة.</div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> بعد الدفع، يتم تفعيل حسابك خلال أقل من ساعة.</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> تحويل رصيد (ليبيانا فقط) إلى الرقم الرسمي للإدارة.</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> يتم فتح واجهة الاتصال تلقائياً عند طلب الاشتراك من الإعدادات.</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> بعد إتمام التحويل، سيقوم النظام بتفعيل حسابك خلال أقل من ساعة بعد مراجعة الإدارة.</div>
                 </div>
               </div>
             </Card>

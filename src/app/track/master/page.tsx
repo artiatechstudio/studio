@@ -79,38 +79,49 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
+  // منطق حذف المهام المنتهية وخصم النقاط آلياً
   useEffect(() => {
-    if (!user || !todosData) return;
-    const now = Date.now();
+    if (!user || !todosData || !database) return;
     
-    const checkExpiry = async () => {
+    const checkAndPenalize = async () => {
+      const now = Date.now();
       const entries = Object.entries(todosData);
+      
       for (const [id, todo] of entries as [string, any][]) {
-        if (todo.expiry && now > todo.expiry) {
+        if (todo.expiry && now >= todo.expiry) {
           const penalty = 30;
-          const currentPoints = userData?.points || 0;
+          const currentTotalPoints = userData?.points || 0;
           const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
-          
-          const updates: any = {};
-          updates[`users/${user.uid}/points`] = Math.max(0, currentPoints - penalty);
-          updates[`users/${user.uid}/dailyPoints/${today}`] = currentDailyPoints - penalty;
-          
-          await update(ref(database), updates);
-          await remove(ref(database, `users/${user.uid}/todos/${id}`));
-          
-          push(ref(database, `users/${user.uid}/notifications`), {
-            type: 'system',
-            title: 'فشل المهمة 🛑',
-            message: `انتهى وقت المهمة "${todo.title}". تم خصم ${penalty} نقطة لعدم الالتزام.`,
-            isRead: false,
-            timestamp: serverTimestamp()
-          });
-          toast({ variant: "destructive", title: "مهمة منتهية", description: "خصم 30 نقطة لتجاوز الوقت 🛑" });
+
+          try {
+            // حذف المهمة فوراً من الداتابيز
+            await remove(ref(database, `users/${user.uid}/todos/${id}`));
+            
+            // خصم النقاط
+            await update(ref(database, `users/${user.uid}`), {
+              points: Math.max(0, currentTotalPoints - penalty),
+              [`dailyPoints/${today}`]: currentDailyPoints - penalty
+            });
+
+            // إرسال إشعار
+            push(ref(database, `users/${user.uid}/notifications`), {
+              type: 'system',
+              title: 'انتهى وقت المهمة! 🛑',
+              message: `تم حذف المهمة "${todo.title}" وخصم 30 نقطة لعدم الالتزام.`,
+              isRead: false,
+              timestamp: serverTimestamp()
+            });
+
+            toast({ variant: "destructive", title: "انتهى الوقت!", description: "تم خصم 30 نقطة لعدم الإتمام." });
+          } catch (e) {
+            console.error("Auto-delete error:", e);
+          }
         }
       }
     };
-    const timer = setInterval(checkExpiry, 10000); // فحص كل 10 ثواني
-    return () => clearInterval(timer);
+
+    const interval = setInterval(checkAndPenalize, 5000); // فحص كل 5 ثوانٍ
+    return () => clearInterval(interval);
   }, [user, todosData, database, userData, today]);
 
   const isLegend = useMemo(() => {
@@ -235,7 +246,7 @@ export default function MasterTrackPage() {
   };
 
   const handleDeleteTodo = async (todoId: string) => {
-    if (!user) return;
+    if (!user || !database) return;
     const confirmDelete = window.confirm("إلغاء المهمة يعتبر تراجعاً وسيخصم 30 نقطة! هل أنت متأكد؟ 🛑");
     if (!confirmDelete) return;
 
@@ -243,13 +254,12 @@ export default function MasterTrackPage() {
     const currentPoints = userData?.points || 0;
     const currentDailyPoints = userData?.dailyPoints?.[today] || 0;
     
-    const updates: any = {};
-    updates[`users/${user.uid}/points`] = Math.max(0, currentPoints - 30);
-    updates[`users/${user.uid}/dailyPoints/${today}`] = currentDailyPoints - 30;
-
     try {
-      await update(ref(database), updates);
       await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
+      await update(ref(database, `users/${user.uid}`), {
+        points: Math.max(0, currentPoints - 30),
+        [`dailyPoints/${today}`]: currentDailyPoints - 30
+      });
       toast({ variant: "destructive", title: "تم الإلغاء", description: "خصم 30 نقطة لعدم الالتزام 🛑" });
     } catch (e) {
       toast({ variant: "destructive", title: "فشل الحذف" });
@@ -490,7 +500,7 @@ export default function MasterTrackPage() {
                     size="icon" 
                     className="text-red-600 hover:bg-red-50 h-8 w-8 shrink-0 rounded-lg font-black text-sm"
                   >
-                    X
+                    <X size={16} />
                   </Button>
                 </div>
               )) : (

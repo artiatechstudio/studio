@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles, Users } from 'lucide-react';
+import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles, Users, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -29,7 +29,13 @@ export default function ProfilePage() {
   const { data: allUsersData, isLoading: isAllUsersLoading } = useDatabase(allUsersRef);
   
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
-  const { data: userData, isLoading } = useDatabase(profileRef);
+  const { data: userData, isLoading: isDataLoading } = useDatabase(profileRef);
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const membershipInfo = useMemo(() => {
     if (!allUsersData || !user || !userData) return { rank: 0, total: 0 };
@@ -54,7 +60,7 @@ export default function ProfilePage() {
     router.replace('/login');
   };
 
-  if (isUserLoading || isLoading || isAllUsersLoading) {
+  if (isUserLoading || isDataLoading || isAllUsersLoading || (!user && !isUserLoading)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
@@ -63,7 +69,6 @@ export default function ProfilePage() {
     );
   }
 
-  // حماية ضد البيانات الفارغة بعد التحميل
   if (!userData) return null;
 
   const getRankName = (points: number = 0) => {
@@ -92,7 +97,10 @@ export default function ProfilePage() {
           
           <div className="flex-1 text-center md:text-right space-y-2">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2">
-              <h1 className="text-2xl md:text-4xl font-black text-primary">{userData.name || 'Careingo'}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl md:text-4xl font-black text-primary">{userData.name || 'Careingo'}</h1>
+                {(userData.isPremium === 1 || userData.name === 'admin') && <Crown size={24} className="text-yellow-500" fill="currentColor" />}
+              </div>
               <span className="bg-primary/10 px-3 py-0.5 rounded-full text-[9px] font-black text-primary border border-primary/20">
                 {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
               </span>
@@ -185,7 +193,7 @@ export default function ProfilePage() {
                    <div className="bg-white p-4 rounded-3xl border-4 border-accent shadow-inner">
                       <Image src="/qr.png" alt="App QR" width={200} height={200} className="object-contain" />
                    </div>
-                   <p className="text-xs font-bold text-muted-foreground">امسح الرمز لمشاركة التطبيق مع من تحب 🐱</p>
+                   <p className="text-xs font-bold text-muted-foreground">امسح المركز لمشاركة التطبيق مع من تحب 🐱</p>
                    <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-xl font-black">إغلاق</Button>
                  </div>
                </DialogContent>

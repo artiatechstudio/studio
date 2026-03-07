@@ -121,7 +121,7 @@ export default function Home() {
     return { value: val, status: "سمنة", color: "text-red-500" };
   }, [userData]);
 
-  if (isUserLoading || (user && isDataLoading)) {
+  if (isUserLoading || (user && isDataLoading) || (!user && !isUserLoading)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>

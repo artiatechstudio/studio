@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare, AlertTriangle, Crown } from 'lucide-react';
+import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare, AlertTriangle, Crown, Infinity } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -38,8 +38,13 @@ export default function MasterTrackPage() {
   const { data: todosData } = useDatabase(todosRef);
 
   const isPremium = userData?.isPremium === 1;
+  const today = new Date().toLocaleDateString('en-CA');
 
-  // منطق المؤقت المستمر في المسار العام
+  // عدادات اليوم
+  const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
+  const todoCountToday = userData?.dailyTodoCount?.[today] || 0;
+
+  // منطق المؤقت المستمر
   useEffect(() => {
     const savedEnd = localStorage.getItem('master_timer_end');
     const savedChallenge = localStorage.getItem('master_current_challenge');
@@ -75,12 +80,11 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
-  // منطق التنظيف اليومي والخصم الآلي
+  // تنظيف يومي للمهام وخصم النقاط
   useEffect(() => {
     if (!user || !userData) return;
 
     const checkDailyTodos = async () => {
-      const today = new Date().toLocaleDateString('en-CA');
       const lastCheck = userData.lastTodoCheckDate;
 
       if (lastCheck && lastCheck !== today) {
@@ -114,7 +118,7 @@ export default function MasterTrackPage() {
     };
 
     checkDailyTodos();
-  }, [user, userData, database]);
+  }, [user, userData, database, today]);
 
   const isLegend = useMemo(() => {
     if (!userData?.trackProgress) return false;
@@ -131,10 +135,7 @@ export default function MasterTrackPage() {
       return;
     }
     
-    // حدود المستخدم المجاني
-    const today = new Date().toLocaleDateString('en-CA');
-    const masterCount = userData?.dailyMasterCount?.[today] || 0;
-    if (!isPremium && masterCount >= 5) {
+    if (!isPremium && masterCountToday >= 5) {
       toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لتحديات غير محدودة! 👑" });
       return;
     }
@@ -149,9 +150,8 @@ export default function MasterTrackPage() {
     localStorage.setItem('master_timer_end', endTime.toString());
     localStorage.setItem('master_current_challenge', JSON.stringify(random));
     
-    // تحديث عداد التحديات اليومي
     update(ref(database, `users/${user.uid}`), {
-      [`dailyMasterCount/${today}`]: masterCount + 1
+      [`dailyMasterCount/${today}`]: masterCountToday + 1
     });
 
     setTimeLeft(durationSeconds);
@@ -167,11 +167,10 @@ export default function MasterTrackPage() {
     localStorage.removeItem('master_current_challenge');
 
     if (isLegend) {
-      const todayStr = new Date().toLocaleDateString('en-CA');
       const points = currentChallenge.points || 50;
       await update(ref(database, `users/${user.uid}`), {
         points: (userData.points || 0) + points,
-        [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + points
+        [`dailyPoints/${today}`]: (userData.dailyPoints?.[today] || 0) + points
       });
       toast({ title: "إنجاز أسطوري! 🎉", description: `حصلت على ${points} نقطة لمستواك المتقدم.` });
     } else {
@@ -185,9 +184,8 @@ export default function MasterTrackPage() {
     e.preventDefault();
     if (!todoInput.trim() || !user) return;
 
-    const currentTodos = todosData ? Object.keys(todosData).length : 0;
-    if (!isPremium && currentTodos >= 5) {
-      toast({ variant: "destructive", title: "الحد الأقصى للمهام", description: "اشترك في بريميوم لإضافة مهام لا نهائية! 👑" });
+    if (!isPremium && todoCountToday >= 5) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لمهام لا نهائية يومياً! 👑" });
       return;
     }
 
@@ -199,6 +197,12 @@ export default function MasterTrackPage() {
       completed: false,
       timestamp: serverTimestamp()
     });
+
+    // تحديث عداد المهام اليومي المنشأة
+    update(ref(database, `users/${user.uid}`), {
+      [`dailyTodoCount/${today}`]: todoCountToday + 1
+    });
+
     setTodoInput('');
   };
 
@@ -207,13 +211,12 @@ export default function MasterTrackPage() {
     playSound('click');
     setCompletingId(todoId);
     
-    const todayStr = new Date().toLocaleDateString('en-CA');
     const currentPoints = userData?.points || 0;
-    const dailyPoints = userData?.dailyPoints?.[todayStr] || 0;
+    const dailyPoints = userData?.dailyPoints?.[today] || 0;
 
     update(ref(database, `users/${user.uid}`), {
       points: currentPoints + 5,
-      [`dailyPoints/${todayStr}`]: dailyPoints + 5
+      [`dailyPoints/${today}`]: dailyPoints + 5
     });
 
     toast({ title: "أحسنت! +5 نقاط 🌟" });
@@ -232,11 +235,10 @@ export default function MasterTrackPage() {
 
     playSound('click');
     const currentPoints = userData?.points || 0;
-    const todayStr = new Date().toLocaleDateString('en-CA');
     
     await update(ref(database, `users/${user.uid}`), {
       points: Math.max(0, currentPoints - 30),
-      [`dailyPoints/${todayStr}`]: (userData?.dailyPoints?.[todayStr] || 0) - 30
+      [`dailyPoints/${today}`]: (userData?.dailyPoints?.[today] || 0) - 30
     });
 
     await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
@@ -275,6 +277,14 @@ export default function MasterTrackPage() {
 
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden">
+            <div className="flex items-center justify-between">
+               <h3 className="font-black text-primary text-sm">ابدأ تحدياً جديداً</h3>
+               <div className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full border border-border/50">
+                  <span className="text-[9px] font-black text-muted-foreground">المتبقي اليوم:</span>
+                  {isPremium ? <Infinity size={12} className="text-yellow-600" /> : <span className="text-xs font-black text-primary">{5 - masterCountToday}/5</span>}
+               </div>
+            </div>
+
             {!isLegend && (
               <div className="bg-orange-50 border-r-4 border-orange-500 p-4 rounded-2xl flex items-start gap-3">
                 <ShieldAlert className="text-orange-600 shrink-0" size={18} />
@@ -285,7 +295,7 @@ export default function MasterTrackPage() {
             )}
 
             <div className="space-y-3">
-              <h3 className="font-black text-primary text-sm">1. نوع المهمة</h3>
+              <h3 className="font-black text-primary text-xs opacity-60">1. نوع المهمة</h3>
               <div className="grid grid-cols-2 gap-2">
                 {(['Fitness', 'Nutrition', 'Behavior', 'Study'] as TrackKey[]).map(t => (
                   <Button 
@@ -301,7 +311,7 @@ export default function MasterTrackPage() {
             </div>
 
             <div className="space-y-3">
-              <h3 className="font-black text-primary text-sm">2. الصعوبة</h3>
+              <h3 className="font-black text-primary text-xs opacity-60">2. الصعوبة</h3>
               <div className="flex gap-2">
                 {(['سهل', 'متوسط', 'صعب'] as const).map(d => (
                   <Button 
@@ -374,8 +384,11 @@ export default function MasterTrackPage() {
               <ListChecks size={20} /> قائمة مهامي
             </h2>
             <div className="flex flex-col items-end">
-              <span className="text-[8px] font-black text-muted-foreground bg-secondary px-2.5 py-1 rounded-full uppercase">الإنجاز = +5 نقاط</span>
-              <span className="text-[7px] font-black text-red-500 mt-1 flex items-center gap-1">
+              <div className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-lg border border-border/20 mb-1">
+                 <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
+                 {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{5 - todoCountToday}/5</span>}
+              </div>
+              <span className="text-[7px] font-black text-red-500 flex items-center gap-1">
                 <AlertTriangle size={8} /> إلغاء/تجاهل = -30 نقطة
               </span>
             </div>
@@ -430,7 +443,7 @@ export default function MasterTrackPage() {
               )) : (
                 <div className="text-center py-8 opacity-20">
                   <ListChecks size={32} className="mx-auto mb-2" />
-                  <p className="font-black text-[10px] italic">لا توجد مهام حالياً.</p>
+                  <p className="font-black text-[10px] italic">لا توجد مهام نشطة حالياً.</p>
                 </div>
               )}
             </div>

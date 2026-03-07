@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles } from 'lucide-react';
+import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles, Users } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -159,25 +159,25 @@ export default function ProfilePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="rounded-[2.5rem] bg-card p-8 border border-border shadow-xl flex flex-col items-center justify-center text-center gap-4">
              <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent">
-               <QrCode size={36} />
+               <Users size={36} />
              </div>
              <div className="space-y-1">
-               <h3 className="font-black text-primary text-lg">شارك رحلتك</h3>
-               <p className="text-[10px] text-muted-foreground font-bold">دع العالم يرى إنجازاتك في كارينجو!</p>
+               <h3 className="font-black text-primary text-lg">شارك التطبيق مع أصدقائك</h3>
+               <p className="text-[10px] text-muted-foreground font-bold">ساعد الآخرين على بدء رحلة نموهم في كارينجو!</p>
              </div>
              <Dialog open={showQr} onOpenChange={setShowQr}>
                <DialogTrigger asChild>
                  <Button className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
-                   <Share2 size={18} /> إظهار الرمز
+                   <QrCode size={18} /> إظهار رمز المشاركة
                  </Button>
                </DialogTrigger>
                <DialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
-                 <DialogHeader><DialogTitle className="text-2xl font-black text-primary">رمز بروفايلك</DialogTitle></DialogHeader>
+                 <DialogHeader><DialogTitle className="text-2xl font-black text-primary">تحميل تطبيق Careingo</DialogTitle></DialogHeader>
                  <div className="flex flex-col items-center gap-6 mt-4">
                    <div className="bg-white p-4 rounded-3xl border-4 border-accent shadow-inner">
-                      <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://careingo.app/user/${user.uid}`} alt="QR" width={200} height={200} />
+                      <Image src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://careingo.app`} alt="App QR" width={200} height={200} />
                    </div>
-                   <p className="text-xs font-bold text-muted-foreground">امسح الرمز لزيارة بروفايلك العام 🐱</p>
+                   <p className="text-xs font-bold text-muted-foreground">امسح الرمز لمشاركة التطبيق مع من تحب 🐱</p>
                    <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-xl font-black">إغلاق</Button>
                  </div>
                </DialogContent>

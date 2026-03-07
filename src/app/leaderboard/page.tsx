@@ -79,7 +79,7 @@ export default function LeaderboardPage() {
         {isLoading ? (
           <div className="text-center p-12">
              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-             <p className="font-black text-primary text-xs animate-pulse">جاري التحميل...</p>
+             <p className="font-black text-primary text-xs animate-pulse">كاري ينتظرك بشوق...</p>
           </div>
         ) : (
           <div className="bg-card rounded-[2rem] shadow-xl overflow-hidden border border-border mx-2">
@@ -125,7 +125,6 @@ export default function LeaderboardPage() {
                         <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
                           {user.streak || 0}ي <Flame size={8} fill="currentColor" />
                         </span>
-                        {/* BMI Status Re-added here */}
                         <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
                            <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
                            <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>

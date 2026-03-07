@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useEffect } from 'react';
@@ -16,8 +17,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden p-4">
-      <div className="relative w-full h-full animate-pulse">
+    <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden p-0">
+      <div className="relative w-full h-full animate-pulse flex items-center justify-center">
         <Image 
           src="/splash.png" 
           alt="Careingo Icon" 
@@ -27,7 +28,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         />
       </div>
       
-      <div className="absolute bottom-8 left-0 right-0 text-center">
+      <div className="absolute bottom-12 left-0 right-0 text-center">
         <p className="text-primary/20 font-black text-[10px] tracking-[0.2em] uppercase">
           Artiatech Studio 2026
         </p>

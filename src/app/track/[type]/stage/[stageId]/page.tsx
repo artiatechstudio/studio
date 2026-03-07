@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { use, useState, useEffect, useCallback, useRef } from 'react';
@@ -27,6 +28,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const [loading, setLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [onCooldown, setOnCooldown] = useState(false);
+  const [bonusValue, setBonusValue] = useState(0);
 
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
@@ -36,6 +38,19 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   const progressRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${trackKey}`) : null, [user, database, trackKey]);
   const { data: progressData } = useDatabase(progressRef);
+
+  const calculateBonus = useCallback(() => {
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour < 5) return 75;
+    if (hour >= 20) return 0;
+    return Math.max(0, (20 - hour) * 5); 
+  }, []);
+
+  useEffect(() => {
+    // تعيين البونص فقط على العميل
+    setBonusValue(calculateBonus());
+  }, [calculateBonus]);
 
   useEffect(() => {
     if (progressData) {
@@ -77,14 +92,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     playSound('click');
     setTimerActive(false);
     setTimeLeft(0);
-  };
-
-  const calculateBonus = () => {
-    const now = new Date();
-    const hour = now.getHours();
-    if (hour < 5) return 75;
-    if (hour >= 20) return 0;
-    return Math.max(0, (20 - hour) * 5); 
   };
 
   const handleComplete = useCallback(async () => {
@@ -134,7 +141,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     } finally {
       setIsUpdating(false);
     }
-  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown]);
+  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -247,7 +254,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                     <p className="text-[8px] font-bold text-muted-foreground">نقطة أساسية</p>
                   </div>
                   <div className="bg-accent/10 p-2 rounded-xl text-center border border-accent/10">
-                    <span className="font-black text-accent text-base">+{calculateBonus()}</span>
+                    <span className="font-black text-accent text-base">+{bonusValue}</span>
                     <p className="text-[8px] font-bold text-accent">بونص تبكير</p>
                   </div>
                 </div>

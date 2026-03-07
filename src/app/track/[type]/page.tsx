@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { use } from 'react';
+import React, { use, useState, useEffect, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { StageNode } from '@/components/track/stage-node';
 import { TrackKey } from '@/lib/challenges';
@@ -24,34 +24,41 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   const userTrackRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${typeKey}`) : null, [user, database, typeKey]);
   const { data: progressData, isLoading } = useDatabase(userTrackRef);
 
+  const [todayStr, setTodayStr] = useState<string>("");
+
+  useEffect(() => {
+    // تحديد التاريخ فقط على العميل لتجنب خطأ Hydration
+    setTodayStr(new Date().toLocaleDateString('en-CA'));
+  }, []);
+
   const progress = progressData || { currentStage: 1, completedStages: [], lastCompletedDate: null };
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  
-  const isOnCooldown = progress.lastCompletedDate === todayStr;
+  const isOnCooldown = todayStr ? progress.lastCompletedDate === todayStr : false;
 
-  const stages = Array.from({ length: 30 }, (_, i) => {
-    const id = i + 1;
-    let status: 'locked' | 'open' | 'completed' | 'cooldown' = 'locked';
-    const completedStages = progress.completedStages || [];
-    
-    if (completedStages.includes(id)) {
-      status = 'completed';
-    } else if (id === (progress.currentStage || 1)) {
-      if (isOnCooldown && id > 1) {
-        status = 'cooldown';
-      } else {
-        status = 'open';
+  const stages = useMemo(() => {
+    return Array.from({ length: 30 }, (_, i) => {
+      const id = i + 1;
+      let status: 'locked' | 'open' | 'completed' | 'cooldown' = 'locked';
+      const completedStages = progress.completedStages || [];
+      
+      if (completedStages.includes(id)) {
+        status = 'completed';
+      } else if (id === (progress.currentStage || 1)) {
+        if (isOnCooldown && id > 1) {
+          status = 'cooldown';
+        } else {
+          status = 'open';
+        }
       }
-    }
 
-    const cycle = 8;
-    const pos = i % cycle;
-    let offset = 0;
-    if (pos < 4) offset = pos * 25 - 40;
-    else offset = (8 - pos) * 25 - 40;
+      const cycle = 8;
+      const pos = i % cycle;
+      let offset = 0;
+      if (pos < 4) offset = pos * 25 - 40;
+      else offset = (8 - pos) * 25 - 40;
 
-    return { id, status, offset };
-  });
+      return { id, status, offset };
+    });
+  }, [progress, isOnCooldown]);
 
   const showInfo = () => {
     toast({

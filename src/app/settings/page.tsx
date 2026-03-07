@@ -129,7 +129,7 @@ export default function SettingsPage() {
     if (!file || !user || !storage) return;
 
     if (!isPremium) {
-      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "رفع الصور متاح فقط لمشتركي العضوية الملكية." });
+      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "تحميل صورة بروفايل شخصية متاح فقط لمشتركي العضوية الملكية." });
       return;
     }
 
@@ -298,7 +298,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 relative z-10">
-            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "رفع صور شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
+            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "تحميل صورة بروفايل شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
               <div key={i} className="flex items-center gap-2 justify-end bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20">
                 <span className="text-[10px] font-black">{m.t}</span>
                 <m.i size={16} className="text-yellow-300" />
@@ -383,7 +383,7 @@ export default function SettingsPage() {
                  <button 
                    onClick={() => {
                      if (!isPremium) {
-                       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "رفع الصور متاح فقط لمشتركي العضوية الملكية." });
+                       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "تحميل صورة بروفايل شخصية متاح فقط لمشتركي العضوية الملكية." });
                        return;
                      }
                      fileInputRef.current?.click();
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                
                {!isPremium && (
                  <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl text-[10px] font-black border border-orange-100 flex items-center gap-2">
-                   <AlertCircle size={14} /> ميزة رفع الصور حصرية للبريميوم 👑
+                   <AlertCircle size={14} /> ميزة تحميل صورة بروفايل شخصية حصرية للبريميوم 👑
                  </div>
                )}
 

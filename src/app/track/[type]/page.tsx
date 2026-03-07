@@ -27,7 +27,6 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   const [todayStr, setTodayStr] = useState<string>("");
 
   useEffect(() => {
-    // تحديد التاريخ فقط على العميل لتجنب خطأ Hydration
     setTodayStr(new Date().toLocaleDateString('en-CA'));
   }, []);
 
@@ -60,17 +59,9 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
     });
   }, [progress, isOnCooldown]);
 
-  const showInfo = () => {
-    toast({
-      title: `قوانين مسار ${typeKey === 'Fitness' ? 'اللياقة' : typeKey === 'Nutrition' ? 'التغذية' : typeKey === 'Behavior' ? 'السلوك' : 'الدراسة'}`,
-      description: "مرحلة واحدة فقط يومياً لضمان بناء العادات. المرحلة القادمة تفتح عند منتصف الليل.",
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background relative overflow-hidden pb-32 md:pr-72 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
-      
       <div className="app-container py-4 relative">
         <div className="flex items-center justify-between mb-4 px-2">
           <Link href="/">
@@ -83,7 +74,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
             <MapIcon className="text-primary" size={16} />
             <h1 className="text-sm font-black text-primary">مسار {typeKey === 'Fitness' ? 'اللياقة' : typeKey === 'Nutrition' ? 'التغذية' : typeKey === 'Behavior' ? 'السلوك' : 'الدراسة'}</h1>
           </div>
-          <Button onClick={showInfo} variant="outline" size="icon" className="h-8 w-8 rounded-full border-primary text-primary">
+          <Button onClick={() => toast({ title: "قانون الـ 24 ساعة", description: "مرحلة واحدة فقط يومياً لضمان بناء العادة." })} variant="outline" size="icon" className="h-8 w-8 rounded-full border-primary text-primary">
             <Info size={14} />
           </Button>
         </div>
@@ -94,9 +85,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
             alt={typeKey}
             fill
             className="object-cover"
-            onError={(e) => {
-              (e.target as any).src = 'https://picsum.photos/seed/track/800/400';
-            }}
+            onError={(e) => { (e.target as any).src = 'https://picsum.photos/seed/track/800/400'; }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-primary/70 to-transparent" />
           <div className="absolute bottom-3 right-4 text-white">
@@ -125,21 +114,13 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
 
         <div className="relative flex flex-col items-center gap-8 pb-20">
           <div className="absolute top-0 bottom-0 left-1/2 w-1.5 bg-secondary/30 -translate-x-1/2 rounded-full -z-0" />
-          
           {isLoading ? (
             <div className="py-10 flex flex-col items-center gap-2">
               <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-              <div className="text-[9px] text-primary font-black uppercase tracking-tighter">جاري التحميل...</div>
             </div>
           ) : (
             stages.map((stage) => (
-              <StageNode 
-                key={stage.id}
-                id={stage.id}
-                status={stage.status}
-                trackType={resolvedParams.type}
-                offset={stage.offset}
-              />
+              <StageNode key={stage.id} id={stage.id} status={stage.status} trackType={resolvedParams.type} offset={stage.offset} />
             ))
           )}
         </div>

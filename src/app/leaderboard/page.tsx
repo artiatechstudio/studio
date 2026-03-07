@@ -38,7 +38,6 @@ export default function LeaderboardPage() {
         const sum = scores.reduce((a, b) => a + b, 0);
         const avgScore = Math.round(sum / 3);
 
-        // حساب مؤشر BMI والحالة الصحية
         let bmiColor = "text-gray-400";
         let bmiValue = "--";
         let bmiStatus = "غير محدد";
@@ -59,7 +58,7 @@ export default function LeaderboardPage() {
   }, [rawData]);
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-24 pt-14 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-24 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="space-y-2 px-2">
@@ -93,7 +92,6 @@ export default function LeaderboardPage() {
                   key={user.id} 
                   className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
                 >
-                  {/* Score Badge */}
                   <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[65px]">
                     <div className="flex items-center gap-1 justify-center">
                       <Star size={10} className="text-yellow-500" fill="currentColor" />
@@ -102,7 +100,6 @@ export default function LeaderboardPage() {
                     <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة</p>
                   </div>
 
-                  {/* User Info */}
                   <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
                     <div className="w-6 text-center font-black text-sm text-primary shrink-0">
                       {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 

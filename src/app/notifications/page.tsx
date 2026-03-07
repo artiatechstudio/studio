@@ -39,7 +39,7 @@ export default function NotificationsPage() {
       await update(ref(database), updates);
       toast({ title: "تم تحديد الكل كمقروء" });
     } catch (e) {
-      toast({ variant: "destructive", title: "فشلت العملية" });
+      toast({ variant: "destructive", title: "فشل العملية" });
     }
   };
 
@@ -68,7 +68,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-32 pt-14 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-32 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-10 space-y-8">
         <header className="flex items-center justify-between bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">

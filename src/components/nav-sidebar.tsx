@@ -75,37 +75,41 @@ export function NavSidebar() {
     router.replace('/login');
   };
 
+  const isHome = pathname === '/';
+
   return (
     <>
-      {/* Top Header for Mobile Only */}
-      <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-background/90 backdrop-blur-xl border-b border-border z-[60] flex items-center justify-between px-4 shadow-sm">
-        <div className="flex items-center gap-2">
-          <Link href="/notifications" onClick={() => playSound('click')} className="relative p-2 rounded-xl bg-secondary/50">
-            <Bell className={cn("w-5 h-5 text-primary", unreadNotifCount > 0 && "animate-pulse")} />
-            {unreadNotifCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-accent text-white text-[8px] font-black min-w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce border border-white">
-                {unreadNotifCount}
-              </span>
-            )}
-          </Link>
-        </div>
+      {/* Top Header for Mobile Only - Shown only on Home Screen */}
+      {isHome && (
+        <div className="md:hidden fixed top-0 left-0 right-0 h-14 bg-background/90 backdrop-blur-xl border-b border-border z-[60] flex items-center justify-between px-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Link href="/notifications" onClick={() => playSound('click')} className="relative p-2 rounded-xl bg-secondary/50">
+              <Bell className={cn("w-5 h-5 text-primary", unreadNotifCount > 0 && "animate-pulse")} />
+              {unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-accent text-white text-[8px] font-black min-w-4 h-4 rounded-full flex items-center justify-center shadow-md animate-bounce border border-white">
+                  {unreadNotifCount}
+                </span>
+              )}
+            </Link>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 shadow-inner">
-            <Flame size={14} className="text-orange-600" fill="currentColor" />
-            <span className="text-[10px] font-black text-orange-600">{userData?.streak || 0}</span>
-          </Link>
-          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-100 shadow-inner">
-            <Star size={14} className="text-yellow-600" fill="currentColor" />
-            <span className="text-[10px] font-black text-yellow-600">{userData?.points || 0}</span>
+          <div className="flex items-center gap-2">
+            <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 shadow-inner">
+              <Flame size={14} className="text-orange-600" fill="currentColor" />
+              <span className="text-[10px] font-black text-orange-600">{userData?.streak || 0}</span>
+            </Link>
+            <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-100 shadow-inner">
+              <Star size={14} className="text-yellow-600" fill="currentColor" />
+              <span className="text-[10px] font-black text-yellow-600">{userData?.points || 0}</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black text-primary">كارينجو</span>
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">🐱</div>
           </div>
         </div>
-
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-black text-primary">كارينجو</span>
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">🐱</div>
-        </div>
-      </div>
+      )}
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl overflow-y-auto">

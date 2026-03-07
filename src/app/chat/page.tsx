@@ -25,11 +25,9 @@ export default function ChatListPage() {
 
   const recentChatUsers = useMemo(() => {
     if (!usersData || !chatsData || !user) return [];
-    
-    // تصفية المحادثات التي تحتوي على رسائل فقط وتخص المستخدم الحالي
     const userIdsWithChats = Object.keys(chatsData)
       .filter(chatId => chatId.includes(user.uid))
-      .filter(chatId => chatsData[chatId].messages) // التأكد من وجود رسائل
+      .filter(chatId => chatsData[chatId].messages)
       .map(chatId => chatId.split('_').find(id => id !== user.uid))
       .filter(Boolean) as string[];
 
@@ -49,7 +47,7 @@ export default function ChatListPage() {
   }, [usersData, searchTerm, user]);
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-32 pt-14 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-32 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-10 space-y-8">
         <header className="flex items-center gap-4 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">
@@ -64,8 +62,6 @@ export default function ChatListPage() {
             <CardTitle className="text-xl font-black text-primary">ابدأ محادثة جديدة</CardTitle>
           </CardHeader>
           <CardContent className="p-8 space-y-6">
-            
-            {/* AI Character Entry */}
             <Link href="/chat/ai" onClick={() => playSound('click')} className="block">
               <div className="flex items-center justify-between p-6 rounded-[2rem] bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-[1.02] transition-transform">
                 <div className="flex items-center gap-4">

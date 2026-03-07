@@ -48,29 +48,22 @@ export default function ProfilePage() {
 
   const membershipInfo = useMemo(() => {
     if (!allUsersData || !user) return { rank: 0, total: 0 };
-    
     const usersArray = Object.values(allUsersData) as any[];
     const sortedUsers = usersArray.sort((a, b) => {
       const dateA = new Date(a.registrationDate || 0).getTime();
       const dateB = new Date(b.registrationDate || 0).getTime();
       return dateA - dateB;
     });
-    
     const rank = sortedUsers.findIndex(u => u.id === user.uid) + 1;
     return { rank: rank > 0 ? rank : 1, total: sortedUsers.length };
   }, [allUsersData, user]);
 
   const handleLogout = async () => {
     playSound('click');
-    localStorage.removeItem('careingo_user_data'); // تنظيف الكاش عند الخروج
+    localStorage.removeItem('careingo_user_data');
     await signOut(auth);
     toast({ title: "تم تسجيل الخروج" });
     router.replace('/login');
-  };
-
-  const handleShare = () => {
-    playSound('click');
-    setShowQr(true);
   };
 
   if (isUserLoading || (isLoading && !cachedProfile) || isAllUsersLoading) {
@@ -94,7 +87,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64 pt-14 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="max-w-5xl mx-auto p-6 md:p-12 space-y-10">
         <header className="flex flex-col md:flex-row items-center gap-8 bg-card p-10 rounded-[2.5rem] shadow-xl border border-border">
@@ -171,7 +164,7 @@ export default function ProfilePage() {
              </div>
              <Dialog open={showQr} onOpenChange={setShowQr}>
                <DialogTrigger asChild>
-                 <Button onClick={handleShare} className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
+                 <Button className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
                    <Share2 size={18} /> إظهار الرمز
                  </Button>
                </DialogTrigger>
@@ -181,13 +174,7 @@ export default function ProfilePage() {
                  </DialogHeader>
                  <div className="flex flex-col items-center gap-6 mt-4">
                    <div className="bg-white p-6 rounded-[2rem] shadow-inner border-4 border-accent">
-                      <Image 
-                        src="/qr.png" 
-                        alt="QR Code" 
-                        width={250} 
-                        height={250} 
-                        className="rounded-lg"
-                      />
+                      <Image src="/qr.png" alt="QR Code" width={250} height={250} className="rounded-lg" />
                    </div>
                    <p className="font-bold text-muted-foreground">اجعل أصدقاءك يصورون هذا الرمز للتحميل المباشر 🐱</p>
                    <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-2xl font-black">إغلاق</Button>

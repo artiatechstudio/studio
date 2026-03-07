@@ -42,7 +42,7 @@ export default function InstructionsPage() {
               <Star className="text-yellow-500" fill="currentColor" /> <h2>نظام النقاط وبونص التبكير</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
-              <p className="font-bold text-base md:text-lg leading-relaxed">
+              <p className="font-bold text-base md:text-lg leading-relaxed text-slate-900">
                 في كارينجو، نكافئ الانضباط والتبكير. إليك كيف تُحسب نقاطك في كل تحدي:
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -64,7 +64,7 @@ export default function InstructionsPage() {
               <Lock className="text-primary" /> <h2>قانون الـ 24 ساعة</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <p className="font-bold text-base md:text-lg leading-relaxed">
+              <p className="font-bold text-base md:text-lg leading-relaxed text-slate-900">
                 النمو الحقيقي يأتي بالتدريج لا بالسرعة. لذلك نطبق "نظام القفل الذكي":
               </p>
               <div className="space-y-3">
@@ -90,12 +90,12 @@ export default function InstructionsPage() {
               <Sparkles className="text-accent" /> <h2>المساعد الذكي "كاري" 🐱</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-accent/20 bg-accent/5 space-y-4">
-              <p className="font-black text-base md:text-lg leading-relaxed text-slate-900">
+              <p className="font-black text-base md:text-lg leading-relaxed text-primary">
                 كاري ليس مجرد أيقونة، إنه رفيقك المدعوم بأحدث تقنيات الذكاء الاصطناعي (Gemini 1.5):
               </p>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10">● <span className="font-black">نصائح فورية:</span> اطلب منه نصيحة في التغذية أو اللياقة في أي وقت.</li>
-                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10">● <span className="font-black">تحفيز دائم:</span> سيقوم كاري بتشجيعك بناءً على مستوى تقدمك الفعلي وسلسلة إنجازك.</li>
+                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10 text-slate-900">● <span className="font-black">نصائح فورية:</span> اطلب منه نصيحة في التغذية أو اللياقة في أي وقت.</li>
+                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10 text-slate-900">● <span className="font-black">تحفيز دائم:</span> سيقوم كاري بتشجيعك بناءً على مستوى تقدمك الفعلي وسلسلة إنجازك.</li>
               </ul>
             </Card>
           </div>
@@ -153,7 +153,7 @@ export default function InstructionsPage() {
               <ShieldCheck className="text-blue-600" /> <h2>الهوية والأوسمة</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <p className="font-bold text-sm md:text-base leading-relaxed">
+              <p className="font-bold text-sm md:text-base leading-relaxed text-slate-900">
                 كل مستخدم في كارينجو يحصل على <span className="font-black text-primary">رقم عضوية فخري</span> يعكس ترتيب انضمامه الفعلي للمجتمع. كما يمكنك اكتساب أوسمة آلية عند تحقيق السلاسل (Streaks) أو إكمال عدد معين من التحديات.
               </p>
               <div className="flex flex-wrap gap-2 justify-center">

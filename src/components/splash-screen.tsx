@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png بعرض الشاشة مع كلمة "تقدم" صغيرة بلون أسود صلب تحتها مباشرة وبشكل قريب.
+ * يعرض أيقونة splash.png بعرض الشاشة مرفوعة للأعلى قليلاً، مع إزالة كافة النصوص.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
@@ -17,8 +17,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden p-0">
-      <div className="flex flex-col items-center gap-0 w-full">
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-start overflow-hidden p-0 pt-20">
+      <div className="flex flex-col items-center gap-0 w-full relative">
         <div className="relative w-full aspect-square max-w-md">
           <Image 
             src="/splash.png" 
@@ -28,7 +28,6 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             priority
           />
         </div>
-        <h1 className="text-[10px] font-black text-black uppercase tracking-[0.3em] mt-[-45px] relative z-10">تقدم</h1>
       </div>
       
       <div className="absolute bottom-12 left-0 right-0 text-center">

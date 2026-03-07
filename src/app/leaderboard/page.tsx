@@ -58,7 +58,7 @@ export default function LeaderboardPage() {
   }, [rawData]);
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-24 pt-4 md:pt-0" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="space-y-2 px-2">

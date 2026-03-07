@@ -21,8 +21,7 @@ export default function StreakPage() {
   const { data: allUsersData } = useDatabase(allUsersRef);
 
   useEffect(() => {
-    const now = new Date();
-    setTodayStr(now.toLocaleDateString('en-CA'));
+    setTodayStr(new Date().toLocaleDateString('en-CA'));
   }, []);
 
   const membershipRank = useMemo(() => {
@@ -41,11 +40,11 @@ export default function StreakPage() {
     return !!userData.dailyPoints[todayStr];
   }, [userData, todayStr]);
 
-  // توليد بيانات آخر 30 يوم للشبكة
   const last30Days = useMemo(() => {
     const days = [];
+    const baseDate = new Date();
     for (let i = 29; i >= 0; i--) {
-      const d = new Date();
+      const d = new Date(baseDate);
       d.setDate(d.getDate() - i);
       const dStr = d.toLocaleDateString('en-CA');
       days.push({
@@ -57,14 +56,14 @@ export default function StreakPage() {
     return days;
   }, [userData]);
 
-  // توليد أيام الأسبوع الحالي
   const currentWeek = useMemo(() => {
     const week = [];
     const dayLabels = ['أحد', 'اثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
+    const baseDate = new Date();
+    const dayOfWeek = baseDate.getDay();
     for (let i = 0; i < 7; i++) {
-      const d = new Date();
-      const day = d.getDay();
-      d.setDate(d.getDate() - (day - i));
+      const d = new Date(baseDate);
+      d.setDate(d.getDate() - (dayOfWeek - i));
       const dStr = d.toLocaleDateString('en-CA');
       week.push({
         label: dayLabels[i],
@@ -90,7 +89,6 @@ export default function StreakPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
-        {/* Header - Compact */}
         <header className="bg-gradient-to-br from-primary to-accent p-6 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
           <div className="flex items-center justify-between relative z-10">
@@ -101,11 +99,11 @@ export default function StreakPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-center border border-white/20">
+              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-center border border-white/20 min-w-[60px]">
                 <p className="text-xl font-black">{userData?.streak || 0}</p>
                 <p className="text-[8px] font-black uppercase opacity-70">يوم</p>
               </div>
-              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-center border border-white/20">
+              <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-2xl text-center border border-white/20 min-w-[60px]">
                 <p className="text-xl font-black">{userData?.points || 0}</p>
                 <p className="text-[8px] font-black uppercase opacity-70">نقطة</p>
               </div>
@@ -113,13 +111,12 @@ export default function StreakPage() {
           </div>
         </header>
 
-        {/* Weekly Momentum Strip - Fixed Margins */}
         <section className="px-2">
-          <Card className="rounded-[2rem] border-none shadow-lg bg-card p-6 overflow-hidden">
+          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-6 overflow-hidden">
             <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2 px-2">
               زخم الأسبوع الحالي <Flame size={18} className="text-orange-500" />
             </h3>
-            <div className="flex justify-between items-center gap-1 px-1">
+            <div className="flex justify-between items-center gap-1 px-2">
               {currentWeek.map((day, i) => (
                 <div key={i} className="flex flex-col items-center gap-2 flex-1">
                   <div className={cn(
@@ -138,7 +135,6 @@ export default function StreakPage() {
           </Card>
         </section>
 
-        {/* Activity Heatmap Grid */}
         <section className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-6 overflow-hidden">
             <CardHeader className="p-0 mb-6 flex flex-row items-center justify-between flex-row-reverse">
@@ -170,7 +166,6 @@ export default function StreakPage() {
           </Card>
         </section>
 
-        {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
           <Card className="rounded-[2rem] border-none shadow-md bg-card p-5 flex items-center gap-4 border border-border">
             <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0", isDoneToday ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600")}>

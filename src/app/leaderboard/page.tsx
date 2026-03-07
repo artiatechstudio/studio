@@ -38,6 +38,7 @@ export default function LeaderboardPage() {
         const sum = scores.reduce((a, b) => a + b, 0);
         const avgScore = Math.round(sum / 3);
 
+        // حساب مؤشر BMI والحالة الصحية
         let bmiColor = "text-gray-400";
         let bmiValue = "--";
         let bmiStatus = "غير محدد";
@@ -82,7 +83,7 @@ export default function LeaderboardPage() {
              <p className="font-black text-primary text-xs animate-pulse">كاري ينتظرك بشوق...</p>
           </div>
         ) : (
-          <div className="bg-card rounded-[2rem] shadow-xl overflow-hidden border border-border mx-2">
+          <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
             <div className="p-3 border-b border-border bg-secondary/5 text-right">
               <h2 className="text-[10px] font-black text-primary uppercase">المتصدرون حالياً</h2>
             </div>

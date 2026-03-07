@@ -36,31 +36,29 @@ export function NavSidebar() {
   const { database } = useFirebase();
   const auth = useAuth();
 
-  // نظام إشعارات الدردشة الذكي
   const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
   const { data: chatsData } = useDatabase(chatsRef);
 
+  // حساب إجمالي الرسائل غير المقروءة عبر كافة المحادثات
   const unreadCount = useMemo(() => {
     if (!chatsData || !user) return 0;
     
-    let count = 0;
+    let totalUnread = 0;
     Object.keys(chatsData).forEach(chatId => {
       if (chatId.includes(user.uid)) {
         const chat = chatsData[chatId];
         const messages: any[] = Object.values(chat.messages || {});
-        if (messages.length === 0) return;
-
-        // العثور على طابع زمن آخر رسالة
-        const lastMsg = messages.reduce((prev, curr) => (curr.timestamp > prev.timestamp ? curr : prev), messages[0]);
         const lastSeen = chat.lastSeen?.[user.uid] || 0;
 
-        // إذا كانت الرسالة من شخص آخر وهي أحدث من آخر وقت دخول لي للدردشة
-        if (lastMsg.senderId !== user.uid && lastMsg.timestamp > lastSeen) {
-          count++;
-        }
+        // عد الرسائل التي أرسلها الطرف الآخر وهي أحدث من آخر وقت رؤية لي
+        const unreadInThisChat = messages.filter(m => 
+          m.senderId !== user.uid && m.timestamp > lastSeen
+        ).length;
+
+        totalUnread += unreadInThisChat;
       }
     });
-    return count;
+    return totalUnread;
   }, [chatsData, user]);
 
   const handleLogout = async () => {
@@ -72,7 +70,6 @@ export function NavSidebar() {
 
   return (
     <>
-      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col fixed right-0 top-0 h-screen w-72 bg-card border-l border-border z-40 p-8 shadow-2xl overflow-y-auto">
         <div className="flex items-center gap-4 mb-10 justify-end" dir="rtl">
           <div className="w-14 h-14 bg-primary rounded-[1.25rem] flex items-center justify-center text-white font-black text-4xl shadow-xl">🐱</div>
@@ -96,8 +93,8 @@ export function NavSidebar() {
               <span className="font-black text-xl">{item.label}</span>
               
               {item.label === 'الدردشة' && unreadCount > 0 && (
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white">
-                  {unreadCount}
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-black min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white">
+                  {unreadCount > 99 ? "+99" : unreadCount}
                 </span>
               )}
             </Link>
@@ -131,7 +128,6 @@ export function NavSidebar() {
         </div>
       </aside>
 
-      {/* Mobile Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[2.5rem]">
         {mobileNavItems.map((item) => (
           <Link
@@ -153,8 +149,8 @@ export function NavSidebar() {
               <item.icon className={cn(item.isCenter ? "w-7 h-7" : "w-6 h-6", pathname === item.href && "stroke-[3px]")} />
               
               {item.label === 'الدردشة' && unreadCount > 0 && (
-                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
-                  {unreadCount}
+                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
+                  {unreadCount > 99 ? "99+" : unreadCount}
                 </span>
               )}
             </div>

@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useEffect } from 'react';
@@ -6,7 +5,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png في منتصف الشاشة بخلفية بيضاء تماماً لمدة 2.5 ثانية.
+ * يعرض أيقونة splash.png بحجم كبير في منتصف الشاشة بخلفية بيضاء تماماً لمدة 2.5 ثانية.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
@@ -22,8 +21,8 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
         <Image 
           src="/splash.png" 
           alt="Careingo Icon" 
-          width={120} 
-          height={120} 
+          width={250} // تم تكبير العرض من 120 إلى 250
+          height={250} // تم تكبير الارتفاع من 120 إلى 250
           className="object-contain"
           priority
         />

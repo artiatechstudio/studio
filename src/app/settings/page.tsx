@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2 } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -200,7 +200,7 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="grid grid-cols-2 gap-4 relative z-10">
-            {[{ t: "بدون إعلانات", i: Sparkles }, { t: "نشر غير محدود", i: Globe }, { t: "تحديات مفتوحة", i: Trophy }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
+            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "نقاط مضاعفة", i: Trophy }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
               <div key={i} className="flex items-center gap-2 justify-end bg-white/10 p-2 rounded-xl border border-white/20"><span className="text-[10px] font-black">{m.t}</span><m.i size={14} /></div>
             ))}
           </div>
@@ -217,12 +217,15 @@ export default function SettingsPage() {
 
         <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
           <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
-            <DialogHeader><DialogTitle className="text-2xl font-black text-primary text-right">اختر باقة النمو</DialogTitle><DialogDescription className="text-right font-bold">باقات بسيطة لتجربة ملكية كاملة</DialogDescription></DialogHeader>
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-black text-primary text-right">اختر باقة النمو</DialogTitle>
+              <DialogDescription className="text-right font-bold">باقات بسيطة لتجربة ملكية كاملة</DialogDescription>
+            </DialogHeader>
             <div className="space-y-4 py-4">
               {[
-                { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 دينار' },
-                { id: '1month', label: 'شهر كامل (اقتصادي)', price: '4 دينار' },
-                { id: '6months', label: '6 أشهر (احترافي)', price: '20 دينار' }
+                { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 د.ل' },
+                { id: '1month', label: 'شهر كامل (اقتصادي)', price: '3 د.ل' },
+                { id: '6months', label: '6 أشهر (احترافي)', price: '18 د.ل' }
               ].map((plan) => (
                 <div key={plan.id} onClick={() => { playSound('click'); setSelectedType(plan.id); }} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20")}>
                   <div className="flex items-center gap-3">{selectedPlan === plan.id ? <CheckCircle2 className="text-primary" /> : <div className="w-6 h-6 rounded-full border-2 border-border" />}<span className="font-black text-sm">{plan.label}</span></div>
@@ -230,7 +233,20 @@ export default function SettingsPage() {
                 </div>
               ))}
             </div>
-            <DialogFooter><Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-12 rounded-xl font-black text-lg">{isSubmittingRequest ? "جاري الإرسال..." : "تأكيد وإرسال الطلب 🐱"}</Button></DialogFooter>
+            
+            <div className="bg-primary/5 p-4 rounded-2xl space-y-2 border border-primary/10 mb-4">
+               <p className="text-[10px] font-black text-primary flex items-center gap-2"><Wallet size={12}/> آلية الدفع المتاحة:</p>
+               <p className="text-[9px] font-bold text-muted-foreground leading-relaxed">
+                 - نقداً في مدينة سبها (المركز الرئيسي).<br/>
+                 - تحويل رصيد ليبيانا أو مدار (عبر الواتساب).
+               </p>
+            </div>
+
+            <DialogFooter>
+              <Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-12 rounded-xl font-black text-lg">
+                {isSubmittingRequest ? "جاري الإرسال..." : "تأكيد وإرسال الطلب 🐱"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 

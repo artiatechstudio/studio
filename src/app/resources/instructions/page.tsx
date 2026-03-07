@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -60,29 +60,59 @@ export default function InstructionsPage() {
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-dashed border-2 border-primary/30 bg-primary/5 space-y-6">
               <p className="text-xs font-bold text-slate-700 leading-relaxed">هناك 90 مرحلة أسطورية إضافية تفتح للأبطال في المسار العام. لا يتم احتساب نقاط هنا إلا لمن ختم المسارات الأربعة الأساسية أولاً.</p>
+              <div className="flex items-center gap-2 bg-yellow-50 p-4 rounded-2xl border border-yellow-200">
+                <Sparkles className="text-yellow-600" size={20} />
+                <p className="text-[10px] font-black text-yellow-800">ميزة حصرية: يحصل مشتركو البريميوم على نقاط مضاعفة (2x) في هذا المسار!</p>
+              </div>
             </Card>
           </div>
 
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
-              <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية Careingo الملكية والأسعار</h2>
+              <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية Careingo الملكية (Premium)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-yellow-100 bg-yellow-50/20 space-y-6">
-              <p className="font-bold text-slate-900 text-sm">باقات الاشتراك المتاحة (بالدينار الليبي):</p>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-sm">أسبوع واحد</h5><p className="text-2xl font-black text-primary mt-1">1 د.ل</p></div>
-                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-sm">شهر كامل</h5><p className="text-2xl font-black text-primary mt-1">4 د.ل</p></div>
-                <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-sm">6 أشهر</h5><p className="text-2xl font-black text-primary mt-1">20 د.ل</p></div>
+              <div className="space-y-4">
+                <h4 className="font-black text-primary text-sm">باقات الاشتراك الحالية:</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">أسبوع واحد</h5><p className="text-2xl font-black text-primary mt-1">1 د.ل</p></div>
+                  <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">شهر كامل</h5><p className="text-2xl font-black text-primary mt-1">3 د.ل</p></div>
+                  <div className="p-5 bg-white rounded-2xl shadow-sm border border-yellow-200 text-center"><h5 className="font-black text-yellow-800 text-xs">6 أشهر</h5><p className="text-2xl font-black text-primary mt-1">18 د.ل</p></div>
+                </div>
               </div>
-              <div className="space-y-3 pt-4">
-                {[
-                  "تجربة خالية تماماً من الإعلانات.",
-                  "ظهور التاج الملكي بجانب اسمك وتوثيق حسابك.",
-                  "دردشة غير محدودة مع المساعد الذكي كاري.",
-                  "الأولوية في مراجعة التحديات والمهام الخاصة."
-                ].map((txt, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs font-bold text-slate-700"><CheckCircle2 size={14} className="text-green-600" /> {txt}</div>
-                ))}
+
+              <div className="space-y-4 pt-4">
+                <h4 className="font-black text-primary text-sm flex items-center gap-2"><Sparkles size={16}/> الميزات الحصرية:</h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { t: "حصانة الحماسة (Streak Freeze)", d: "لن تفقد سجل التزامك أو نقاطك في حالة الغياب المفاجئ.", i: ShieldCheck },
+                    { t: "نقاط مضاعفة (2x Points)", d: "احصل على ضعف النقاط في المسار العام (تحديات الأساطير).", i: Trophy },
+                    { t: "دردشة غير محدودة مع كاري", d: "تحدث مع المساعد الذكي في أي وقت دون حدود يومية.", i: Brain },
+                    { t: "تجربة نقية وبدون إعلانات", d: "تصفح التطبيق بسرعة فائقة ودون أي مقاطعة إعلانية.", i: Zap },
+                    { t: "التاج الملكي وتوثيق الحساب", d: "ظهور أيقونة التاج بجانب اسمك في كافة القوائم.", i: Crown },
+                    { t: "تقارير النمو الأسبوعية", d: "بطاقة إنجازات خاصة نهاية كل أسبوع لمشاركتها.", i: ListChecks }
+                  ].map((feat, i) => (
+                    <div key={i} className="flex items-start gap-3 p-4 bg-white/60 rounded-2xl border border-yellow-100">
+                      <div className="w-8 h-8 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center shrink-0"><feat.i size={16}/></div>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-primary">{feat.t}</p>
+                        <p className="text-[8px] font-bold text-muted-foreground">{feat.d}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10 space-y-4">
+                <h4 className="font-black text-primary text-sm flex items-center gap-2"><Wallet size={16} /> كيفية الدفع والتفعيل:</h4>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                  نحن ندعم وسائل الدفع المحلية لضمان سهولة الانضمام:
+                </p>
+                <div className="space-y-2 pr-2">
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> الدفع نقداً في مقر الاستوديو بمدينة سبها.</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> تحويل رصيد (ليبيانا أو مدار) إلى الرقم الرسمي للإدارة.</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> بعد الدفع، يتم تفعيل حسابك خلال أقل من ساعة.</div>
+                </div>
               </div>
             </Card>
           </div>

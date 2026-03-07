@@ -118,12 +118,15 @@ export default function MasterTrackPage() {
     const isLegend = userData?.trackProgress && tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
 
     if (isLegend) {
-      const points = currentChallenge.points || 50;
+      // ميزة البريميوم: مضاعفة النقاط في المسار العام
+      const basePoints = currentChallenge.points || 50;
+      const points = isPremium ? basePoints * 2 : basePoints;
+      
       await update(ref(database, `users/${user.uid}`), {
         points: (userData.points || 0) + points,
         [`dailyPoints/${today}`]: (userData.dailyPoints?.[today] || 0) + points
       });
-      toast({ title: "إنجاز أسطوري! 🎉", description: `حصلت على ${points} نقطة.` });
+      toast({ title: isPremium ? "إنجاز ملكي! (نقاط 2x) 🎉" : "إنجاز أسطوري! 🎉", description: `حصلت على ${points} نقطة.` });
     } else {
       toast({ title: "أحسنت التدريب! 🐱", description: "أكمل المسارات الأساسية أولاً للحصول على نقاط هنا." });
     }
@@ -265,6 +268,13 @@ export default function MasterTrackPage() {
             </Button>
           </Link>
         </header>
+
+        {isPremium && (
+          <div className="mx-2 bg-yellow-50 border border-yellow-200 p-3 rounded-2xl flex items-center gap-3 shadow-sm">
+            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-600"><Trophy size={16}/></div>
+            <p className="text-[9px] font-black text-yellow-800">ميزة بريميوم: نقاطك في هذا المسار مضاعفة (2x) دائماً! 🔥</p>
+          </div>
+        )}
 
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden mx-2">

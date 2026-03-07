@@ -35,6 +35,7 @@ export default function Home() {
   }, [user, isUserLoading, router]);
 
   const isAdmin = userData?.name === 'admin';
+  const isPremium = userData?.isPremium === 1;
 
   useEffect(() => {
     if (userData && user && !isAdmin && !hasCheckedStatus.current) {
@@ -63,30 +64,39 @@ export default function Home() {
       }
 
       // 3. فحص كسر الحماسة (Penalty)
-      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-      const lastActive = userData.lastActiveDate;
-      const lastPenaltyDate = userData.lastStreakPenaltyDate;
+      // ميزة بريميوم: حصانة من كسر الحماسة (Streak Freeze)
+      if (!isPremium) {
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+        const lastActive = userData.lastActiveDate;
+        const lastPenaltyDate = userData.lastStreakPenaltyDate;
 
-      if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
-        const penalty = 150;
-        const currentPoints = userData.points || 0;
-        
-        updates.points = Math.max(0, currentPoints - penalty);
-        updates.streak = 0;
-        updates.lastStreakPenaltyDate = todayStr;
-        updates.lastActiveDate = todayStr;
-        needsUpdate = true;
+        if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
+          const penalty = 150;
+          const currentPoints = userData.points || 0;
+          
+          updates.points = Math.max(0, currentPoints - penalty);
+          updates.streak = 0;
+          updates.lastStreakPenaltyDate = todayStr;
+          updates.lastActiveDate = todayStr;
+          needsUpdate = true;
 
-        if (currentPoints > 0) {
-          push(ref(database, `users/${user.uid}/notifications`), {
-            type: 'system',
-            title: 'تنبيه كسر الحماسة 🛑',
-            message: `لقد تغيبت عن التطبيق! تم خصم ${penalty} نقطة.`,
-            isRead: false,
-            timestamp: serverTimestamp()
-          });
-          toast({ variant: "destructive", title: "كسر الحماسة!", description: `تم خصم ${penalty} نقطة لغيابك.` });
+          if (currentPoints > 0) {
+            push(ref(database, `users/${user.uid}/notifications`), {
+              type: 'system',
+              title: 'تنبيه كسر الحماسة 🛑',
+              message: `لقد تغيبت عن التطبيق! تم خصم ${penalty} نقطة.`,
+              isRead: false,
+              timestamp: serverTimestamp()
+            });
+            toast({ variant: "destructive", title: "كسر الحماسة!", description: `تم خصم ${penalty} نقطة لغيابك.` });
+          }
+        }
+      } else {
+        // للمشتركين: حتى لو غابوا، لا يتم تصفير الـ Streak تلقائياً كجزء من الحصانة
+        if (userData.lastActiveDate && userData.lastActiveDate !== todayStr) {
+           updates.lastActiveDate = todayStr;
+           needsUpdate = true;
         }
       }
 
@@ -94,7 +104,7 @@ export default function Home() {
         update(ref(database, `users/${user.uid}`), updates).catch(e => console.error("Update failed", e));
       }
     }
-  }, [userData, user, database, isAdmin]);
+  }, [userData, user, database, isAdmin, isPremium]);
 
   const progressPercent = useMemo(() => {
     const totalStages = 120;

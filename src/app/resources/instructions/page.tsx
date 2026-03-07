@@ -111,7 +111,7 @@ export default function InstructionsPage() {
                 <div className="space-y-2 pr-2">
                   <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> تحويل رصيد (ليبيانا فقط) إلى الرقم الرسمي للإدارة.</div>
                   <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> يتم فتح واجهة الاتصال تلقائياً عند طلب الاشتراك من الإعدادات.</div>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> بعد إتمام التحويل، سيقوم النظام بتفعيل حسابك خلال أقل من ساعة بعد مراجعة الإدارة.</div>
+                  <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600"><CheckCircle2 size={12} className="text-green-600" /> عادة خلال اقل من ساعة لكن قد تصل العملية إلى ٢٤ ساعة</div>
                 </div>
               </div>
             </Card>

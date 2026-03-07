@@ -113,23 +113,23 @@ export default function StreakPage() {
           </div>
         </header>
 
-        {/* Weekly Momentum Strip */}
+        {/* Weekly Momentum Strip - Fixed Margins */}
         <section className="px-2">
           <Card className="rounded-[2rem] border-none shadow-lg bg-card p-6 overflow-hidden">
-            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
+            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2 px-2">
               زخم الأسبوع الحالي <Flame size={18} className="text-orange-500" />
             </h3>
-            <div className="flex justify-between items-center gap-2">
+            <div className="flex justify-between items-center gap-1 px-1">
               {currentWeek.map((day, i) => (
-                <div key={i} className="flex flex-col items-center gap-3">
+                <div key={i} className="flex flex-col items-center gap-2 flex-1">
                   <div className={cn(
-                    "w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2",
+                    "w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2 shrink-0",
                     day.isCompleted ? "bg-orange-500 border-orange-400 text-white animate-pulse shadow-orange-500/20" : 
                     day.isToday ? "bg-secondary border-primary/30 text-primary" : "bg-secondary border-transparent text-muted-foreground/40"
                   )}>
-                    {day.isCompleted ? <Flame size={20} fill="currentColor" /> : <span className="text-[10px] font-black">{day.label[0]}</span>}
+                    {day.isCompleted ? <Flame size={16} fill="currentColor" /> : <span className="text-[9px] font-black">{day.label[0]}</span>}
                   </div>
-                  <span className={cn("text-[8px] font-black", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
+                  <span className={cn("text-[7px] md:text-[9px] font-black text-center truncate w-full", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
                     {day.label}
                   </span>
                 </div>

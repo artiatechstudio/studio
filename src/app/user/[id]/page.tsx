@@ -4,7 +4,7 @@
 import React, { use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
-import { ref, runTransaction } from 'firebase/database';
+import { ref, runTransaction, push, serverTimestamp } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
@@ -49,6 +49,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
     playSound('click');
     const userLikesRef = ref(database, `users/${id}/likesCount`);
     const likedByRef = ref(database, `users/${id}/likedBy/${currentUser.uid}`);
+    const targetNotifRef = ref(database, `users/${id}/notifications`);
 
     runTransaction(likedByRef, (isLiked) => {
       if (isLiked) {
@@ -57,6 +58,17 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         return null;
       } else {
         runTransaction(userLikesRef, (count) => (count || 0) + 1);
+        
+        // إرسال إشعار للطرف الآخر
+        push(targetNotifRef, {
+          type: 'like',
+          title: 'إعجاب جديد! ❤️',
+          message: `لقد أعجب ${currentUser.displayName || 'أحد الأعضاء'} بملفك الشخصي.`,
+          fromId: currentUser.uid,
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+
         toast({ title: "تم إرسال إعجاب! ❤️" });
         playSound('success');
         return true;

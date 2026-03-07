@@ -11,7 +11,7 @@ import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, get } from 'firebase/database';
+import { ref, update, get, push, serverTimestamp } from 'firebase/database';
 import { playSound } from '@/lib/sounds';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -48,7 +48,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   }, []);
 
   useEffect(() => {
-    // تعيين البونص فقط على العميل
     setBonusValue(calculateBonus());
   }, [calculateBonus]);
 
@@ -56,10 +55,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     if (progressData) {
       const isDone = progressData.completedStages?.includes(stageId);
       setCompleted(!!isDone);
-      
       const todayStr = new Date().toLocaleDateString('en-CA');
       const hasCompletedToday = progressData.lastCompletedDate === todayStr;
-      
       if (hasCompletedToday && !isDone && stageId > 1) {
         setOnCooldown(true);
       }
@@ -130,6 +127,16 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
           currentStage: nextStage,
           lastCompletedDate: todayStr
         }
+      });
+
+      // إرسال إشعار إنجاز
+      const notifRef = ref(database, `users/${user.uid}/notifications`);
+      push(notifRef, {
+        type: 'achievement',
+        title: 'إنجاز جديد مذهل! 🏆',
+        message: `لقد أكملت اليوم ${stageId} في مسار ${trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'}. استمر يا بطل!`,
+        isRead: false,
+        timestamp: serverTimestamp()
       });
 
       setCompleted(true);

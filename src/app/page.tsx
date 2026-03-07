@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref } from 'firebase/database';
+import { ref, push, serverTimestamp, get } from 'firebase/database';
 import { Flame, Star, Activity, HeartPulse } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -25,14 +25,11 @@ export default function Home() {
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
 
   useEffect(() => {
-    // تحميل الكاش عند البداية
     const cache = localStorage.getItem('careingo_user_data');
     if (cache) {
       try {
         setCachedProfile(JSON.parse(cache));
-      } catch (e) {
-        console.error("Cache parsing error", e);
-      }
+      } catch (e) {}
     }
   }, []);
 
@@ -43,12 +40,30 @@ export default function Home() {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    // تحديث الكاش عند جلب بيانات جديدة
     if (userData) {
       localStorage.setItem('careingo_user_data', JSON.stringify(userData));
       setCachedProfile(userData);
+
+      // تنبيه بونص التبكير عند فتح التطبيق في الصباح الباكر
+      const now = new Date();
+      const hour = now.getHours();
+      if (hour >= 5 && hour < 10) {
+        const todayStr = now.toLocaleDateString('en-CA');
+        const lastNotifDate = localStorage.getItem('careingo_early_bird_notif');
+        if (lastNotifDate !== todayStr) {
+          const notifRef = ref(database, `users/${user!.uid}/notifications`);
+          push(notifRef, {
+            type: 'bonus',
+            title: 'صباح النشاط! 🔥',
+            message: 'بونص التبكير (+75 نقطة) متاح الآن. أنجز مهامك قبل الساعة 8 مساءً للحصول على أكبر قدر من النقاط!',
+            isRead: false,
+            timestamp: serverTimestamp()
+          });
+          localStorage.setItem('careingo_early_bird_notif', todayStr);
+        }
+      }
     }
-  }, [userData]);
+  }, [userData, database, user]);
 
   const profile = userData || cachedProfile || {};
 

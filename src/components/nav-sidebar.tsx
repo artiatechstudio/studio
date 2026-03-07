@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, BookOpen } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, BookOpen, Bell } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -15,6 +15,7 @@ import { useMemo } from 'react';
 const sideNavItems = [
   { label: 'الرئيسية', icon: Home, href: '/' },
   { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
+  { label: 'الإشعارات', icon: Bell, href: '/notifications' },
   { label: 'الحماسة', icon: Flame, href: '/streak' },
   { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'الموارد', icon: BookMarked, href: '/resources' },
@@ -23,9 +24,9 @@ const sideNavItems = [
 
 const mobileNavItems = [
   { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
-  { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
+  { label: 'الإشعارات', icon: Bell, href: '/notifications' },
   { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
-  { label: 'الموارد', icon: BookOpen, href: '/resources' },
+  { label: 'المتصدرون', icon: Trophy, href: '/leaderboard' },
   { label: 'أنت', icon: User, href: '/profile' },
 ];
 
@@ -39,27 +40,32 @@ export function NavSidebar() {
   const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
   const { data: chatsData } = useDatabase(chatsRef);
 
-  // حساب إجمالي الرسائل غير المقروءة عبر كافة المحادثات
-  const unreadCount = useMemo(() => {
+  const notificationsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/notifications`) : null, [database, user]);
+  const { data: notificationsData } = useDatabase(notificationsRef);
+
+  // حساب إجمالي الرسائل غير المقروءة
+  const unreadChatCount = useMemo(() => {
     if (!chatsData || !user) return 0;
-    
     let totalUnread = 0;
     Object.keys(chatsData).forEach(chatId => {
       if (chatId.includes(user.uid)) {
         const chat = chatsData[chatId];
         const messages: any[] = Object.values(chat.messages || {});
         const lastSeen = chat.lastSeen?.[user.uid] || 0;
-
-        // عد الرسائل التي أرسلها الطرف الآخر وهي أحدث من آخر وقت رؤية لي
         const unreadInThisChat = messages.filter(m => 
           m.senderId !== user.uid && m.timestamp > lastSeen
         ).length;
-
         totalUnread += unreadInThisChat;
       }
     });
     return totalUnread;
   }, [chatsData, user]);
+
+  // حساب الإشعارات غير المقروءة (likes, achievements, etc.)
+  const unreadNotifCount = useMemo(() => {
+    if (!notificationsData) return 0;
+    return Object.values(notificationsData).filter((n: any) => !n.isRead).length;
+  }, [notificationsData]);
 
   const handleLogout = async () => {
     playSound('click');
@@ -92,9 +98,15 @@ export function NavSidebar() {
               <item.icon className={cn("w-7 h-7", pathname === item.href ? "text-white" : "group-hover:scale-110")} />
               <span className="font-black text-xl">{item.label}</span>
               
-              {item.label === 'الدردشة' && unreadCount > 0 && (
+              {item.label === 'الدردشة' && unreadChatCount > 0 && (
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-500 text-white text-[10px] font-black min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center shadow-lg animate-pulse border-2 border-white">
-                  {unreadCount > 99 ? "+99" : unreadCount}
+                  {unreadChatCount > 99 ? "+99" : unreadChatCount}
+                </span>
+              )}
+
+              {item.label === 'الإشعارات' && unreadNotifCount > 0 && (
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-accent text-white text-[10px] font-black min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center shadow-lg animate-bounce border-2 border-white">
+                  {unreadNotifCount}
                 </span>
               )}
             </Link>
@@ -148,9 +160,15 @@ export function NavSidebar() {
             )}>
               <item.icon className={cn(item.isCenter ? "w-7 h-7" : "w-6 h-6", pathname === item.href && "stroke-[3px]")} />
               
-              {item.label === 'الدردشة' && unreadCount > 0 && (
+              {item.label === 'الدردشة' && unreadChatCount > 0 && (
                 <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
-                  {unreadCount > 99 ? "99+" : unreadCount}
+                  {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                </span>
+              )}
+
+              {item.label === 'الإشعارات' && unreadNotifCount > 0 && (
+                <span className="absolute -top-1 -left-1 bg-accent text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
+                  {unreadNotifCount}
                 </span>
               )}
             </div>

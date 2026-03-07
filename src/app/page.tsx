@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, Sparkles, HeartPulse, ShieldCheck, Crown, ArrowRight } from 'lucide-react';
+import { Activity, Sparkles, HeartPulse, Crown, ArrowRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -44,21 +44,6 @@ export default function Home() {
           premiumUntil: null
         });
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
-      }
-
-      if (userData.isPremium !== 1 && (userData.points >= 5000 || userData.streak >= 15)) {
-        update(ref(database, `users/${user.uid}`), {
-          isPremium: 1,
-          premiumUntil: now + (3 * 24 * 60 * 60 * 1000) 
-        });
-        push(ref(database, `users/${user.uid}/notifications`), {
-          type: 'bonus',
-          title: 'مكافأة أسطورية! 👑',
-          message: 'لأنك بطل متميز، حصلت على 3 أيام بريميوم مجانية.',
-          isRead: false,
-          timestamp: serverTimestamp()
-        });
-        toast({ title: "مبروك! حصلت على بريميوم 🎁" });
       }
 
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -163,17 +148,17 @@ export default function Home() {
         )}
 
         {isAdmin ? (
-          <section className="bg-primary/5 rounded-[2rem] p-8 border border-primary/10 mx-2 shadow-inner space-y-5">
-            <div className="flex items-center gap-4">
-              <div className="w-16 h-16 bg-primary text-white rounded-[1.5rem] flex items-center justify-center text-4xl shadow-lg shrink-0">🛡️</div>
+          <section className="bg-primary/5 rounded-[2.5rem] p-6 border border-primary/10 mx-2 shadow-inner space-y-6">
+            <div className="flex items-center gap-5">
+              <div className="w-14 h-14 bg-primary text-white rounded-[1.5rem] flex items-center justify-center text-3xl shadow-lg shrink-0">🛡️</div>
               <div className="text-right">
-                <h1 className="text-2xl font-black text-primary">أهلاً يا مدير كاري!</h1>
-                <p className="text-xs font-bold text-muted-foreground leading-tight">أنت الآن في وضع الرقابة والتحكم الكامل بالنظام.</p>
+                <h1 className="text-xl font-black text-primary">أهلاً يا مدير كاري!</h1>
+                <p className="text-[10px] font-bold text-muted-foreground leading-tight">أنت الآن في وضع الرقابة والتحكم الكامل بالنظام.</p>
               </div>
             </div>
-            <Link href="/admin" onClick={() => playSound('click')}>
-              <Button className="w-full h-14 rounded-xl bg-primary hover:bg-primary/90 text-lg font-black gap-3 shadow-lg">
-                لوحة الإدارة العليا <ArrowRight className="rotate-180" size={20} />
+            <Link href="/admin" onClick={() => playSound('click')} className="block">
+              <Button className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-sm font-black gap-3 shadow-lg">
+                لوحة الإدارة العليا <ArrowRight className="rotate-180" size={16} />
               </Button>
             </Link>
           </section>
@@ -203,9 +188,8 @@ export default function Home() {
                   </div>
                 </Card>
               </Link>
-            </section>
-          </>
-        )}
+            </>
+          )}
 
         <div className="mx-2">
           <AdBanner label="إعلان ممول" />

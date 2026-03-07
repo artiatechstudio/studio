@@ -10,11 +10,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, Moon, Sun, Trash2, LogOut, Save, User as UserIcon, Phone, Mail, Globe, Instagram, Facebook, Youtube, PenLine, Crown, Sparkles } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -35,7 +34,6 @@ export default function SettingsPage() {
   const [weight, setWeight] = useState('');
   const [avatar, setAvatar] = useState('🐱');
   const [bio, setBio] = useState('');
-  const [isDark, setIsDark] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -48,18 +46,7 @@ export default function SettingsPage() {
       setAvatar(userData.avatar || '🐱');
       setBio(userData.bio || '');
     }
-    const savedTheme = typeof window !== 'undefined' ? localStorage.getItem('theme') : 'light';
-    setIsDark(savedTheme === 'dark');
   }, [userData]);
-
-  const toggleTheme = () => {
-    playSound('click');
-    const newTheme = !isDark ? 'dark' : 'light';
-    setIsDark(!isDark);
-    localStorage.setItem('theme', newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    toast({ title: newTheme === 'dark' ? "تم تفعيل الوضع الليلي" : "تم تفعيل الوضع الفاتح" });
-  };
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -143,18 +130,6 @@ export default function SettingsPage() {
     }
   };
 
-  const socialLinks = [
-    { name: 'فيسبوك', icon: Facebook, url: 'https://www.facebook.com/profile.php?id=61584838507463', color: 'bg-blue-600' },
-    { name: 'انستجرام', icon: Instagram, url: 'https://instagram.com/artiatechstudio', color: 'bg-pink-600' },
-    { name: 'يوتيوب', icon: Youtube, url: 'https://youtube.com/@artiatechstudio?si=80mNO6QsIRP7mn5z', color: 'bg-red-600' },
-    { name: 'الموقع', icon: Globe, url: 'https://artiatechstudio.com.ly', color: 'bg-slate-700' },
-  ];
-
-  const contactLinks = [
-    { name: 'واتساب', icon: Phone, url: 'https://wa.me/218929196428', color: 'bg-green-500' },
-    { name: 'إيميل', icon: Mail, url: 'mailto:artiateech@gmail.com', color: 'bg-primary' },
-  ];
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -167,7 +142,7 @@ export default function SettingsPage() {
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
       <NavSidebar />
       <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-10">
-        <header className="flex items-center gap-4 text-right">
+        <header className="flex items-center gap-4 text-right mx-2">
           <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0">
             <Settings size={32} />
           </div>
@@ -178,7 +153,7 @@ export default function SettingsPage() {
         </header>
 
         {/* بطاقة البريميوم */}
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500 to-amber-600 text-white overflow-hidden p-8 space-y-6 relative">
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-gradient-to-br from-yellow-500 to-amber-600 text-white overflow-hidden p-8 space-y-6 relative mx-2">
           <Crown className="absolute top-4 left-4 opacity-20" size={120} />
           <div className="relative z-10 space-y-2 text-right">
             <div className="flex items-center justify-end gap-2">
@@ -209,7 +184,7 @@ export default function SettingsPage() {
           )}
         </Card>
 
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border">
+        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
             <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">
               تعديل المعلومات الشخصية <UserIcon size={20} />
@@ -285,7 +260,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <div className="pt-6 flex flex-col gap-3">
+        <div className="pt-6 flex flex-col gap-3 mx-2">
           <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black hover:bg-primary/5">
             <LogOut className="ml-2" /> تسجيل الخروج
           </Button>
@@ -295,10 +270,6 @@ export default function SettingsPage() {
             </Button>
           )}
         </div>
-
-        <footer className="text-center pt-10 opacity-30 font-black text-primary text-xs">
-          Careingo v2.0 - Developed by Artiatech Studio 2026
-        </footer>
       </div>
     </div>
   );

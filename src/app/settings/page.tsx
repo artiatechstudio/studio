@@ -264,25 +264,50 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card className={cn("border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 space-y-6 relative mx-2", userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 to-amber-600" : "bg-gradient-to-br from-slate-700 to-slate-900")}>
-          <Crown className="absolute top-4 left-4 opacity-20" size={120} />
-          <div className="relative z-10 space-y-2 text-right">
-            <div className="flex items-center justify-end gap-2"><h2 className="text-2xl font-black">عضوية Careingo المميزة</h2><Crown size={24} fill="currentColor" /></div>
-            <p className="text-sm font-bold opacity-90 leading-relaxed">
-              {userData?.isPremium === 1 ? (isAdmin ? "أنت مدير النظام! اشتراكك دائم. 🛡️" : `أنت مستخدم بريميوم! ينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}`) : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات."}
+        {/* بطاقة البريميوم المحسنة - بدون تشوش */}
+        <Card className={cn(
+          "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 flex flex-col gap-6 relative mx-2 transition-all duration-500", 
+          userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 via-amber-600 to-yellow-700" : "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900"
+        )}>
+          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+            <Crown size={200} className="absolute -top-10 -left-10 -rotate-12" />
+          </div>
+          
+          <div className="relative z-10 flex flex-col gap-2 text-right">
+            <div className="flex items-center justify-end gap-3">
+              <h2 className="text-2xl font-black">عضوية Careingo المميزة</h2>
+              <Crown size={28} fill="currentColor" className="text-yellow-300" />
+            </div>
+            <p className="text-sm font-bold opacity-90 leading-relaxed max-w-lg self-end">
+              {userData?.isPremium === 1 
+                ? (isAdmin ? "أنت مدير النظام! اشتراكك دائم ولا يخضع لانتهاء الصلاحية. 🛡️" : `أنت مستخدم بريميوم! اشتراكك فعال وينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}`) 
+                : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات تماماً واستمتع بمميزات حصرية."}
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-4 relative z-10">
+
+          <div className="grid grid-cols-2 gap-3 relative z-10">
             {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "رفع صور شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
-              <div key={i} className="flex items-center gap-2 justify-end bg-white/10 p-2 rounded-xl border border-white/20"><span className="text-[10px] font-black">{m.t}</span><m.i size={14} /></div>
+              <div key={i} className="flex items-center gap-2 justify-end bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20">
+                <span className="text-[10px] font-black">{m.t}</span>
+                <m.i size={16} className="text-yellow-300" />
+              </div>
             ))}
           </div>
+
           {userData?.isPremium !== 1 && (
-            <div className="relative z-10">
+            <div className="relative z-10 pt-2">
               {requestStatus === 'pending' ? (
-                <Button disabled className="w-full h-14 rounded-2xl bg-amber-100 text-amber-700 font-black flex gap-2"><Clock size={20} /> طلبك تحت الإجراء...</Button>
+                <div className="w-full h-14 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center gap-3 animate-pulse shadow-inner">
+                  <Clock size={20} className="text-yellow-300" />
+                  <span className="text-sm font-black text-white">طلبك تحت الإجراء حالياً... ⏳</span>
+                </div>
               ) : (
-                <Button onClick={() => { playSound('click'); setIsRequestOpen(true); }} className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-lg font-black shadow-lg">اطلب اشتراك بريميوم 👑</Button>
+                <Button 
+                  onClick={() => { playSound('click'); setIsRequestOpen(true); }} 
+                  className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-lg font-black shadow-2xl transition-transform hover:scale-[1.02]"
+                >
+                  اطلب اشتراك بريميوم 👑
+                </Button>
               )}
             </div>
           )}

@@ -37,6 +37,7 @@ export default function AdminDashboardPage() {
 
   const users = useMemo(() => {
     if (!usersData) return [];
+    // استثناء الآدمن من القائمة الإدارية لمنع المدير من تعديل نفسه أو الظهور كمستفيد
     return Object.values(usersData)
       .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
@@ -91,11 +92,11 @@ export default function AdminDashboardPage() {
 
         <div className="grid grid-cols-2 gap-3 mx-2">
            <Card className="p-4 rounded-[1.5rem] bg-secondary/20 border-none shadow-sm text-center">
-              <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء</p>
+              <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء (حقيقيين)</p>
               <p className="text-2xl font-black text-primary">{users.length}</p>
            </Card>
            <Card className="p-4 rounded-[1.5rem] bg-yellow-50 border-none shadow-sm text-center">
-              <p className="text-[8px] font-black text-yellow-600 uppercase mb-1">بريميوم</p>
+              <p className="text-[8px] font-black text-yellow-600 uppercase mb-1">بريميوم نشط</p>
               <p className="text-2xl font-black text-yellow-600">{users.filter((u:any) => u.isPremium === 1).length}</p>
            </Card>
         </div>

@@ -51,7 +51,7 @@ export default function ProfilePage() {
     if (profile?.name === 'admin') return { rank: 0, total: 0 };
 
     const usersArray = Object.values(allUsersData) as any[];
-    // استثناء الآدمن من الترتيب
+    // استثناء الآدمن من الترتيب تماماً ليكون العضو رقم 0
     const filteredUsers = usersArray.filter(u => u.name !== 'admin')
       .sort((a, b) => {
         const dateA = new Date(a.registrationDate || 0).getTime();
@@ -105,7 +105,7 @@ export default function ProfilePage() {
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-3">
               <h1 className="text-3xl md:text-5xl font-black text-primary">{userData.name || 'جارِ التحميل'}</h1>
               <span className="bg-primary/10 px-4 py-1 rounded-full text-xs font-black text-primary border border-primary/20">
-                {userData.name === 'admin' ? "عضوية الإدارة العليا" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
+                {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
               </span>
               <span className="bg-red-50 px-4 py-1 rounded-full text-xs font-black text-red-600 border border-red-100 flex items-center gap-1">
                  {userData.likesCount || 0} إعجاب <Heart size={14} fill="currentColor" />

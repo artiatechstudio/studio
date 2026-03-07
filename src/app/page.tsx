@@ -6,13 +6,12 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, get } from 'firebase/database';
-import { Flame, Star, Activity, HeartPulse } from 'lucide-react';
+import { ref, push, serverTimestamp } from 'firebase/database';
+import { Activity, HeartPulse } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { playSound } from '@/lib/sounds';
 import { AdBanner } from '@/components/ad-banner';
 
 export default function Home() {
@@ -40,7 +39,7 @@ export default function Home() {
   }, [user, isUserLoading, router]);
 
   useEffect(() => {
-    if (userData) {
+    if (userData && user) {
       localStorage.setItem('careingo_user_data', JSON.stringify(userData));
       setCachedProfile(userData);
 
@@ -51,7 +50,7 @@ export default function Home() {
         const todayStr = now.toLocaleDateString('en-CA');
         const lastNotifDate = localStorage.getItem('careingo_early_bird_notif');
         if (lastNotifDate !== todayStr) {
-          const notifRef = ref(database, `users/${user!.uid}/notifications`);
+          const notifRef = ref(database, `users/${user.uid}/notifications`);
           push(notifRef, {
             type: 'bonus',
             title: 'صباح النشاط! 🔥',
@@ -113,10 +112,6 @@ export default function Home() {
               <p className="text-[8px] font-black text-muted-foreground">أهلاً بك</p>
               <p className="text-xs font-black text-primary leading-tight truncate max-w-[120px]">{profile.name || 'جارِ التحميل'}</p>
             </div>
-          </div>
-          
-          <div className="flex items-center gap-1.5 shrink-0">
-            <p className="text-[8px] font-black text-muted-foreground uppercase px-2">لوحة التحكم</p>
           </div>
         </header>
 

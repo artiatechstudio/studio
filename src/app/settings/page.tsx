@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, remove } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,6 +41,7 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -132,33 +133,45 @@ export default function SettingsPage() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 2 ميجابايت لضمان سرعة الرفع." });
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 5 ميجابايت." });
       return;
     }
 
     setIsUploading(true);
+    setUploadProgress(0);
     playSound('click');
-    toast({ title: "جاري بدء الرفع...", description: "يرجى الانتظار قليلاً، لا تغلق الصفحة ⏳" });
+    
+    const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
+    const uploadTask = uploadBytesResumable(avatarRef, file);
 
-    try {
-      const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-      await uploadBytes(avatarRef, file);
-      const downloadUrl = await getDownloadURL(avatarRef);
-      
-      await update(ref(database, `users/${user.uid}`), {
-        avatar: downloadUrl
-      });
-      
-      setAvatar(downloadUrl);
-      toast({ title: "تم رفع الصورة بنجاح! 📸", description: "تم تحديث مظهرك الملكي بنجاح." });
-      playSound('success');
-    } catch (e) {
-      console.error(e);
-      toast({ variant: "destructive", title: "فشل الرفع", description: "تأكد من اتصالك بالإنترنت وحاول مجدداً." });
-    } finally {
-      setIsUploading(false);
-    }
+    uploadTask.on('state_changed', 
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        setUploadProgress(Math.round(progress));
+      }, 
+      (error) => {
+        console.error("Upload error:", error);
+        toast({ variant: "destructive", title: "فشل الرفع", description: "حدث خطأ غير متوقع أثناء الرفع، تأكد من الاتصال وحاول مجدداً." });
+        setIsUploading(false);
+      }, 
+      async () => {
+        try {
+          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+          await update(ref(database, `users/${user.uid}`), {
+            avatar: downloadUrl
+          });
+          setAvatar(downloadUrl);
+          toast({ title: "تم الرفع بنجاح! 📸", description: "تم تحديث مظهرك الملكي بنجاح." });
+          playSound('success');
+        } catch (e) {
+          toast({ variant: "destructive", title: "خطأ في التحديث", description: "تم رفع الصورة ولكن فشل تحديث الملف، حاول الحفظ يدوياً." });
+        } finally {
+          setIsUploading(false);
+          setUploadProgress(0);
+        }
+      }
+    );
   };
 
   const handleUpdatePassword = async () => {
@@ -264,7 +277,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* بطاقة البريميوم المحسنة لتجنب التشوش */}
         <Card className={cn(
           "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 flex flex-col gap-6 relative mx-2 transition-all duration-500", 
           userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 via-amber-600 to-yellow-700" : "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900"
@@ -361,18 +373,30 @@ export default function SettingsPage() {
                      <span className="text-7xl md:text-8xl">{avatar}</span>
                    )}
                    {isUploading && (
-                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-sm z-20">
-                       <Loader2 className="text-white animate-spin" size={32} />
+                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm z-20">
+                       <Loader2 className="text-white animate-spin mb-2" size={32} />
+                       <span className="text-white font-black text-xs">{uploadProgress}%</span>
                      </div>
                    )}
                  </div>
+                 
                  <button 
-                   onClick={() => fileInputRef.current?.click()}
+                   onClick={() => {
+                     if (!isPremium) {
+                       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "رفع الصور متاح فقط لمشتركي العضوية الملكية." });
+                       return;
+                     }
+                     fileInputRef.current?.click();
+                   }}
                    disabled={isUploading}
-                   className="absolute -bottom-2 -right-2 w-12 h-12 bg-primary text-white rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 hover:scale-110 transition-transform z-30"
+                   className={cn(
+                     "absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 transition-all z-30",
+                     isPremium ? "bg-primary text-white hover:scale-110 active:scale-95" : "bg-slate-400 text-slate-200 cursor-not-allowed opacity-80"
+                   )}
                  >
-                   <Camera size={20} />
+                   {isPremium ? <Camera size={20} /> : <Lock size={20} />}
                  </button>
+                 
                  <input 
                    type="file" 
                    ref={fileInputRef} 
@@ -384,7 +408,7 @@ export default function SettingsPage() {
                
                {!isPremium && (
                  <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl text-[10px] font-black border border-orange-100 flex items-center gap-2">
-                   <AlertCircle size={14} /> ميزة رفع الصور متاحة فقط للبريميوم 👑
+                   <AlertCircle size={14} /> ميزة رفع الصور حصرية للبريميوم 👑
                  </div>
                )}
 

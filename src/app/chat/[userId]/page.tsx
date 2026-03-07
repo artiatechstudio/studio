@@ -36,9 +36,9 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
   const otherUserRef = useMemoFirebase(() => ref(database, `users/${otherId}`), [database, otherId]);
   const { data: otherUserData } = useDatabase(otherUserRef);
 
-  // تحديث وقت القراءة (Mark as Read)
+  // تحديث وقت القراءة (Mark as Read) بمجرد تحميل الرسائل أو التواجد في الصفحة
   useEffect(() => {
-    if (user && chatId && messagesData) {
+    if (user && chatId && database) {
       const lastSeenRef = ref(database, `chats/${chatId}/lastSeen/${user.uid}`);
       set(lastSeenRef, serverTimestamp());
     }

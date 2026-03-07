@@ -13,9 +13,9 @@ interface AdBannerProps {
 
 /**
  * مكون مساحة إعلانية مفعل لـ Google AdSense.
- * لاستخدامه فعلياً، استبدل ca-pub-XXXXXXXXXXXXXXXX برقم الناشر الخاص بك.
+ * يستخدم الآن رقم الناشر الخاص بالمستخدم: pub-2754396305908181
  */
-export function AdBanner({ label = "إعلان ممول", className, adSlot = "YYYYYYYYYY" }: AdBannerProps) {
+export function AdBanner({ label = "إعلان ممول", className, adSlot = "8823456789" }: AdBannerProps) {
   useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
@@ -36,7 +36,7 @@ export function AdBanner({ label = "إعلان ممول", className, adSlot = "Y
       <div className="w-full overflow-hidden flex justify-center">
         <ins className="adsbygoogle"
              style={{ display: 'block' }}
-             data-ad-client="ca-pub-XXXXXXXXXXXXXXXX"
+             data-ad-client="ca-pub-2754396305908181"
              data-ad-slot={adSlot}
              data-ad-format="auto"
              data-full-width-responsive="true"></ins>

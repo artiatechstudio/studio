@@ -49,10 +49,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Careingo" />
         <meta name="mobile-web-app-capable" content="yes" />
         
-        {/* Google AdSense Global Script - استبدل XXXXXXXXXXXXXXXX برقم الناشر الخاص بك */}
+        {/* Google AdSense Global Script */}
         <Script 
           async 
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2754396305908181" 
           crossOrigin="anonymous"
           strategy="afterInteractive"
         />

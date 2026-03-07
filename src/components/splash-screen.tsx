@@ -12,13 +12,13 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onComplete();
-    }, 2500); // ثانيتين ونصف كما طلب المستخدم
+    }, 2500); // ثانيتين ونصف
     return () => clearTimeout(timer);
   }, [onComplete]);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden p-0">
-      <div className="relative w-full h-full animate-pulse flex items-center justify-center">
+      <div className="relative w-full h-full flex items-center justify-center animate-pulse">
         <Image 
           src="/splash.png" 
           alt="Careingo Icon" 

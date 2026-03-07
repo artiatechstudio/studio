@@ -33,7 +33,7 @@ export default function ChatListPage() {
 
     return Object.values(usersData)
       .filter((u: any) => userIdsWithChats.includes(u.id))
-      .slice(0, 10);
+      .slice(0, 15);
   }, [usersData, chatsData, user]);
 
   const filteredUsers = useMemo(() => {
@@ -45,6 +45,20 @@ export default function ChatListPage() {
       )
       .slice(0, 5);
   }, [usersData, searchTerm, user]);
+
+  const getUnreadCount = (otherUserId: string) => {
+    if (!chatsData || !user) return 0;
+    const chatId = [user.uid, otherUserId].sort().join('_');
+    const chat = chatsData[chatId];
+    if (!chat || !chat.messages) return 0;
+    
+    const messages: any[] = Object.values(chat.messages);
+    const lastSeen = chat.lastSeen?.[user.uid] || 0;
+    
+    return messages.filter(m => 
+      m.senderId !== user.uid && m.timestamp > lastSeen
+    ).length;
+  };
 
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
@@ -102,7 +116,7 @@ export default function ChatListPage() {
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <Input 
                 placeholder="ابحث باسم المستخدم لبدء محادثة..." 
-                className="h-12 pr-10 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] sm:text-xs"
+                className="h-12 pr-10 rounded-xl bg-secondary/50 border-none font-bold text-right text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -112,7 +126,7 @@ export default function ChatListPage() {
               <div className="space-y-2">
                 <p className="text-[10px] font-black text-muted-foreground px-2 uppercase tracking-widest">نتائج البحث</p>
                 {filteredUsers.length > 0 ? filteredUsers.map((u: any) => (
-                  <UserChatListItem key={u.id} user={u} />
+                  <UserChatListItem key={u.id} user={u} unreadCount={getUnreadCount(u.id)} />
                 )) : (
                   <p className="text-center p-4 text-muted-foreground font-bold text-xs italic">لا يوجد مستخدمين بهذا الاسم</p>
                 )}
@@ -125,7 +139,7 @@ export default function ChatListPage() {
                   <Clock size={12} /> دردشات سابقة
                 </p>
                 {recentChatUsers.map((u: any) => (
-                  <UserChatListItem key={u.id} user={u} />
+                  <UserChatListItem key={u.id} user={u} unreadCount={getUnreadCount(u.id)} />
                 ))}
               </div>
             )}
@@ -136,26 +150,40 @@ export default function ChatListPage() {
   );
 }
 
-function UserChatListItem({ user }: { user: any }) {
+function UserChatListItem({ user, unreadCount }: { user: any, unreadCount: number }) {
   const isPremium = user.isPremium === 1 || user.name === 'admin';
+  const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+
   return (
     <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm hover:scale-110 transition-transform">
-          {user.avatar || "🐱"}
+        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm hover:scale-110 transition-transform overflow-hidden relative">
+          {isAvatarUrl ? (
+            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+          ) : (
+            <span>{user.avatar || "🐱"}</span>
+          )}
         </div>
       </Link>
       <Link href={`/chat/${user.id}`} onClick={() => playSound('click')} className="flex-1 flex items-center justify-between mr-3">
-        <div className="text-right">
+        <div className="text-right flex-1 min-w-0">
           <div className="flex items-center gap-1 justify-end">
-            <p className="font-black text-primary text-sm">{user.name}</p>
+            <p className="font-black text-primary text-sm truncate">{user.name}</p>
             {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
           </div>
-          <p className="text-[9px] text-muted-foreground font-bold truncate max-w-[120px]">
+          <p className="text-[9px] text-muted-foreground font-bold truncate">
             {user.bio || "عضو في كارينجو 🌱"}
           </p>
         </div>
-        <ArrowLeft className="text-primary opacity-30 rotate-180" size={14} />
+        
+        <div className="flex items-center gap-3 mr-2">
+          {unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-[10px] font-black min-w-[20px] h-5 px-1.5 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
+              {unreadCount > 9 ? "+9" : unreadCount}
+            </span>
+          )}
+          <ArrowLeft className="text-primary opacity-30 rotate-180" size={14} />
+        </div>
       </Link>
     </div>
   );

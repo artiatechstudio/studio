@@ -37,7 +37,7 @@ export default function AdminDashboardPage() {
 
   const users = useMemo(() => {
     if (!usersData) return [];
-    // استثناء الآدمن من القائمة الإدارية ومن إحصائيات البريميوم
+    // استثناء الآدمن من القائمة الإدارية تماماً
     return Object.values(usersData)
       .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));

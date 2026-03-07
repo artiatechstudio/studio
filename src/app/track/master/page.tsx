@@ -40,11 +40,9 @@ export default function MasterTrackPage() {
   const isPremium = userData?.isPremium === 1;
   const today = new Date().toLocaleDateString('en-CA');
 
-  // عدادات اليوم
   const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
   const todoCountToday = userData?.dailyTodoCount?.[today] || 0;
 
-  // منطق المؤقت المستمر
   useEffect(() => {
     const savedEnd = localStorage.getItem('master_timer_end');
     const savedChallenge = localStorage.getItem('master_current_challenge');
@@ -80,7 +78,6 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
-  // تنظيف يومي للمهام وخصم النقاط
   useEffect(() => {
     if (!user || !userData) return;
 
@@ -198,7 +195,6 @@ export default function MasterTrackPage() {
       timestamp: serverTimestamp()
     });
 
-    // تحديث عداد المهام اليومي المنشأة
     update(ref(database, `users/${user.uid}`), {
       [`dailyTodoCount/${today}`]: todoCountToday + 1
     });
@@ -255,7 +251,7 @@ export default function MasterTrackPage() {
     <div className="min-h-screen bg-background md:pr-72 pb-40 overflow-x-hidden" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6 px-4 md:px-0">
-        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border">
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
               <Sparkles size={28} />
@@ -276,7 +272,7 @@ export default function MasterTrackPage() {
         </header>
 
         {step === 'setup' && (
-          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden">
+          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden mx-2">
             <div className="flex items-center justify-between">
                <h3 className="font-black text-primary text-sm">ابدأ تحدياً جديداً</h3>
                <div className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full border border-border/50">
@@ -335,11 +331,11 @@ export default function MasterTrackPage() {
         {step === 'active' && currentChallenge && (
           <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl mx-2">
             <CardHeader className="bg-primary text-white p-5">
-              <div className="flex items-center justify-between flex-row-reverse">
-                <CardTitle className="text-lg font-black truncate max-w-[70%]">
+              <div className="flex items-center justify-between flex-row-reverse gap-4">
+                <CardTitle className="text-lg font-black leading-tight flex-1 text-right">
                   {cleanTitle(currentChallenge.title)}
                 </CardTitle>
-                <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black">{currentChallenge.difficulty}</span>
+                <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{currentChallenge.difficulty}</span>
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
@@ -379,7 +375,7 @@ export default function MasterTrackPage() {
         )}
 
         <section className="space-y-4 pt-6 border-t border-border/50">
-          <header className="flex items-center justify-between px-1">
+          <header className="flex items-center justify-between px-3">
             <h2 className="text-lg font-black text-primary flex items-center gap-2">
               <ListChecks size={20} /> قائمة مهامي
             </h2>

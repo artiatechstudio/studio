@@ -4,16 +4,16 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart } from 'lucide-react';
+import { ArrowLeft, Info, Trophy, Star, Timer as TimerIcon, Map, Activity, Zap, Lock, ShieldCheck, Heart, AlertTriangle, UserCheck, MessageCircle, Skull } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
 
 export default function InstructionsPage() {
   return (
-    <div className="min-h-screen bg-background md:pr-64" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-64 pb-40" dir="rtl">
       <NavSidebar />
-      <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-10 pb-32 overflow-x-hidden text-right">
+      <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-10 overflow-x-hidden text-right">
         <div className="flex justify-start">
           <Link href="/resources" onClick={() => playSound('click')}>
             <Button variant="ghost" className="rounded-full gap-2 text-primary font-bold hover:bg-secondary">
@@ -29,133 +29,139 @@ export default function InstructionsPage() {
               <Info size={40} />
             </div>
             <div>
-              <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">دليل كارينجو الشامل</h1>
-              <p className="text-muted-foreground text-base md:text-lg font-bold">كل ما تحتاجه لتكون أسطورة في مجتمع النمو الخاص بنا.</p>
+              <h1 className="text-3xl md:text-5xl font-black text-primary leading-tight">الدستور الكامل لكارينجو</h1>
+              <p className="text-muted-foreground text-base md:text-lg font-bold">كل القوانين، العقوبات، والآليات التي تحكم مجتمعنا.</p>
             </div>
           </div>
         </header>
 
         <section className="space-y-12">
-          {/* نظام النقاط والبونص */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-orange-600">
-              <Star className="text-yellow-500" fill="currentColor" /> <h2>نظام النقاط وبونص التبكير</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
-              <p className="font-bold text-base md:text-lg leading-relaxed text-slate-900">
-                في كارينجو، نكافئ الانضباط والتبكير. إليك كيف تُحسب نقاطك في كل تحدي:
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-primary/5 p-6 rounded-3xl border border-primary/10">
-                  <h4 className="font-black text-primary text-lg mb-2 flex items-center gap-2">100 نقطة أساسية <Zap size={16}/></h4>
-                  <p className="text-xs font-bold text-slate-800">تحصل عليها بمجرد إكمال أي مهمة في أي مسار بنجاح.</p>
-                </div>
-                <div className="bg-yellow-50 p-6 rounded-3xl border border-yellow-200">
-                  <h4 className="font-black text-yellow-700 text-lg mb-2 flex items-center gap-2">بونص التبكير (+75) <TimerIcon size={16}/></h4>
-                  <p className="text-xs font-bold text-slate-800">يبدأ من الساعة 5 صباحاً بـ 75 نقطة، ويتناقص 5 نقاط كل ساعة حتى يختفي تماماً الساعة 8 مساءً.</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* نظام المسارات */}
+          {/* 1. نظام احتساب النقاط */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Map className="text-primary" /> <h2>المسارات الأربعة (الـ 120 مرحلة)</h2>
+              <Star className="text-yellow-500" fill="currentColor" /> <h2>1. نظام النقاط والمكافآت</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
-              <p className="font-bold text-slate-900">يتكون التطبيق من 4 مسارات تخصصية، كل مسار يحتوي على 30 مرحلة متدرجة الصعوبة:</p>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                {[
-                  { t: 'اللياقة', d: 'تمارين بدنية بوزن الجسم.', c: 'bg-blue-50 text-blue-600' },
-                  { t: 'التغذية', d: 'عادات أكل صحية يومية.', c: 'bg-green-50 text-green-600' },
-                  { t: 'السلوك', d: 'تطوير العقلية والانضباط.', c: 'bg-purple-50 text-purple-600' },
-                  { t: 'الدراسة', d: 'تقنيات التعلم والتركيز.', c: 'bg-orange-50 text-orange-600' }
-                ].map((track, i) => (
-                  <div key={i} className={`${track.c} p-4 rounded-2xl text-center border border-current/10`}>
-                    <h5 className="font-black text-sm mb-1">{track.t}</h5>
-                    <p className="text-[10px] font-bold opacity-80">{track.d}</p>
-                  </div>
-                ))}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-green-50 p-6 rounded-3xl border border-green-100 text-center">
+                  <p className="text-2xl font-black text-green-600">50</p>
+                  <p className="text-[10px] font-black uppercase text-green-800">مهمة سهلة</p>
+                </div>
+                <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 text-center">
+                  <p className="text-2xl font-black text-blue-600">70</p>
+                  <p className="text-[10px] font-black uppercase text-blue-800">مهمة متوسطة</p>
+                </div>
+                <div className="bg-red-50 p-6 rounded-3xl border border-red-100 text-center">
+                  <p className="text-2xl font-black text-red-600">100</p>
+                  <p className="text-[10px] font-black uppercase text-red-800">مهمة صعبة</p>
+                </div>
               </div>
-              <div className="flex items-start gap-3 bg-red-50 p-4 rounded-2xl border-r-4 border-red-500">
-                <Lock className="text-red-500 shrink-0" size={20} />
-                <p className="text-xs font-bold text-red-900 leading-relaxed">
-                  <span className="font-black">قانون الـ 24 ساعة:</span> لا يمكنك فتح أكثر من مرحلة واحدة في نفس المسار خلال يوم واحد. تفتح المرحلة التالية دائماً عند منتصف الليل.
+              
+              <div className="space-y-4">
+                <h4 className="font-black text-primary text-lg flex items-center gap-2"><TimerIcon className="text-accent" /> بونص التبكير (Early Bird)</h4>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                  نحن نقدس الاستيقاظ مبكراً. بونص التبكير يبدأ بقوة **75 نقطة** عند الساعة 5:00 صباحاً، ثم يتناقص بمقدار **5 نقاط كل ساعة** حتى يختفي تماماً عند الساعة 8:00 مساءً. 
+                  <br /><span className="text-accent">القاعدة:</span> كلما أنجزت أبكر، ارتفع رصيدك أسرع!
                 </p>
               </div>
             </Card>
           </div>
 
-          {/* مؤشر الـ BMI */}
+          {/* 2. نظام العقوبات الصارم */}
           <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-green-600">
-              <Activity className="text-green-600" /> <h2>مؤشر الأداء الصحي (BMI)</h2>
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-destructive">
+              <AlertTriangle className="text-red-600" /> <h2>2. قانون الانضباط (العقوبات)</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
-              <p className="font-bold text-slate-900">نستخدم معادلة كتلة الجسم لمساعدتك في تتبع حالتك البدنية العامة:</p>
-              <div className="bg-secondary/30 p-6 rounded-2xl text-center border border-border">
-                <code className="text-primary font-black text-lg">الوزن (كجم) / (الطول بالامتار)²</code>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                {[
-                  { l: 'نحافة', v: '< 18.5', c: 'text-blue-500' },
-                  { l: 'مثالي', v: '18.5 - 25', c: 'text-green-500' },
-                  { l: 'زيادة', v: '25 - 30', c: 'text-orange-500' },
-                  { l: 'سمنة', v: '> 30', c: 'text-red-500' }
-                ].map((s, i) => (
-                  <div key={i} className="bg-white p-3 rounded-xl shadow-sm border border-border text-center">
-                    <p className={`font-black text-xs ${s.c}`}>{s.l}</p>
-                    <p className="text-[10px] font-bold text-muted-foreground">{s.v}</p>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-red-100 bg-red-50/20 space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border-r-4 border-red-600">
+                  <Zap className="text-red-600 shrink-0" />
+                  <div>
+                    <h5 className="font-black text-red-900 text-sm">عقوبة كسر الحماسة (-150 نقطة)</h5>
+                    <p className="text-[10px] font-bold text-slate-600 mt-1">تغيبك عن التطبيق ليوم واحد فقط يؤدي لتصفير عداد أيامك وخصم 150 نقطة فورية من رصيدك العام كعقوبة على التخاذل.</p>
                   </div>
-                ))}
+                </div>
+                <div className="flex items-start gap-4 p-4 bg-white rounded-2xl border-r-4 border-orange-500">
+                  <ListChecks className="text-orange-500 shrink-0" />
+                  <div>
+                    <h5 className="font-black text-orange-900 text-sm">عقوبة المهام اليومية (-30 نقطة)</h5>
+                    <p className="text-[10px] font-bold text-slate-600 mt-1">أي مهمة تضعها في "قائمة مهامي" ولم تنجزها قبل منتصف الليل، أو قمت بإلغائها يدوياً، سيتم خصم 30 نقطة عن كل مهمة منها.</p>
+                  </div>
+                </div>
               </div>
             </Card>
           </div>
 
-          {/* قائمة المتصدرين */}
+          {/* 3. جدار العار */}
           <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
-              <Trophy className="text-yellow-500" /> <h2>قائمة العظماء (Leaderboard)</h2>
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-red-800">
+              <Skull className="text-red-800" /> <h2>3. جدار العار (Wall of Shame)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <p className="font-bold text-slate-900 leading-relaxed">
-                المنافسة في كارينجو عادلة جداً. الترتيب لا يعتمد على إجمالي النقاط منذ البداية فقط، بل يعتمد على <span className="text-primary font-black">متوسط نقاط آخر 3 أيام</span>.
+              <p className="font-bold text-slate-900 leading-relaxed text-sm">
+                هذا القسم في لوحة المتصدرين مخصص لفضح المقصرين. يُدرج في جدار العار كل من:
               </p>
-              <ul className="space-y-2 text-xs font-bold text-slate-800">
-                <li className="flex items-center gap-2">● يسمح هذا النظام للمشتركين الجدد بمنافسة القدامى.</li>
-                <li className="flex items-center gap-2">● يتم تحديث الترتيب لحظياً بمجرد إكمال أي مهمة.</li>
-                <li className="flex items-center gap-2">● يظهر شعار "الأسطورة" لأول 3 مراكز في القائمة.</li>
+              <ul className="space-y-3 text-xs font-bold text-slate-700 pr-4 list-disc">
+                <li>وصلت نقاطه إلى **صفر** بسبب العقوبات المتتالية.</li>
+                <li>كان نشطاً خلال **آخر 7 أيام** فقط (لا يظهر فيه القدامى المختفون).</li>
+                <li>يتم رفع اسمك من جدار العار فور حصولك على أول نقطة إنجاز جديدة.</li>
               </ul>
             </Card>
           </div>
 
-          {/* الذكاء الاصطناعي كاري */}
+          {/* 4. المسار العام وتحدي الأساطير */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
-              <Heart className="text-accent" fill="currentColor" /> <h2>المساعد الذكي "كاري" 🐱</h2>
+              <Trophy className="text-accent" /> <h2>4. المسار العام للأساطير</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-accent/20 bg-accent/5 space-y-4">
-              <div className="bg-destructive text-white p-4 rounded-2xl text-center font-black animate-pulse shadow-lg border border-white/20">
-                تنبيه هام: السيرفر متوقف حالياً إلى أجل غير مسمى 🛑
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
+              <p className="font-bold text-slate-900 text-sm">المسار العام هو مولد تحديات عشوائي يحتوي على 210 تحدياً متنوعاً.</p>
+              <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                <h5 className="font-black text-primary text-xs mb-2">شرط الحصول على نقاط:</h5>
+                <p className="text-[10px] font-bold text-slate-700 leading-relaxed">
+                  لا يمكنك الحصول على نقاط من المسار العام إلا إذا كنت "أسطورة"، أي أنك أتممت **30 مرحلة كاملة** في كل المسارات الأربعة (اللياقة، التغذية، السلوك، الدراسة). قبل ذلك، يعتبر المسار العام للتدريب الحر فقط بدون نقاط.
+                </p>
               </div>
-              <p className="font-black text-base md:text-lg leading-relaxed text-slate-900">
-                كاري ليس مجرد أيقونة، إنه رفيقك المدعوم بأحدث تقنيات الذكاء الاصطناعي (Gemini 1.5):
-              </p>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10 text-slate-900 shadow-sm leading-relaxed">
-                  ● <span className="font-black text-primary">نصائح فورية:</span> اطلب منه نصيحة في التغذية أو اللياقة في أي وقت عبر صفحة الدردشة الذكية.
-                </li>
-                <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10 text-slate-900 shadow-sm leading-relaxed">
-                  ● <span className="font-black text-primary">تحفيز مخصص:</span> يقوم كاري بقراءة إحصائياتك وتحفيزك بكلمات تشبه تقدمك الفعلي في كل مسار.
-                </li>
+            </Card>
+          </div>
+
+          {/* 5. التواصل الاجتماعي */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
+              <MessageCircle className="text-blue-600" /> <h2>5. المجتمع والمنشورات</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
+              <ul className="space-y-3 text-xs font-bold text-slate-700 pr-4 list-disc">
+                <li>المنشورات العامة يجب ألا تتجاوز **150 حرفاً** لضمان السرعة والتركيز.</li>
+                <li>تختفي المنشورات تلقائياً من المجتمع بعد **24 ساعة** لضمان تجدد المحتوى يومياً.</li>
+                <li>يمكنك الإعجاب بمنشورات الآخرين (مرة واحدة لكل منشور).</li>
+                <li>الإساءة في المجتمع تؤدي لحظر الحساب نهائياً.</li>
               </ul>
+            </Card>
+          </div>
+
+          {/* 6. مؤشر BMI والرتب */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-green-600">
+              <Activity className="text-green-600" /> <h2>6. الرتب الصحية والفخرية</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-secondary/20 rounded-2xl">
+                  <h5 className="font-black text-primary text-xs mb-1">رقم العضوية:</h5>
+                  <p className="text-[10px] font-bold opacity-70">يعكس ترتيبك التاريخي في التسجيل بالمنصة وهو رقم ثابت لا يتغير، يظهر في بروفايلك العام كمصدر للفخر.</p>
+                </div>
+                <div className="p-4 bg-secondary/20 rounded-2xl">
+                  <h5 className="font-black text-primary text-xs mb-1">مؤشر BMI:</h5>
+                  <p className="text-[10px] font-bold opacity-70">يتم حسابه تلقائياً من وزنك وطولك. نسعى جميعاً للوصول للمنطقة الخضراء (18.5 - 25) لضمان صحة مثالية.</p>
+                </div>
+              </div>
             </Card>
           </div>
         </section>
 
         <footer className="pt-20 opacity-40 font-black text-primary text-[10px] md:text-xs text-center">
-          جميع الحقوق محفوظة © Artiatech Studio 2026
+          كارينجو - نظام نمو متكامل - جميع الحقوق محفوظة © Artiatech Studio 2026
         </footer>
       </div>
     </div>

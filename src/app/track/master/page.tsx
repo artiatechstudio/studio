@@ -37,6 +37,42 @@ export default function MasterTrackPage() {
   const todosRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/todos`) : null, [user, database]);
   const { data: todosData } = useDatabase(todosRef);
 
+  // منطق المؤقت المستمر في المسار العام
+  useEffect(() => {
+    const savedEnd = localStorage.getItem('master_timer_end');
+    const savedChallenge = localStorage.getItem('master_current_challenge');
+    
+    if (savedEnd && savedChallenge) {
+      const remaining = Math.round((parseInt(savedEnd) - Date.now()) / 1000);
+      if (remaining > 0) {
+        setCurrentChallenge(JSON.parse(savedChallenge));
+        setTimeLeft(remaining);
+        setTimerActive(true);
+        setStep('active');
+      } else {
+        localStorage.removeItem('master_timer_end');
+        localStorage.removeItem('master_current_challenge');
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (timerActive && timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            localStorage.removeItem('master_timer_end');
+            localStorage.removeItem('master_current_challenge');
+            setTimerActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerActive, timeLeft]);
+
   // منطق التنظيف اليومي والخصم الآلي
   useEffect(() => {
     if (!user || !userData) return;
@@ -46,7 +82,6 @@ export default function MasterTrackPage() {
       const lastCheck = userData.lastTodoCheckDate;
 
       if (lastCheck && lastCheck !== today) {
-        // نحن في يوم جديد، يجب معالجة مهام الأمس
         const currentTodosSnap = await get(ref(database, `users/${user.uid}/todos`));
         if (currentTodosSnap.exists()) {
           const todos = currentTodosSnap.val();
@@ -58,7 +93,6 @@ export default function MasterTrackPage() {
               points: Math.max(0, (userData.points || 0) - penalty),
               lastTodoCheckDate: today
             });
-            // إرسال إشعار بالعقوبة
             push(ref(database, `users/${user.uid}/notifications`), {
               type: 'system',
               title: 'تنبيه الانضباط 🛑',
@@ -66,20 +100,13 @@ export default function MasterTrackPage() {
               isRead: false,
               timestamp: serverTimestamp()
             });
-            toast({ 
-              variant: "destructive", 
-              title: "يوم جديد!", 
-              description: `تم خصم ${penalty} نقطة لعدم إكمال مهام الأمس.` 
-            });
+            toast({ variant: "destructive", title: "يوم جديد!", description: `تم خصم ${penalty} نقطة لعدم إكمال مهام الأمس.` });
           }
-          // مسح كافة المهام القديمة
           await remove(ref(database, `users/${user.uid}/todos`));
         } else {
-          // تحديث التاريخ فقط إذا لم توجد مهام
           await update(ref(database, `users/${user.uid}`), { lastTodoCheckDate: today });
         }
       } else if (!lastCheck) {
-        // أول مرة
         await update(ref(database, `users/${user.uid}`), { lastTodoCheckDate: today });
       }
     };
@@ -104,24 +131,25 @@ export default function MasterTrackPage() {
     const random = pool[Math.floor(Math.random() * pool.length)];
     setCurrentChallenge(random);
     setStep('active');
-    setTimeLeft((random.time || 5) * 60);
+    
+    const durationSeconds = (random.time || 5) * 60;
+    const endTime = Date.now() + (durationSeconds * 1000);
+    
+    localStorage.setItem('master_timer_end', endTime.toString());
+    localStorage.setItem('master_current_challenge', JSON.stringify(random));
+    
+    setTimeLeft(durationSeconds);
     setTimerActive(true);
     playSound('click');
   };
-
-  useEffect(() => {
-    if (timerActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
-    } else if (timeLeft === 0 && timerActive) {
-      setTimerActive(false);
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timerActive, timeLeft]);
 
   const handleCompleteChallenge = async () => {
     if (!user || !currentChallenge) return;
     playSound('success');
     
+    localStorage.removeItem('master_timer_end');
+    localStorage.removeItem('master_current_challenge');
+
     if (isLegend) {
       const todayStr = new Date().toLocaleDateString('en-CA');
       const points = currentChallenge.points || 50;
@@ -134,6 +162,7 @@ export default function MasterTrackPage() {
       toast({ title: "أحسنت التدريب! 🐱", description: "استمر حتى تنهي المسارات الأربعة للحصول على نقاط رسمية." });
     }
     setStep('done');
+    setTimerActive(false);
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -281,7 +310,7 @@ export default function MasterTrackPage() {
               <p className="text-base font-bold text-muted-foreground leading-relaxed">{currentChallenge.description}</p>
               
               <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
-                <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي</p>
+                <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي (مستمر في الخلفية)</p>
                 <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
               </div>
 
@@ -289,7 +318,12 @@ export default function MasterTrackPage() {
                 <Button onClick={handleCompleteChallenge} className="h-14 rounded-2xl bg-accent text-lg font-black shadow-lg">
                   أنهيت المهمة 🔥
                 </Button>
-                <Button onClick={() => setStep('setup')} variant="ghost" className="text-destructive font-black text-xs h-10">
+                <Button onClick={() => {
+                  setStep('setup');
+                  localStorage.removeItem('master_timer_end');
+                  localStorage.removeItem('master_current_challenge');
+                  setTimerActive(false);
+                }} variant="ghost" className="text-destructive font-black text-xs h-10">
                   إلغاء التحدي
                 </Button>
               </div>

@@ -154,14 +154,14 @@ export default function LeaderboardPage() {
               </div>
             </div>
 
-            {/* قسم الراسبين */}
+            {/* جدار العار (الراسبين) */}
             <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
               <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
                 <div className="flex items-center gap-2">
                   <Skull size={18} />
-                  <h2 className="text-sm font-black uppercase tracking-widest">قسم الراسبين ⚠️</h2>
+                  <h2 className="text-sm font-black uppercase tracking-widest">جدار العار 🛑</h2>
                 </div>
-                <p className="text-[8px] font-bold opacity-80">الذين فقدوا نقاطهم هذا الأسبوع</p>
+                <p className="text-[8px] font-bold opacity-80">نشطون فقدوا كافة نقاطهم هذا الأسبوع</p>
               </div>
               <div className="p-4 space-y-3">
                 {stats.losers.length > 0 ? stats.losers.map((user: any) => (
@@ -179,16 +179,16 @@ export default function LeaderboardPage() {
                       </Link>
                       <div className="text-right">
                         <p className="font-black text-red-900 text-xs">{user.name}</p>
-                        <p className="text-[8px] font-bold text-red-400">فقد حماسته والتزامه</p>
+                        <p className="text-[8px] font-bold text-red-400">فقد الالتزام والحماسة</p>
                       </div>
                     </div>
                   </div>
                 )) : (
-                  <div className="p-10 text-center text-red-300 font-bold text-[10px]">لا يوجد أحد في قسم الراسبين حالياً.. الجميع يقاتل! 🔥</div>
+                  <div className="p-10 text-center text-red-300 font-bold text-[10px]">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>
                 )}
               </div>
               <div className="bg-red-100 p-2 text-center">
-                <p className="text-[7px] font-black text-red-600 uppercase">الالتزام هو الفرق بين البطل والراسب</p>
+                <p className="text-[7px] font-black text-red-600 uppercase">الالتزام هو الفارق الوحيد بين العظيم والراسب</p>
               </div>
             </div>
           </div>

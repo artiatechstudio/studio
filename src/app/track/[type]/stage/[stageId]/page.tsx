@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer } from 'lucide-react';
 import Link from 'next/link';
-import { Mascot } from '@/components/mascot';
 import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
@@ -38,6 +37,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const progressRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/trackProgress/${trackKey}`) : null, [user, database, trackKey]);
   const { data: progressData } = useDatabase(progressRef);
 
+  // حساب بونص التبكير
   const calculateBonus = useCallback(() => {
     const now = new Date();
     const hour = now.getHours();
@@ -50,6 +50,39 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     setBonusValue(calculateBonus());
   }, [calculateBonus]);
 
+  // منطق المؤقت المستمر في الخلفية
+  useEffect(() => {
+    const timerKey = `timer_end_${trackKey}_${stageId}`;
+    const savedEnd = localStorage.getItem(timerKey);
+    
+    if (savedEnd) {
+      const remaining = Math.round((parseInt(savedEnd) - Date.now()) / 1000);
+      if (remaining > 0) {
+        setTimeLeft(remaining);
+        setTimerActive(true);
+      } else {
+        localStorage.removeItem(timerKey);
+      }
+    }
+  }, [trackKey, stageId]);
+
+  useEffect(() => {
+    if (timerActive && timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            setTimerActive(false);
+            const timerKey = `timer_end_${trackKey}_${stageId}`;
+            localStorage.removeItem(timerKey);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerActive, timeLeft, trackKey, stageId]);
+
   useEffect(() => {
     if (progressData) {
       const isDone = progressData.completedStages?.includes(stageId);
@@ -58,7 +91,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const todayStr = new Date().toLocaleDateString('en-CA');
       const hasCompletedTodayInThisTrack = progressData.lastCompletedDate === todayStr;
       
-      // قانون الـ 24 ساعة
       if (hasCompletedTodayInThisTrack && !isDone && stageId > 1) {
         setOnCooldown(true);
       }
@@ -68,14 +100,16 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     }
   }, [progressData, stageId]);
 
-  useEffect(() => {
-    if (timerActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
-    } else if (timeLeft === 0 && timerActive) {
-      setTimerActive(false);
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timerActive, timeLeft]);
+  const handleStartTimer = () => {
+    const durationSeconds = challenge.time * 60;
+    const endTime = Date.now() + (durationSeconds * 1000);
+    const timerKey = `timer_end_${trackKey}_${stageId}`;
+    
+    localStorage.setItem(timerKey, endTime.toString());
+    setTimeLeft(durationSeconds);
+    setTimerActive(true);
+    playSound('click');
+  };
 
   const handleComplete = useCallback(async () => {
     if (!user || !database || isUpdating || completed || onCooldown) return;
@@ -89,14 +123,13 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       
-      const basePoints = challenge?.points || 100;
+      const basePoints = challenge?.points || 50;
       const pointsEarned = basePoints + calculateBonus();
       
       if (!completedStages.includes(stageId)) {
         completedStages.push(stageId);
       }
 
-      // لا ترفع المرحلة الحالية إلا إذا أكملت المرحلة المفتوحة فعلياً
       let nextStage = currentProgress.currentStage;
       if (stageId === currentProgress.currentStage) {
         nextStage = stageId + 1;
@@ -132,7 +165,11 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         timestamp: serverTimestamp()
       });
 
+      const timerKey = `timer_end_${trackKey}_${stageId}`;
+      localStorage.removeItem(timerKey);
+
       setCompleted(true);
+      setTimerActive(false);
       playSound('success');
       toast({ title: "تم الإنجاز! 🎉" });
     } catch (e) {
@@ -150,7 +187,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   if (onCooldown) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center" dir="rtl">
         <Timer size={64} className="text-orange-500 mb-4 animate-float" />
         <h1 className="text-2xl font-black text-primary">وقت الراحة!</h1>
         <p className="font-bold text-muted-foreground mt-2">أكملت مرحلة في هذا المسار اليوم. عد غداً!</p>
@@ -193,7 +230,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                 {timerActive ? (
                   <div className="space-y-6">
                     <div className="bg-primary/5 p-8 rounded-[2rem] text-center space-y-2 border border-primary/10">
-                      <p className="text-xs font-black text-primary uppercase">الوقت المتبقي</p>
+                      <p className="text-xs font-black text-primary uppercase">الوقت المتبقي (يعمل في الخلفية)</p>
                       <p className="text-6xl font-black text-primary font-mono">{formatTime(timeLeft)}</p>
                     </div>
                     <Button onClick={handleComplete} disabled={isUpdating} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">
@@ -201,7 +238,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                     </Button>
                   </div>
                 ) : (
-                  <Button onClick={() => { playSound('click'); setTimerActive(true); setTimeLeft(challenge.time * 60); }} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl shadow-primary/20">
+                  <Button onClick={handleStartTimer} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl shadow-primary/20">
                     ابدأ التحدي 🐱🚀
                   </Button>
                 )}

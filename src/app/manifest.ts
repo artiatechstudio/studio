@@ -25,5 +25,7 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
     categories: ['health', 'lifestyle', 'education'],
+    display_override: ['window-controls-overlay', 'minimal-ui'],
+    orientation: 'portrait',
   }
 }

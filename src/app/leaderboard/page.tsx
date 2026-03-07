@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Avatar } from "@/components/ui/avatar";
-import { Trophy, Medal, Flame, Star, TrendingUp, Heart, Skull, AlertCircle, Crown } from "lucide-react";
+import { Trophy, Medal, Flame, Star, TrendingUp, Heart, Skull, AlertCircle, Crown, Timer } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
@@ -15,7 +15,7 @@ import Image from 'next/image';
 export default function LeaderboardPage() {
   const { database } = useFirebase();
   
-  // جلب أفضل 200 مستخدم بناءً على النقاط الكلية لضمان المزامنة اللحظية
+  // جلب أفضل 200 مستخدم بناءً على النقاط الكلية كمرحلة أولى لضمان الحصول على النشطين
   const leadersQuery = useMemoFirebase(() => {
     return query(ref(database, 'users'), orderByChild('points'), limitToLast(200));
   }, [database]);
@@ -26,6 +26,16 @@ export default function LeaderboardPage() {
     if (!rawData) return { leaders: [], losers: [] };
     
     const today = new Date();
+    const todayStr = today.toLocaleDateString('en-CA');
+    
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+    
+    const dayBefore = new Date();
+    dayBefore.setDate(today.getDate() - 2);
+    const dayBeforeStr = dayBefore.toLocaleDateString('en-CA');
+
     const threeDaysAgo = new Date();
     threeDaysAgo.setDate(today.getDate() - 3);
     const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
@@ -33,6 +43,12 @@ export default function LeaderboardPage() {
     const allUsers = Object.values(rawData)
       .filter((u: any) => u.name !== 'admin')
       .map((user: any) => {
+        // حساب متوسط نقاط آخر 3 أيام
+        const p1 = user.dailyPoints?.[todayStr] || 0;
+        const p2 = user.dailyPoints?.[yesterdayStr] || 0;
+        const p3 = user.dailyPoints?.[dayBeforeStr] || 0;
+        const averagePoints = Math.round((p1 + p2 + p3) / 3);
+
         let bmiColor = "text-gray-400";
         let bmiValue = "--";
         let bmiStatus = "غير محدد";
@@ -46,16 +62,16 @@ export default function LeaderboardPage() {
           else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
         }
 
-        return { ...user, bmiColor, bmiValue, bmiStatus };
+        return { ...user, averagePoints, bmiColor, bmiValue, bmiStatus };
       });
 
-    // المتصدرون: ترتيب تنازلي حسب النقاط الكلية
+    // المتصدرون: ترتيب تنازلي حسب متوسط نقاط آخر 3 أيام
     const leaders = [...allUsers]
-      .filter((user: any) => (user.points || 0) > 0)
-      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
+      .filter((user: any) => user.averagePoints > 0)
+      .sort((a: any, b: any) => b.averagePoints - a.averagePoints)
       .slice(0, 100);
 
-    // جدار العار: من تم معاقبتهم في آخر 3 أيام
+    // جدار العار: من تم معاقبتهم في آخر 3 أيام فقط
     const losers = allUsers
       .filter((user: any) => user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr)
       .sort((a: any, b: any) => b.lastStreakPenaltyDate.localeCompare(a.lastStreakPenaltyDate))
@@ -86,7 +102,7 @@ export default function LeaderboardPage() {
             <div className="text-right">
               <h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1>
               <p className="text-muted-foreground text-[9px] font-bold flex items-center justify-end gap-1 mt-0.5">
-                ترتيب الأبطال حسب النقاط الكلية 🏆
+                الترتيب حسب متوسط نشاط آخر 3 أيام ⚡
               </p>
             </div>
           </div>
@@ -94,9 +110,9 @@ export default function LeaderboardPage() {
 
         <div className="space-y-10">
           <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
-            <div className="p-3 border-b border-border bg-secondary/5 text-right flex items-center justify-between flex-row-reverse px-6">
-              <h2 className="text-[10px] font-black text-primary uppercase">المتصدرون حالياً</h2>
-              <Star size={12} className="text-yellow-500" />
+            <div className="p-4 border-b border-border bg-secondary/5 text-right flex items-center justify-between flex-row-reverse px-6">
+              <h2 className="text-[10px] font-black text-primary uppercase">أبطال الـ 72 ساعة الأخيرة</h2>
+              <Timer size={14} className="text-primary opacity-40" />
             </div>
             <div className="divide-y divide-border">
               {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => {
@@ -107,13 +123,13 @@ export default function LeaderboardPage() {
                     key={user.id} 
                     className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
                   >
-                    {/* عرض النقاط الكلية بوضوح */}
-                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[75px] border border-primary/10">
+                    {/* عرض المتوسط بوضوح */}
+                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
                       <div className="flex items-center gap-1 justify-center">
-                        <Star size={10} className="text-yellow-500" fill="currentColor" />
-                        <p className="font-black text-primary text-sm">{(user.points || 0).toLocaleString()}</p>
+                        <TrendingUp size={10} className="text-accent" />
+                        <p className="font-black text-primary text-sm">{(user.averagePoints || 0).toLocaleString()}</p>
                       </div>
-                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">نقطة كلية</p>
+                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">متوسط النقاط</p>
                     </div>
 
                     <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
@@ -156,7 +172,7 @@ export default function LeaderboardPage() {
                   </div>
                 );
               }) : (
-                <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون حالياً.</div>
+                <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون في الـ 3 أيام الأخيرة.</div>
               )}
             </div>
           </div>
@@ -168,7 +184,7 @@ export default function LeaderboardPage() {
                 <Skull size={18} />
                 <h2 className="text-sm font-black uppercase tracking-widest">جدار العار 🛑</h2>
               </div>
-              <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام في آخر 3 أيام</p>
+              <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام مؤخراً</p>
             </div>
             <div className="p-4 space-y-3">
               {stats.losers.length > 0 ? stats.losers.map((user: any) => {
@@ -183,7 +199,7 @@ export default function LeaderboardPage() {
                     
                     <div className="flex items-center gap-3 flex-row-reverse">
                       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden relative">
+                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden relative border border-border">
                           {isAvatarUrl ? (
                             <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full opacity-50" unoptimized />
                           ) : (
@@ -206,7 +222,7 @@ export default function LeaderboardPage() {
               )}
             </div>
             <div className="bg-red-100 p-2 text-center">
-              <p className="text-[7px] font-black text-red-600 uppercase">الالتزام هو الفارق الوحيد بين العظيم والراسب</p>
+              <p className="text-[7px] font-black text-red-600 uppercase italic">الالتزام هو الفارق الوحيد بين العظيم والراسب</p>
             </div>
           </div>
         </div>

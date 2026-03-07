@@ -264,7 +264,7 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* بطاقة البريميوم المحسنة - بدون تشوش */}
+        {/* بطاقة البريميوم المحسنة لتجنب التشوش */}
         <Card className={cn(
           "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 flex flex-col gap-6 relative mx-2 transition-all duration-500", 
           userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 via-amber-600 to-yellow-700" : "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900"
@@ -278,11 +278,11 @@ export default function SettingsPage() {
               <h2 className="text-2xl font-black">عضوية Careingo المميزة</h2>
               <Crown size={28} fill="currentColor" className="text-yellow-300" />
             </div>
-            <p className="text-sm font-bold opacity-90 leading-relaxed max-w-lg self-end">
+            <div className="text-sm font-bold opacity-90 leading-relaxed max-w-lg self-end text-right">
               {userData?.isPremium === 1 
-                ? (isAdmin ? "أنت مدير النظام! اشتراكك دائم ولا يخضع لانتهاء الصلاحية. 🛡️" : `أنت مستخدم بريميوم! اشتراكك فعال وينتهي في: ${userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}`) 
-                : "اشترك الآن وافتح كافة القيود وتخلص من الإعلانات تماماً واستمتع بمميزات حصرية."}
-            </p>
+                ? (isAdmin ? <p>أنت مدير النظام! اشتراكك دائم ولا يخضع لانتهاء الصلاحية. 🛡️</p> : <p>أنت مستخدم بريميوم! اشتراكك فعال وينتهي في: {userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}</p>) 
+                : <p>اشترك الآن وافتح كافة القيود وتخلص من الإعلانات تماماً واستمتع بمميزات حصرية.</p>}
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3 relative z-10">
@@ -295,11 +295,11 @@ export default function SettingsPage() {
           </div>
 
           {userData?.isPremium !== 1 && (
-            <div className="relative z-10 pt-2">
+            <div className="relative z-10 pt-2 w-full">
               {requestStatus === 'pending' ? (
-                <div className="w-full h-14 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center gap-3 animate-pulse shadow-inner">
-                  <Clock size={20} className="text-yellow-300" />
-                  <span className="text-sm font-black text-white">طلبك تحت الإجراء حالياً... ⏳</span>
+                <div className="w-full h-14 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center gap-3 animate-pulse shadow-inner px-4">
+                  <Clock size={20} className="text-yellow-300 shrink-0" />
+                  <span className="text-xs md:text-sm font-black text-white text-right">طلبك تحت الإجراء حالياً... ⏳</span>
                 </div>
               ) : (
                 <Button 
@@ -334,11 +334,11 @@ export default function SettingsPage() {
             
             <div className="bg-primary/5 p-4 rounded-2xl space-y-2 border border-primary/10 mb-4">
                <p className="text-[10px] font-black text-primary flex items-center gap-2"><Wallet size={12}/> آلية الدفع (ليبيانا فقط):</p>
-               <p className="text-[9px] font-bold text-muted-foreground leading-relaxed">
-                 - سيتم فتح لوحة الاتصال تلقائياً بكود التحويل.<br/>
-                 - يرجى تأكيد عملية الاتصال لإتمام تحويل الرصيد.<br/>
-                 - سيتم تفعيل حسابك يدوياً من قبل الإدارة بعد المراجعة.
-               </p>
+               <div className="text-[9px] font-bold text-muted-foreground leading-relaxed text-right space-y-1">
+                 <p>- سيتم فتح لوحة الاتصال تلقائياً بكود التحويل.</p>
+                 <p>- يرجى تأكيد عملية الاتصال لإتمام تحويل الرصيد.</p>
+                 <p>- سيتم تفعيل حسابك يدوياً من قبل الإدارة بعد المراجعة.</p>
+               </div>
             </div>
 
             <DialogFooter>

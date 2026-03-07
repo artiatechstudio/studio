@@ -100,9 +100,9 @@ export default function Home() {
   const progressPercent = Math.round((completedCount / totalStages) * 100);
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-4 md:py-10 space-y-4">
+      <div className="app-container py-6 space-y-4">
         
         <header className="flex items-center justify-between bg-card p-3 rounded-[2rem] shadow-lg border border-border sticky top-2 z-30 mx-1">
           <div className="flex items-center gap-2 overflow-hidden">
@@ -111,21 +111,12 @@ export default function Home() {
             </div>
             <div className="flex flex-col text-right overflow-hidden">
               <p className="text-[8px] font-black text-muted-foreground">أهلاً بك</p>
-              <p className="text-xs font-black text-primary leading-tight truncate max-w-[80px]">{profile.name || 'جارِ التحميل'}</p>
+              <p className="text-xs font-black text-primary leading-tight truncate max-w-[120px]">{profile.name || 'جارِ التحميل'}</p>
             </div>
           </div>
           
           <div className="flex items-center gap-1.5 shrink-0">
-            <Link href="/streak" onClick={() => playSound('click')}>
-              <div className="flex items-center gap-1 bg-orange-100 dark:bg-orange-900/30 px-2 py-1 rounded-full border border-orange-200 dark:border-orange-800">
-                <Flame size={14} className="text-orange-600" fill="currentColor" />
-                <span className="text-xs font-black text-orange-600">{profile.streak || 0}</span>
-              </div>
-            </Link>
-            <div className="flex items-center gap-1 bg-yellow-100 dark:bg-yellow-900/30 px-2 py-1 rounded-full border border-yellow-200 dark:border-yellow-800">
-              <Star size={14} className="text-yellow-600" fill="currentColor" />
-              <span className="text-xs font-black text-yellow-600">{profile.points || 0}</span>
-            </div>
+            <p className="text-[8px] font-black text-muted-foreground uppercase px-2">لوحة التحكم</p>
           </div>
         </header>
 

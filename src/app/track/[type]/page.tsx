@@ -68,7 +68,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   };
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden pb-32 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background relative overflow-hidden pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       
       <div className="app-container py-4 relative">

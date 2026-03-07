@@ -85,7 +85,7 @@ export default function StreakPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-32 md:pr-72" dir="rtl">
+    <div className="min-h-screen bg-background pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         

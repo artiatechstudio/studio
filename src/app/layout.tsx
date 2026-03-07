@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 import { AppWrapper } from '@/components/app-wrapper';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'كارينجو | رفيقك اليومي للنمو',
@@ -47,6 +48,15 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Careingo" />
         <meta name="mobile-web-app-capable" content="yes" />
+        
+        {/* Google AdSense Global Script */}
+        <Script 
+          async 
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" 
+          crossOrigin="anonymous"
+          strategy="afterInteractive"
+        />
+
         <script dangerouslySetInnerHTML={{
           __html: `
             (function() {

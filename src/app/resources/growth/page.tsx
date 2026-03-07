@@ -4,12 +4,22 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Lightbulb, Target, UserCheck, BookOpen, Brain, Star, TrendingUp, Zap } from 'lucide-react';
+import { ArrowLeft, Lightbulb, Brain, BookOpen, Target, Star, TrendingUp, Zap, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import Image from 'next/image';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function GrowthResourcePage() {
+  const theories = [
+    { name: "تقنية فاينمان (Feynman Technique)", desc: "لتعلم أي شيء بعمق، حاول شرحه بكلمات بسيطة لطفل عمره 10 سنوات. إذا تعثرت، عد للمصدر واقرأ مجدداً." },
+    { name: "قصر الذاكرة (Memory Palace)", desc: "اربط المعلومات التي تدرسها بأماكن مادية تعرفها في منزلك. تخيل أن كل معلومة مخزنة في درج أو زاوية معينة." },
+    { name: "مصفوفة إيزنهاور", desc: "تقسيم المهام لـ (مهم ومستعجل، مهم وغير مستعجل، غير مهم ومستعجل، غير مهم وغير مستعجل). ركز على المربع الثاني للنمو." },
+    { name: "الاستذكار النشط (Active Recall)", desc: "بدلاً من قراءة الكتاب مراراً، أغلقه وحاول استرجاع ما قرأت من ذاكرتك. هذا يقوي الروابط العصبية." },
+    { name: "قاعدة الـ 5 ثوانٍ", desc: "إذا خطرت لك فكرة إيجابية للعمل، ابدأ بالعد التنازلي 5-4-3-2-1 وتحرك فوراً قبل أن يقتلك عقلك بالأعذار." },
+    { name: "التبكير (Early Bird)", desc: "استغلال ساعات الصباح الأولى (5-8 صباحاً) حيث يكون الدماغ في قمة نشاطه والبيئة خالية من المشتتات." }
+  ];
+
   return (
     <div className="min-h-screen bg-background md:pr-64" dir="rtl">
       <NavSidebar />
@@ -29,30 +39,48 @@ export default function GrowthResourcePage() {
               <Lightbulb size={48} />
             </div>
             <div>
-              <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">التحسين الذاتي</h1>
-              <p className="text-muted-foreground text-lg font-bold">عقلية النمو هي المحرك الحقيقي لكل إنجاز.</p>
+              <h1 className="text-4xl md:text-5xl font-black text-primary leading-tight">أسرار النمو والدراسة</h1>
+              <p className="text-muted-foreground text-lg font-bold">دليلك العقلي لتجاوز تحديات السلوك والتعلم.</p>
             </div>
           </div>
         </header>
 
         <div className="relative w-full h-[350px] rounded-[3rem] overflow-hidden shadow-2xl border-4 border-card">
           <Image 
-            src="https://picsum.photos/seed/growth-ultra/1200/800" 
+            src="https://picsum.photos/seed/growth-theories/1200/800" 
             alt="التحسين الذاتي" 
             fill 
             className="object-cover"
             data-ai-hint="personal development"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-10">
-            <p className="text-white text-2xl font-black">الانضباط هو الجسر الذي يربط بين أهدافك وإنجازاتك.</p>
+            <p className="text-white text-2xl font-black">العقل الذي يتوسع بفكرة جديدة لن يعود أبداً لأبعاده القديمة.</p>
           </div>
         </div>
 
         <section className="space-y-16">
-          {/* قاعدة الـ 1% وفلسفة الكايزن */}
           <div className="space-y-8">
             <div className="flex items-center gap-4 text-3xl font-black text-primary">
-              <TrendingUp size={36} /> <h2>فلسفة الكايزن: قوة الـ 1%</h2>
+              <Brain size={36} /> <h2>أدوات التفوق العقلي</h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {theories.map((theory, i) => (
+                <Card key={i} className="rounded-3xl border-none shadow-lg bg-card hover:bg-primary/5 transition-all">
+                  <div className="p-6 space-y-4">
+                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
+                      <Sparkles size={20} />
+                    </div>
+                    <h3 className="font-black text-primary text-base">{theory.name}</h3>
+                    <p className="text-xs font-bold text-muted-foreground leading-relaxed">{theory.desc}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-8">
+            <div className="flex items-center gap-4 text-3xl font-black text-orange-600">
+              <Target size={36} /> <h2>فلسفة الكايزن: قوة الـ 1%</h2>
             </div>
             <div className="bg-card p-10 rounded-[3rem] shadow-xl border border-border space-y-6 leading-relaxed">
               <p className="font-bold text-lg">النجاح ليس قفزة عملاقة، بل هو سلسلة من الخطوات الصغيرة المستمرة.</p>
@@ -66,59 +94,6 @@ export default function GrowthResourcePage() {
                   <p className="text-sm font-bold text-muted-foreground">اجعل البدء سهلاً جداً لدرجة أنك لا تستطيع قول "لا". ابدأ بـ 5 دقائق تمرين أو قراءة صفحة واحدة فقط.</p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* تقنيات التركيز العميق */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-4 text-3xl font-black text-orange-600">
-              <Brain size={36} /> <h2>تقنيات التركيز العميق</h2>
-            </div>
-            <div className="bg-card p-10 rounded-[3rem] shadow-xl border border-border space-y-8">
-               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="p-6 bg-secondary/20 rounded-3xl text-center space-y-3">
-                     <Zap className="mx-auto text-orange-600" />
-                     <h5 className="font-black text-primary">تقنية بومودورو</h5>
-                     <p className="text-xs font-bold text-muted-foreground">25 دقيقة من العمل المركز، تليها 5 دقائق راحة. تكرر 4 مرات ثم تأخذ راحة طويلة.</p>
-                  </div>
-                  <div className="p-6 bg-secondary/20 rounded-3xl text-center space-y-3">
-                     <Target className="mx-auto text-orange-600" />
-                     <h5 className="font-black text-primary">العمل العميق</h5>
-                     <p className="text-xs font-bold text-muted-foreground">تخصيص وقت محدد (60-90 دقيقة) لمهمة واحدة دون أي مشتتات أو تنبيهات.</p>
-                  </div>
-                  <div className="p-6 bg-secondary/20 rounded-3xl text-center space-y-3">
-                     <BookOpen className="mx-auto text-orange-600" />
-                     <h5 className="font-black text-primary">التلقين الذاتي</h5>
-                     <p className="text-xs font-bold text-muted-foreground">مراجعة أهدافك اليومية كل صباح لبرمجة عقلك الباطن على الإنجاز.</p>
-                  </div>
-               </div>
-            </div>
-          </div>
-
-          {/* عادات النجاح السبعة */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-4 text-3xl font-black text-green-600">
-              <Star size={36} /> <h2>قواعد بناء العقلية الحديدية</h2>
-            </div>
-            <div className="bg-green-50/50 p-10 rounded-[3rem] shadow-xl border border-green-100 space-y-6">
-               <div className="space-y-4 font-bold text-muted-foreground leading-relaxed">
-                  <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-green-200">
-                     <UserCheck className="text-green-600 shrink-0" />
-                     <p>1. <span className="text-green-800 font-black">المبادرة:</span> توقف عن انتظار الوقت المثالي، الوقت المثالي هو الآن.</p>
-                  </div>
-                  <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-green-200">
-                     <UserCheck className="text-green-600 shrink-0" />
-                     <p>2. <span className="text-green-800 font-black">البداية والغاية في ذهنك:</span> اعرف لماذا تفعل ما تفعل، الغاية تعطيك القوة عند التعب.</p>
-                  </div>
-                  <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-green-200">
-                     <UserCheck className="text-green-600 shrink-0" />
-                     <p>3. <span className="text-green-800 font-black">ترتيب الأولويات:</span> افعل الأشياء المهمة أولاً، لا تجعل الأشياء المستعجلة تسرق وقتك.</p>
-                  </div>
-                  <div className="flex items-start gap-4 p-4 bg-white rounded-2xl shadow-sm border border-green-200">
-                     <UserCheck className="text-green-600 shrink-0" />
-                     <p>4. <span className="text-green-800 font-black">البيئة هي المصير:</span> صمم بيئتك لخدمة أهدافك، أحط نفسك بملهمين ومحفزين.</p>
-                  </div>
-               </div>
             </div>
           </div>
         </section>

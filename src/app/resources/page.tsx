@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Heart, Lightbulb, ChevronLeft, AlertTriangle, Info, ShieldCheck } from 'lucide-react';
+import { BookOpen, Dumbbell, Lightbulb, ChevronLeft, AlertTriangle, Info, ShieldCheck } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
@@ -20,9 +20,9 @@ export default function ResourcesPage() {
       bgColor: "bg-purple-50"
     },
     {
-      title: "الموسوعة الصحية",
-      description: "دليلك الشامل للتغذية، الترطيب، والنوم المثالي لنمو جسدي سليم.",
-      icon: Heart,
+      title: "دليل اللياقة والتمارين",
+      description: "شرح تفصيلي لكافة التمارين الرياضية ونظام التغذية المتوازن.",
+      icon: Dumbbell,
       href: "/resources/health",
       color: "text-red-500",
       bgColor: "bg-red-50"
@@ -36,8 +36,8 @@ export default function ResourcesPage() {
       bgColor: "bg-amber-50"
     },
     {
-      title: "أسرار النمو",
-      description: "قواعد ذهبية لبناء الانضباط، الاستمرارية، وتطوير العقلية الإيجابية.",
+      title: "أسرار النمو والدراسة",
+      description: "نظريات التعلم، بناء الانضباط، وتطوير العقلية الحديدية.",
       icon: Lightbulb,
       href: "/resources/growth",
       color: "text-blue-600",
@@ -88,41 +88,9 @@ export default function ResourcesPage() {
               <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية والأحكام</AccordionTrigger>
               <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
                 <div className="space-y-4">
-                  <p>● <span className="text-primary font-black">حماية البيانات:</span> نلتزم في "كارينجو" بحماية معلوماتك الشخصية (الاسم، الوزن، الطول) واستخدامها فقط لتحسين تجربتك الصحية. لا يتم مشاركة هذه البيانات مع أطراف خارجية لأغراض إعلانية.</p>
-                  <p>● <span className="text-primary font-black">سلوك المستخدم:</span> يُتوقع من جميع الأعضاء الاحترام المتبادل في غرف الدردشة. أي تنمر أو إساءة سيؤدي إلى حظر الحساب نهائياً دون سابق إنذار.</p>
-                  <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> جميع النصائح المقدمة عبر المساعد الذكي "كاري" هي نصائح تحفيزية وتثقيفية فقط، وليست بديلاً عن الاستشارة الطبية المتخصصة.</p>
-                  <div className="p-3 bg-red-50 rounded-xl border-r-2 border-red-200 text-xs text-red-700">
-                    تنبيه: الدردشات العامة والخاصة لا تخضع للتشفير التام (End-to-End)، يرجى تجنب مشاركة كلمات المرور أو البيانات الحساسة جداً.
-                  </div>
-                  <p>● <span className="text-primary font-black">حذف الحساب:</span> يحق للمستخدم حذف حسابه في أي وقت، وسيتم مسح كافة سجلات تقدمه من قواعد البيانات بشكل نهائي.</p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-            
-            <AccordionItem value="faq">
-              <AccordionTrigger className="text-right font-black text-lg">الأسئلة الشائعة</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-primary font-black">كيف يمكنني تغيير مساري الحالي؟</h4>
-                    <p>يمكنك التبديل بين المسارات الأربعة (اللياقة، التغذية، السلوك، الدراسة) في أي وقت من الصفحة الرئيسية. تقدمك في كل مسار منفصل تماماً.</p>
-                  </div>
-                  <div>
-                    <h4 className="text-primary font-black">لماذا لا يمكنني فتح أكثر من مرحلة يومياً؟</h4>
-                    <p>فلسفة كارينجو تقوم على "التراكم المستدام". الهدف هو بناء عادة يومية وليس إنهاء التحديات بسرعة. الصبر هو مفتاح النمو.</p>
-                  </div>
-                  <div>
-                    <h4 className="text-primary font-black">كيف يتم حساب "رقم العضوية"؟</h4>
-                    <p>رقمك يعكس ترتيبك الزمني في الانضمام لمجتمعنا. العضو رقم 1 هو أول من سجل، وهكذا. هذا الرقم فخري ويبقى ثابتاً.</p>
-                  </div>
-                  <div>
-                    <h4 className="text-primary font-black">هل يمكنني استعادة سجل دردشة محذوف؟</h4>
-                    <p>للأسف لا. بمجرد الضغط على زر حذف السجل، يتم مسح الرسائل نهائياً من خوادمنا لحماية خصوصيتك.</p>
-                  </div>
-                  <div>
-                    <h4 className="text-primary font-black">ما هو دور "بونص التبكير"؟</h4>
-                    <p>نحن نكافئ من يستيقظ مبكراً لإنجاز مهامه. كلما أنجزت مهمتك في الصباح الباكر، حصلت على نقاط إضافية تصل إلى 75 نقطة.</p>
-                  </div>
+                  <p>● <span className="text-primary font-black">حماية البيانات:</span> نلتزم في "كارينجو" بحماية معلوماتك الشخصية واستخدامها فقط لتحسين تجربتك الصحية. لا يتم مشاركة هذه البيانات مع أطراف خارجية.</p>
+                  <p>● <span className="text-primary font-black">سلوك المستخدم:</span> يُتوقع الاحترام المتبادل في غرف الدردشة. أي تنمر سيؤدي إلى حظر الحساب نهائياً.</p>
+                  <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> النصائح المقدمة من كاري تحفيزية فقط، وليست بديلاً عن الاستشارة الطبية.</p>
                 </div>
               </AccordionContent>
             </AccordionItem>

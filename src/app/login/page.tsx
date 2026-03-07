@@ -23,7 +23,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // إذا كان المستخدم مسجلاً ومفعلاً بريده، يتم توجيهه للرئيسية
     if (!isUserLoading && user && user.emailVerified) {
       router.replace('/');
     }
@@ -41,9 +40,8 @@ export default function LoginPage() {
         toast({ 
           variant: "destructive", 
           title: "لم يتم تفعيل البريد", 
-          description: "يرجى تفعيل حسابك من خلال الرابط المرسل لبريدك الإلكتروني (تفقد مجلد Spam)." 
+          description: "يرجى تفعيل حسابك من خلال الرابط المرسل لبريدك الإلكتروني." 
         });
-        // لا نسمح بالبقاء مسجلاً إذا لم يفعل البريد لضمان الصرامة
         await signOut(auth);
       } else {
         playSound('login');
@@ -59,16 +57,15 @@ export default function LoginPage() {
 
   const handleResendVerification = async () => {
     if (!email || !password) {
-      toast({ variant: "destructive", title: "تنبيه", description: "يرجى إدخال البريد وكلمة المرور أولاً لطلب رابط جديد." });
+      toast({ variant: "destructive", title: "تنبيه", description: "يرجى إدخال البيانات لطلب رابط تفعيل جديد." });
       return;
     }
     setLoading(true);
     try {
-      // نحتاج لتسجيل الدخول مؤقتاً لإرسال الرابط
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       await sendEmailVerification(userCredential.user);
       await signOut(auth);
-      toast({ title: "تم إعادة الإرسال", description: "تفقد بريدك الإلكتروني الآن (بما في ذلك مجلد Spam)." });
+      toast({ title: "تم إعادة الإرسال", description: "تفقد بريدك الإلكتروني الآن." });
     } catch (e: any) {
       toast({ variant: "destructive", title: "خطأ", description: "تأكد من بياناتك قبل إعادة طلب الرابط." });
     } finally {
@@ -82,7 +79,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center gap-6">
            <div className="text-8xl animate-bounce">🐱</div>
            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-           <p className="text-primary font-black text-xl animate-pulse">كاري يرحب بك...</p>
+           <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
         </div>
       </div>
     );
@@ -132,7 +129,7 @@ export default function LoginPage() {
           </form>
 
           <button onClick={handleResendVerification} className="w-full text-xs font-black text-primary/60 hover:text-primary transition-colors underline">
-            لم يصلك رابط التفعيل؟ أعد الإرسال (يتطلب البريد وكلمة المرور)
+            لم يصلك رابط التفعيل؟ أعد الإرسال
           </button>
 
           <div className="relative">

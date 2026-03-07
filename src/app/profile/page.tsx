@@ -60,7 +60,7 @@ export default function ProfilePage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="text-8xl animate-bounce">🐱</div>
         <div className="w-16 h-16 border-8 border-primary border-t-transparent rounded-[1.5rem] animate-spin" />
-        <p className="text-primary font-black text-xl animate-pulse">كاري يجهز ملفك الشخصي...</p>
+        <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
       </div>
     );
   }

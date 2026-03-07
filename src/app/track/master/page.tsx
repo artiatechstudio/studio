@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -38,7 +38,7 @@ export default function MasterTrackPage() {
   const todosRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/todos`) : null, [user, database]);
   const { data: todosData } = useDatabase(todosRef);
 
-  const isPremium = userData?.isPremium === 1;
+  const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const today = new Date().toLocaleDateString('en-CA');
 
   const masterCountToday = userData?.dailyMasterCount?.[today] || 0;

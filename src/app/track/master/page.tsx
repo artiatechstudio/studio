@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare } from 'lucide-react';
+import { ArrowLeft, Sparkles, Timer, Play, CheckCircle, Zap, Trophy, ShieldAlert, ListChecks, Plus, Trash2, CheckSquare, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -37,13 +37,62 @@ export default function MasterTrackPage() {
   const todosRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/todos`) : null, [user, database]);
   const { data: todosData } = useDatabase(todosRef);
 
+  // منطق التنظيف اليومي والخصم الآلي
+  useEffect(() => {
+    if (!user || !userData) return;
+
+    const checkDailyTodos = async () => {
+      const today = new Date().toLocaleDateString('en-CA');
+      const lastCheck = userData.lastTodoCheckDate;
+
+      if (lastCheck && lastCheck !== today) {
+        // نحن في يوم جديد، يجب معالجة مهام الأمس
+        const currentTodosSnap = await get(ref(database, `users/${user.uid}/todos`));
+        if (currentTodosSnap.exists()) {
+          const todos = currentTodosSnap.val();
+          const count = Object.keys(todos).length;
+          const penalty = count * 30;
+
+          if (penalty > 0) {
+            await update(ref(database, `users/${user.uid}`), {
+              points: Math.max(0, (userData.points || 0) - penalty),
+              lastTodoCheckDate: today
+            });
+            // إرسال إشعار بالعقوبة
+            push(ref(database, `users/${user.uid}/notifications`), {
+              type: 'system',
+              title: 'تنبيه الانضباط 🛑',
+              message: `لقد فاتك إنجاز ${count} مهام بالأمس. تم خصم ${penalty} نقطة.`,
+              isRead: false,
+              timestamp: serverTimestamp()
+            });
+            toast({ 
+              variant: "destructive", 
+              title: "يوم جديد!", 
+              description: `تم خصم ${penalty} نقطة لعدم إكمال مهام الأمس.` 
+            });
+          }
+          // مسح كافة المهام القديمة
+          await remove(ref(database, `users/${user.uid}/todos`));
+        } else {
+          // تحديث التاريخ فقط إذا لم توجد مهام
+          await update(ref(database, `users/${user.uid}`), { lastTodoCheckDate: today });
+        }
+      } else if (!lastCheck) {
+        // أول مرة
+        await update(ref(database, `users/${user.uid}`), { lastTodoCheckDate: today });
+      }
+    };
+
+    checkDailyTodos();
+  }, [user, userData, database]);
+
   const isLegend = useMemo(() => {
     if (!userData?.trackProgress) return false;
     const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
     return tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
   }, [userData]);
 
-  // دالة لتنظيف العنوان من بادئة اليوم حتى لا يتم "الحرق" على المستخدم
   const cleanTitle = (title: string) => title.replace(/^اليوم\s+\d+:\s*/, '');
 
   const handleStart = () => {
@@ -122,6 +171,24 @@ export default function MasterTrackPage() {
       remove(ref(database, `users/${user.uid}/todos/${todoId}`));
       setCompletingId(null);
     }, 1000);
+  };
+
+  const handleDeleteTodo = async (todoId: string) => {
+    if (!user) return;
+    const confirmDelete = window.confirm("إلغاء المهمة سيؤدي لخصم 30 نقطة! هل أنت متأكد؟ 🛑");
+    if (!confirmDelete) return;
+
+    playSound('click');
+    const currentPoints = userData?.points || 0;
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    
+    await update(ref(database, `users/${user.uid}`), {
+      points: Math.max(0, currentPoints - 30),
+      [`dailyPoints/${todayStr}`]: (userData?.dailyPoints?.[todayStr] || 0) - 30
+    });
+
+    await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
+    toast({ variant: "destructive", title: "تم الإلغاء", description: "خصم 30 نقطة لعدم الالتزام 🛑" });
   };
 
   const formatTime = (s: number) => {
@@ -246,7 +313,12 @@ export default function MasterTrackPage() {
             <h2 className="text-lg font-black text-primary flex items-center gap-2">
               <ListChecks size={20} /> قائمة مهامي
             </h2>
-            <span className="text-[8px] font-black text-muted-foreground bg-secondary px-2.5 py-1 rounded-full uppercase">كل مهمة = +5 نقاط</span>
+            <div className="flex flex-col items-end">
+              <span className="text-[8px] font-black text-muted-foreground bg-secondary px-2.5 py-1 rounded-full uppercase">الإنجاز = +5 نقاط</span>
+              <span className="text-[7px] font-black text-red-500 mt-1 flex items-center gap-1">
+                <AlertTriangle size={8} /> إلغاء/تجاهل = -30 نقطة
+              </span>
+            </div>
           </header>
           
           <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5">
@@ -287,7 +359,7 @@ export default function MasterTrackPage() {
                     </span>
                   </div>
                   <Button 
-                    onClick={() => remove(ref(database, `users/${user!.uid}/todos/${todo.id}`))} 
+                    onClick={() => handleDeleteTodo(todo.id)} 
                     variant="ghost" 
                     size="icon" 
                     className="text-muted-foreground hover:text-destructive h-8 w-8 shrink-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity"

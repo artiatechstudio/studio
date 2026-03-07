@@ -200,7 +200,7 @@ export default function ProfilePage() {
                    <Share2 size={18} /> إظهار الرمز
                  </Button>
                </DialogTrigger>
-               <DialogContent className="rounded-[3rem] p-10 text-center sm:max-w-md">
+               <DialogContent className="rounded-[3rem] p-10 text-center sm:max-w-md" dir="rtl">
                  <DialogHeader>
                    <DialogTitle className="text-2xl font-black text-primary">ادعُ أصدقاءك</DialogTitle>
                  </DialogHeader>

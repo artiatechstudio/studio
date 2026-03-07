@@ -140,7 +140,7 @@ export function NavSidebar() {
           )}
 
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-primary">كارينجو</span>
+            <span className="text-xs font-black text-primary">Careingo</span>
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white text-xs shadow-md">
               {isAdmin ? "🛡️" : isPremium ? "👑" : "🐱"}
             </div>
@@ -155,7 +155,7 @@ export function NavSidebar() {
             {isAdmin ? "🛡️" : isPremium ? "👑" : "🐱"}
           </div>
           <div className="text-right">
-            <span className="text-3xl font-black text-primary tracking-tight block">كارينجو</span>
+            <span className="text-3xl font-black text-primary tracking-tight block">Careingo</span>
             {isAdmin && <span className="text-[10px] font-black text-red-600 uppercase tracking-widest bg-red-50 px-2 py-0.5 rounded-full border border-red-100">Super Admin</span>}
             {isPremium && !isAdmin && <span className="text-[10px] font-black text-yellow-600 uppercase tracking-widest bg-yellow-50 px-2 py-0.5 rounded-full border border-yellow-100">Premium Member</span>}
           </div>

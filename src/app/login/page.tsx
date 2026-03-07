@@ -93,7 +93,7 @@ export default function LoginPage() {
           <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center mx-auto mb-4 p-2 shadow-2xl relative z-10">
             <Image src="/logo.png" alt="Careingo Logo" width={80} height={80} className="object-contain" />
           </div>
-          <CardTitle className="text-4xl font-black relative z-10">كارينجو</CardTitle>
+          <CardTitle className="text-4xl font-black relative z-10">Careingo</CardTitle>
           <p className="opacity-80 font-bold mt-2 text-lg relative z-10">رفيقك اليومي للنمو</p>
         </CardHeader>
         <CardContent className="p-10 space-y-8">

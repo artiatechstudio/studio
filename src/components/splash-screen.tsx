@@ -3,6 +3,7 @@
 
 import React, { useEffect } from 'react';
 import Image from 'next/image';
+import { playSound } from '@/lib/sounds';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
@@ -10,6 +11,9 @@ import Image from 'next/image';
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
+    // تشغيل الصوت الافتتاحي
+    playSound('startup');
+    
     const timer = setTimeout(() => {
       onComplete();
     }, 2500);
@@ -27,9 +31,6 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             className="object-contain"
             priority
           />
-        </div>
-        <div className="mt-8">
-           <p className="text-primary font-black text-4xl tracking-[0.1em] uppercase animate-pulse">Careingo</p>
         </div>
       </div>
       

@@ -7,7 +7,7 @@ import { AppWrapper } from '@/components/app-wrapper';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'كارينجو | رفيقك اليومي للنمو',
+  title: 'Careingo | رفيقك اليومي للنمو',
   description: 'منصة مستوحاة من دولينجو للتطوير في اللياقة، التغذية، السلوك، والدراسة.',
   manifest: '/manifest.json',
   appleWebApp: {

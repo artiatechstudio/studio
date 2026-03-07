@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
@@ -23,6 +23,7 @@ export default function Home() {
   const { database } = useFirebase();
   const router = useRouter();
   const [showCelebration, setShowCelebration] = useState(false);
+  const hasCheckedStatus = useRef(false);
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
@@ -36,27 +37,32 @@ export default function Home() {
   const isAdmin = userData?.name === 'admin';
 
   useEffect(() => {
-    if (userData && user && !isAdmin) {
+    if (userData && user && !isAdmin && !hasCheckedStatus.current) {
+      hasCheckedStatus.current = true; // منع التكرار اللانهائي
+      
       const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
+      const updates: any = {};
+      let needsUpdate = false;
 
+      // 1. فحص انتهاء البريميوم
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
-        update(ref(database, `users/${user.uid}`), {
-          isPremium: 0,
-          premiumUntil: null,
-          [`premiumRequest/status`]: 'expired'
-        });
+        updates.isPremium = 0;
+        updates.premiumUntil = null;
+        updates[`premiumRequest/status`] = 'expired';
+        needsUpdate = true;
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
+      // 2. إظهار احتفالية الترقية
       if (userData.showPremiumCelebration) {
         setShowCelebration(true);
         playSound('success');
-        update(ref(database, `users/${user.uid}`), {
-          showPremiumCelebration: false
-        });
+        updates.showPremiumCelebration = false;
+        needsUpdate = true;
       }
 
+      // 3. فحص كسر الحماسة (Penalty)
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       const lastActive = userData.lastActiveDate;
@@ -65,12 +71,12 @@ export default function Home() {
       if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
         const penalty = 150;
         const currentPoints = userData.points || 0;
-        update(ref(database, `users/${user.uid}`), {
-          points: Math.max(0, currentPoints - penalty),
-          streak: 0,
-          lastStreakPenaltyDate: todayStr,
-          lastActiveDate: todayStr
-        });
+        
+        updates.points = Math.max(0, currentPoints - penalty);
+        updates.streak = 0;
+        updates.lastStreakPenaltyDate = todayStr;
+        updates.lastActiveDate = todayStr;
+        needsUpdate = true;
 
         if (currentPoints > 0) {
           push(ref(database, `users/${user.uid}/notifications`), {
@@ -82,6 +88,10 @@ export default function Home() {
           });
           toast({ variant: "destructive", title: "كسر الحماسة!", description: `تم خصم ${penalty} نقطة لغيابك.` });
         }
+      }
+
+      if (needsUpdate) {
+        update(ref(database, `users/${user.uid}`), updates);
       }
     }
   }, [userData, user, database, isAdmin]);
@@ -129,7 +139,7 @@ export default function Home() {
             <div className="flex flex-col items-center text-center gap-3">
               <div className="w-16 h-16 bg-primary text-white rounded-[1.5rem] flex items-center justify-center text-4xl shadow-md border-2 border-white">🛡️</div>
               <div>
-                <h1 className="text-2xl font-black text-primary">لوحة الإدارة العليا</h1>
+                <h1 className="text-2xl font-black text-primary leading-tight">لوحة الإدارة العليا</h1>
                 <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-wide">أهلاً بك يا مدير النظام ✨</p>
               </div>
             </div>

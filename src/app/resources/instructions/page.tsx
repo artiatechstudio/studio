@@ -58,32 +58,6 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* نظام المسارات والقفل */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Lock className="text-primary" /> <h2>قانون الـ 24 ساعة</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <p className="font-bold text-base md:text-lg leading-relaxed text-slate-900">
-                النمو الحقيقي يأتي بالتدريج لا بالسرعة. لذلك نطبق "نظام القفل الذكي":
-              </p>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm shrink-0">1</div>
-                  <p className="text-sm font-bold text-muted-foreground">لا يمكنك فتح أكثر من <span className="text-primary font-black">مرحلة واحدة</span> في المسار الواحد خلال اليوم.</p>
-                </div>
-                <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm shrink-0">2</div>
-                  <p className="text-sm font-bold text-muted-foreground">المرحلة القادمة تفتح دائماً عند <span className="text-primary font-black">منتصف الليل (00:00)</span>.</p>
-                </div>
-                <div className="flex items-center gap-3 p-4 bg-secondary/30 rounded-2xl">
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-black text-primary shadow-sm shrink-0">3</div>
-                  <p className="text-sm font-bold text-muted-foreground">الاستثناء الوحيد هو <span className="text-primary font-black">المرحلة الأولى</span> من كل مسار، فهي مفتوحة دائماً للمبتدئين.</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
           {/* الذكاء الاصطناعي كاري */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-accent">
@@ -100,70 +74,6 @@ export default function InstructionsPage() {
                 <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10 text-slate-900 shadow-sm">● <span className="font-black text-primary">نصائح فورية:</span> اطلب منه نصيحة في التغذية أو اللياقة في أي وقت.</li>
                 <li className="bg-white/50 p-4 rounded-2xl text-xs font-bold border border-accent/10 text-slate-900 shadow-sm">● <span className="font-black text-primary">تحفيز دائم:</span> سيقوم كاري بتشجيعك بناءً على مستوى تقدمك الفعلي وسلسلة إنجازك.</li>
               </ul>
-            </Card>
-          </div>
-
-          {/* الترتيب والـ BMI */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-green-600">
-              <Activity className="text-green-600" /> <h2>الصحة والترتيب العالمي</h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="p-6 rounded-3xl border border-border bg-card shadow-lg">
-                <h4 className="font-black text-green-700 flex items-center gap-2 mb-3">مؤشر كتلة الجسم (BMI)</h4>
-                <p className="text-sm font-bold text-muted-foreground leading-relaxed">
-                  نحسبه تلقائياً بناءً على طولك ووزنك. هذا المؤشر خاص بك ولا يظهر للآخرين في البروفايل العام لضمان خصوصيتك الكاملة.
-                </p>
-              </Card>
-              <Card className="p-6 rounded-3xl border border-border bg-card shadow-lg">
-                <h4 className="font-black text-blue-700 flex items-center gap-2 mb-3">لوحة المتصدرين العادلة</h4>
-                <p className="text-sm font-bold text-muted-foreground leading-relaxed">
-                  لا نعتمد فقط على النقاط الإجمالية، بل على <span className="font-black text-primary">متوسط إنجاز آخر 3 أيام</span>. هذا يعطي فرصة للمشتركين الجدد للمنافسة!
-                </p>
-              </Card>
-            </div>
-          </div>
-
-          {/* التفاعل الاجتماعي */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-pink-600">
-              <Heart className="text-pink-600" fill="currentColor" /> <h2>التواصل مع المجتمع</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center space-y-2 p-4 bg-secondary/20 rounded-3xl">
-                  <Search className="mx-auto text-primary" />
-                  <h5 className="font-black text-sm text-primary">البحث عن أصدقاء</h5>
-                  <p className="text-[10px] font-bold text-muted-foreground">ابحث عن مستخدمين آخرين بالاسم وشاهد إنجازاتهم العامة.</p>
-                </div>
-                <div className="text-center space-y-2 p-4 bg-secondary/20 rounded-3xl">
-                  <MessageSquare className="mx-auto text-primary" />
-                  <h5 className="font-black text-sm text-primary">دردشة فورية</h5>
-                  <p className="text-[10px] font-bold text-muted-foreground">تواصل مع أي عضو في مجتمع كارينجو لتبادل الخبرات.</p>
-                </div>
-                <div className="text-center space-y-2 p-4 bg-secondary/20 rounded-3xl">
-                  <Heart className="mx-auto text-red-500" />
-                  <h5 className="font-black text-sm text-red-600">الإعجاب بالملف</h5>
-                  <p className="text-[10px] font-bold text-muted-foreground">عبر عن تقديرك لإنجازات الآخرين بضغطة زر واحدة.</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          {/* رقم العضوية والأوسمة */}
-          <div className="space-y-6">
-            <div className="flex items-center justify-start gap-3 text-2xl font-black text-blue-600">
-              <ShieldCheck className="text-blue-600" /> <h2>الهوية والأوسمة</h2>
-            </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
-              <p className="font-bold text-sm md:text-base leading-relaxed text-slate-900">
-                كل مستخدم في كارينجو يحصل على <span className="font-black text-primary">رقم عضوية فخري</span> يعكس ترتيب انضمامه الفعلي للمجتمع. كما يمكنك اكتساب أوسمة آلية عند تحقيق السلاسل (Streaks) أو إكمال عدد معين من التحديات.
-              </p>
-              <div className="flex flex-wrap gap-2 justify-center">
-                <span className="bg-secondary/50 px-4 py-1.5 rounded-full text-[10px] font-black border border-border">أول إنجاز 🏅</span>
-                <span className="bg-secondary/50 px-4 py-1.5 rounded-full text-[10px] font-black border border-border">ثلاثية الحماسة 🔥</span>
-                <span className="bg-secondary/50 px-4 py-1.5 rounded-full text-[10px] font-black border border-border">بطل الأسبوع 👑</span>
-              </div>
             </Card>
           </div>
         </section>

@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -36,14 +36,6 @@ export default function InstructionsPage() {
         { name: "نجم الفجر", criteria: "إنجاز مهمة في الساعة 5 صباحاً", icon: "🌅" },
         { name: "صياد الشمس", criteria: "إنجاز 10 مهام قبل الساعة 7 صباحاً", icon: "☀️" },
         { name: "قاهر النوم", criteria: "إنجاز 30 مهمة قبل الساعة 6 صباحاً", icon: "🦅" }
-      ]
-    },
-    {
-      title: "أوسمة التفاعل (Social)",
-      items: [
-        { name: "المحبوب", criteria: "الحصول على 50 إعجاب بملفك", icon: "❤️" },
-        { name: "المؤثر", criteria: "الحصول على 200 إعجاب بملفك", icon: "🌍" },
-        { name: "نجم المجتمع", criteria: "نشر 100 منشور في العام", icon: "🌟" }
       ]
     }
   ];
@@ -179,6 +171,33 @@ export default function InstructionsPage() {
                 <li>يجب أن يكون المستخدم قد سجل دخوله خلال **آخر 7 أيام** (القدامى لا يظهرون هنا).</li>
                 <li><span className="text-red-600">كيف تخرج؟</span> فور حصولك على أول نقطة إنجاز جديدة، سيمحو كاري اسمك من هذا الجدار فوراً!</li>
               </ul>
+            </Card>
+          </div>
+
+          {/* 5. المسار العام */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
+              <Swords className="text-primary" /> <h2>5. قانون المسار العام (The Master Track)</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-dashed border-2 border-primary/30 bg-primary/5 space-y-6">
+              <div className="space-y-4">
+                <h4 className="font-black text-primary text-xl flex items-center gap-2"><Sparkles size={20}/> ما هو المسار العام؟</h4>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">
+                  بمجرد إتمامك للمراحل الـ 30 الأساسية في أي مسار، فأنت لم تنتهِ بعد. هناك **90 مرحلة أسطورية إضافية** تفتح للأبطال الحقيقيين في المسار العام.
+                </p>
+              </div>
+              <div className="space-y-4 bg-white/50 p-5 rounded-2xl border border-primary/10">
+                <h4 className="font-black text-primary text-sm flex items-center gap-2"><Trophy size={16}/> النقاط الأسطورية:</h4>
+                <p className="text-[10px] font-bold text-slate-600 leading-relaxed">
+                  لا يتم احتساب نقاط في المسار العام إلا لمن استطاع **ختم المسارات الأربعة الأساسية** (اللياقة، التغذية، السلوك، الدراسة) بالكامل. بمجرد ختم الـ 120 مرحلة الأساسية، ستتحول كل مهمة في المسار العام إلى "منجم نقاط" يرفع ترتيبك العالمي بسرعة جنونية.
+                </p>
+              </div>
+              <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-xl border border-amber-100">
+                <AlertCircle className="text-amber-600 shrink-0" size={18} />
+                <p className="text-[9px] font-bold text-amber-800">
+                  المسار العام متاح للجميع للتدريب، ولكن "النقاط الأسطورية" هي جائزة مخصصة فقط لمن أثبت جدارته بختم كافة المسارات الأساسية أولاً.
+                </p>
+              </div>
             </Card>
           </div>
         </section>

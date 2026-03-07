@@ -13,7 +13,7 @@ export default function ResourcesPage() {
   const categories = [
     {
       title: "دليل التعليمات",
-      description: "تعرف على آليات حساب النقاط، الحماسة، وكيفية تصدر القائمة.",
+      description: "تعرف على آليات حساب النقاط، الحماسة، وقوانين الـ 90 مرحلة الإضافية.",
       icon: Info,
       href: "/resources/instructions",
       color: "text-purple-600",

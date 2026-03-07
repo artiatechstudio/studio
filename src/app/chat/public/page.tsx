@@ -1,79 +1,89 @@
 
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, update, remove, runTransaction, query, limitToLast } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction, onValue, off } from 'firebase/database';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Send, Trash2, Heart, Globe, Sparkles, Crown, Clock, Infinity, MessageSquare } from 'lucide-react';
+import { Send, Trash2, Heart, Crown, ArrowLeft, Clock, MessageSquare, Globe, Sparkles, Infinity, AlertCircle } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import Image from 'next/image';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function PublicChatPage() {
   const { user } = useUser();
   const { database } = useFirebase();
   const [postText, setPostText] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const todayStr = new Date().toLocaleDateString('en-CA');
+  const [isSending, setIsSending] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
 
   const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
-  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(100)), [postsRef]);
+  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
   const { data: postsData, isLoading } = useDatabase(postsQuery);
 
-  const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
-  const postsRemaining = isPremium ? 999 : Math.max(0, 5 - (userData?.dailyPublicPostCount?.[todayStr] || 0));
+  const isAdmin = userData?.name === 'admin';
+  const isPremium = userData?.isPremium === 1 || isAdmin;
+  const today = new Date().toLocaleDateString('en-CA');
+  const postsCountToday = userData?.dailyPublicPosts?.[today] || 0;
+  const remainingPosts = isPremium ? Infinity : Math.max(0, 2 - postsCountToday);
 
-  const handleCreatePost = async (e: React.FormEvent) => {
+  const handleSendPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postText.trim() || !user || isSubmitting) return;
+    if (!postText.trim() || isSending || !user || !userData) return;
 
-    if (postsRemaining <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لنشر غير محدود! 👑" });
+    if (!isPremium && postsCountToday >= 2) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي (منشورين)", description: "اشترك في بريميوم لنشر غير محدود! 👑" });
       return;
     }
 
-    setIsSubmitting(true);
+    setIsSending(true);
     playSound('click');
 
-    const newPost = {
-      userId: user.uid,
-      userName: userData?.name || 'عضو مجهول',
-      userAvatar: userData?.avatar || '🐱',
-      userIsPremium: isPremium,
-      text: postText.trim(),
-      timestamp: serverTimestamp(),
-      likesCount: 0
-    };
-
     try {
+      const newPost = {
+        userId: user.uid,
+        userName: userData.name,
+        userAvatar: userData.avatar || '🐱',
+        isPremium: isPremium,
+        text: postText.trim(),
+        timestamp: serverTimestamp(),
+        likesCount: 0
+      };
+
       await push(postsRef, newPost);
-      await update(ref(database, `users/${user.uid}`), {
-        [`dailyPublicPostCount/${todayStr}`]: (userData?.dailyPublicPostCount?.[todayStr] || 0) + 1
-      });
+      
+      await runTransaction(ref(database, `users/${user.uid}/dailyPublicPosts/${today}`), (count) => (count || 0) + 1);
+
       setPostText('');
       toast({ title: "تم النشر بنجاح! 🌍" });
       playSound('success');
     } catch (e) {
       toast({ variant: "destructive", title: "فشل النشر" });
     } finally {
-      setIsSubmitting(false);
+      setIsSending(false);
     }
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!confirm("هل أنت متأكد من حذف هذا المنشور؟")) return;
     playSound('click');
     try {
       await remove(ref(database, `publicPosts/${postId}`));
@@ -83,23 +93,21 @@ export default function PublicChatPage() {
     }
   };
 
-  const handleToggleLike = (postId: string, currentLikes: any) => {
+  const handleToggleLike = (postId: string) => {
     if (!user) return;
     playSound('click');
-    
-    const postLikeRef = ref(database, `publicPosts/${postId}/likes/${user.uid}`);
-    const postLikesCountRef = ref(database, `publicPosts/${postId}/likesCount`);
+    const likeRef = ref(database, `publicPosts/${postId}/likedBy/${user.uid}`);
+    const likesCountRef = ref(database, `publicPosts/${postId}/likesCount`);
 
-    if (currentLikes?.[user.uid]) {
-      // إزالة اللايك
-      remove(postLikeRef);
-      runTransaction(postLikesCountRef, (count) => (count || 1) - 1);
-    } else {
-      // إضافة لايك
-      update(ref(database, `publicPosts/${postId}/likes`), { [user.uid]: true });
-      runTransaction(postLikesCountRef, (count) => (count || 0) + 1);
-      playSound('success');
-    }
+    runTransaction(likeRef, (isLiked) => {
+      if (isLiked) {
+        runTransaction(likesCountRef, (count) => (count || 1) - 1);
+        return null;
+      } else {
+        runTransaction(likesCountRef, (count) => (count || 0) + 1);
+        return true;
+      }
+    });
   };
 
   const posts = useMemo(() => {
@@ -113,143 +121,141 @@ export default function PublicChatPage() {
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        <header className="flex items-center gap-4 bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2 mt-2">
-          <div className="w-12 h-12 bg-accent text-white rounded-xl flex items-center justify-center shadow-lg">
-            <Globe size={24} />
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2 sticky top-4 z-30">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center">
+              <Globe size={28} />
+            </div>
+            <div className="text-right">
+              <h1 className="text-xl font-black text-primary leading-tight">المجتمع العام</h1>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60 flex items-center gap-1">
+                <Sparkles size={8}/> انشر إلهامك للجميع
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-black text-primary">المجتمع العام</h1>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">شارك إنجازاتك مع العالم 🌍</p>
-          </div>
+          <Link href="/chat">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <ArrowLeft className="rotate-180" />
+            </Button>
+          </Link>
         </header>
 
-        {/* صندوق النشر */}
-        <Card className="rounded-[2rem] shadow-xl border-none bg-card overflow-hidden mx-2 p-6 space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-black text-primary text-sm flex items-center gap-2">انشر شيئاً ملهماً <Sparkles size={16} className="text-accent" /></h3>
-            <div className="flex items-center gap-2 bg-secondary/50 px-3 py-1 rounded-full border border-border/50">
-              <span className="text-[9px] font-black text-muted-foreground">المنشورات المتبقية:</span>
-              {isPremium ? <Infinity size={12} className="text-yellow-600" /> : <span className="text-xs font-black text-primary">{postsRemaining}/5</span>}
-            </div>
-          </div>
-          
-          <form onSubmit={handleCreatePost} className="space-y-3">
-            <div className="relative">
-              <Textarea 
+        <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card mx-2">
+          <form onSubmit={handleSendPost} className="space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center shrink-0 overflow-hidden border border-border">
+                {userData?.avatar?.startsWith('http') ? (
+                  <img src={userData.avatar} alt="Me" className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl">{userData?.avatar || "🐱"}</span>
+                )}
+              </div>
+              <textarea 
                 placeholder="بماذا تفكر يا بطل؟..."
-                className="min-h-[100px] rounded-2xl bg-secondary/30 border-none font-bold text-right p-4 focus-visible:ring-primary resize-none text-sm"
+                className="flex-1 min-h-[100px] p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm focus:ring-2 focus:ring-primary/20 resize-none outline-none"
                 value={postText}
                 onChange={(e) => setPostText(e.target.value.slice(0, 280))}
-                disabled={isSubmitting}
+                disabled={isSending}
               />
-              <div className={cn(
-                "absolute bottom-3 left-4 text-[9px] font-black px-2 py-0.5 rounded-md",
-                postText.length >= 250 ? "bg-red-100 text-red-600" : "bg-primary/10 text-primary"
-              )}>
-                {postText.length} / 280
-              </div>
             </div>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || !postText.trim() || postsRemaining <= 0}
-              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black shadow-lg gap-2"
-            >
-              {isSubmitting ? "جاري النشر..." : "نشر المنشور الآن 🚀"}
-            </Button>
+            <div className="flex items-center justify-between flex-row-reverse">
+              <div className="flex items-center gap-4">
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-primary">{postText.length}/280</p>
+                  <p className="text-[8px] font-bold text-muted-foreground uppercase">حرفاً</p>
+                </div>
+                <div className="text-left">
+                  <p className="text-[10px] font-black text-accent">{isPremium ? '∞' : remainingPosts}</p>
+                  <p className="text-[8px] font-bold text-muted-foreground uppercase">متبقي اليوم</p>
+                </div>
+              </div>
+              <Button 
+                type="submit" 
+                disabled={isSending || !postText.trim() || (!isPremium && remainingPosts === 0)}
+                className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 font-black shadow-lg gap-2"
+              >
+                {isSending ? "جاري النشر..." : "نشر الآن 🔥"}
+              </Button>
+            </div>
           </form>
         </Card>
 
-        {/* جدار المناشير */}
         <div className="space-y-4 mx-2">
           {isLoading ? (
-            <div className="py-20 flex flex-col items-center gap-4">
-              <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs font-bold text-muted-foreground animate-pulse">جاري تحميل نبض المجتمع...</p>
-            </div>
+            <div className="flex justify-center p-20"><div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>
           ) : posts.length === 0 ? (
-            <div className="py-20 text-center space-y-4 opacity-30">
-              <div className="text-7xl">🍃</div>
-              <p className="font-black text-xl">لا توجد منشورات بعد.. كن أول من ينشر!</p>
-            </div>
+            <div className="text-center py-20 opacity-30 font-black text-xl">لا توجد منشورات بعد.. كن الأول! 🐱🎤</div>
           ) : posts.map((post) => (
-            <PostCard 
-              key={post.id} 
-              post={post} 
-              currentUser={user} 
-              onDelete={handleDeletePost} 
-              onLike={handleToggleLike}
-              isAdmin={userData?.name === 'admin'}
-            />
+            <Card key={post.id} className="rounded-[2rem] overflow-hidden border border-border shadow-md bg-card transition-all hover:shadow-lg">
+              <CardHeader className="p-5 pb-2 flex flex-row items-start justify-between flex-row-reverse border-none">
+                <div className="flex items-center gap-3 flex-row-reverse">
+                  <Link href={`/user/${post.userId}`} onClick={() => playSound('click')}>
+                    <div className="w-11 h-11 rounded-full bg-white border border-border shadow-sm flex items-center justify-center overflow-hidden hover:scale-105 transition-transform">
+                      {post.userAvatar?.startsWith('http') ? (
+                        <img src={post.userAvatar} alt={post.userName} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl">{post.userAvatar || "🐱"}</span>
+                      )}
+                    </div>
+                  </Link>
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 justify-end">
+                      <h3 className="font-black text-primary text-sm">{post.userName}</h3>
+                      {post.isPremium && <Crown size={12} className="text-yellow-500" fill="currentColor" />}
+                    </div>
+                    <p className="text-[8px] font-bold text-muted-foreground flex items-center gap-1 justify-end">
+                      <Clock size={8} /> {post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+                    </p>
+                  </div>
+                </div>
+                
+                {(post.userId === user?.uid || isAdmin) && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10">
+                        <Trash2 size={14} />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="text-2xl font-black text-primary text-right">حذف المنشور؟</AlertDialogTitle>
+                        <AlertDialogDescription className="text-sm font-bold text-muted-foreground leading-relaxed mt-2 text-right">
+                          هل أنت متأكد من رغبتك في حذف هذا المنشور؟ لا يمكن التراجع عن هذا الفعل. ⚠️
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
+                        <AlertDialogAction onClick={() => handleDeletePost(post.id)} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">حذف نهائي</AlertDialogAction>
+                        <AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
+              </CardHeader>
+              <CardContent className="p-5 pt-2 space-y-4">
+                <p className="text-sm font-bold text-slate-700 leading-relaxed text-right whitespace-pre-wrap">
+                  {post.text}
+                </p>
+                <div className="flex items-center gap-4 border-t border-border/50 pt-3">
+                  <button 
+                    onClick={() => handleToggleLike(post.id)}
+                    className={cn(
+                      "flex items-center gap-1.5 transition-all hover:scale-110",
+                      post.likedBy?.[user?.uid || ''] ? "text-red-500" : "text-muted-foreground"
+                    )}
+                  >
+                    <Heart size={18} fill={post.likedBy?.[user?.uid || ''] ? "currentColor" : "none"} />
+                    <span className="text-xs font-black">{post.likesCount || 0}</span>
+                  </button>
+                  <Link href={`/chat/${post.userId}`} className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors">
+                    <MessageSquare size={18} />
+                    <span className="text-xs font-black italic">دردشة</span>
+                  </Link>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
     </div>
-  );
-}
-
-function PostCard({ post, currentUser, onDelete, onLike, isAdmin }: { post: any, currentUser: any, onDelete: any, onLike: any, isAdmin: boolean }) {
-  const isMine = post.userId === currentUser?.uid;
-  const canDelete = isMine || isAdmin;
-  const isLikedByMe = post.likes?.[currentUser?.uid];
-  const isAvatarUrl = post.userAvatar && post.userAvatar.startsWith('http');
-
-  return (
-    <Card className="rounded-[2rem] border-none shadow-md bg-card overflow-hidden transition-all hover:shadow-lg border border-border/50">
-      <CardHeader className="p-5 border-b border-border/30 bg-secondary/5">
-        <div className="flex items-center justify-between flex-row-reverse">
-          <div className="flex items-center gap-3 flex-row-reverse">
-            <Link href={`/user/${post.userId}`} onClick={() => playSound('click')}>
-              <div className="w-10 h-10 rounded-full bg-white border border-border shadow-sm flex items-center justify-center overflow-hidden relative hover:scale-110 transition-transform">
-                {isAvatarUrl ? (
-                  <Image src={post.userAvatar} alt={post.userName} fill className="object-cover" unoptimized />
-                ) : (
-                  <span className="text-xl">{post.userAvatar || "🐱"}</span>
-                )}
-              </div>
-            </Link>
-            <div className="text-right">
-              <div className="flex items-center gap-1 justify-end">
-                <h4 className="font-black text-primary text-xs">{post.userName}</h4>
-                {(post.userIsPremium || post.userName === 'admin') && <Crown size={12} className="text-yellow-500" fill="currentColor" />}
-              </div>
-              <p className="text-[8px] font-bold text-muted-foreground flex items-center gap-1 justify-end">
-                <Clock size={8} /> {post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
-              </p>
-            </div>
-          </div>
-          {canDelete && (
-            <Button onClick={() => onDelete(post.id)} variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-full">
-              <Trash2 size={14} />
-            </Button>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="p-6 space-y-4">
-        <p className="text-sm font-bold text-slate-700 leading-relaxed text-right whitespace-pre-wrap break-words">
-          {post.text}
-        </p>
-        
-        <div className="flex items-center justify-between pt-2 border-t border-border/30">
-          <Button 
-            onClick={() => onLike(post.id, post.likes)}
-            variant="ghost" 
-            className={cn(
-              "h-10 rounded-xl gap-2 font-black text-[10px] px-4 transition-all",
-              isLikedByMe ? "text-red-500 bg-red-50" : "text-muted-foreground hover:bg-secondary"
-            )}
-          >
-            <Heart size={16} fill={isLikedByMe ? "currentColor" : "none"} className={cn(isLikedByMe && "animate-bounce")} />
-            <span>{post.likesCount || 0}</span>
-          </Button>
-          
-          <Link href={`/chat/${post.userId}`} onClick={() => playSound('click')}>
-            <Button variant="ghost" className="h-10 rounded-xl gap-2 font-black text-[10px] text-primary hover:bg-primary/5">
-              <MessageSquare size={16} />
-              رد خاص
-            </Button>
-          </Link>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet, Image as ImageIcon, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -56,13 +56,22 @@ export default function InstructionsPage() {
 
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Swords className="text-primary" /> <h2>2. قانون المسار العام (Master Track)</h2>
+              <MessageSquare className="text-primary" /> <h2>2. ميثاق المجتمع والخصوصية</h2>
             </div>
-            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-dashed border-2 border-primary/30 bg-primary/5 space-y-6">
-              <p className="text-xs font-bold text-slate-700 leading-relaxed">هناك 90 مرحلة أسطورية إضافية تفتح للأبطال في المسار العام. لا يتم احتساب نقاط هنا إلا لمن ختم المسارات الأربعة الأساسية أولاً.</p>
-              <div className="flex items-center gap-2 bg-yellow-50 p-4 rounded-2xl border border-yellow-200">
-                <Sparkles className="text-yellow-600" size={20} />
-                <p className="text-[10px] font-black text-yellow-800">ميزة حصرية: يحصل مشتركو البريميوم على نقاط مضاعفة (2x) في هذا المسار!</p>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-start gap-3 p-4 bg-secondary/20 rounded-2xl">
+                  <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">1</div>
+                  <p className="text-xs font-bold text-slate-700 leading-relaxed">يُسمح للمستخدمين العاديين بنشر **2 منشور يومياً** فقط في المجتمع العام، بينما يحصل المشتركون البريميوم على عدد لا نهائي.</p>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-secondary/20 rounded-2xl">
+                  <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">2</div>
+                  <p className="text-xs font-bold text-slate-700 leading-relaxed">يمكنك حذف أي رسالة خاصة بينك وبين صديقك؛ الحذف سيتم من **كلا الطرفين** لضمان أعلى درجات الخصوصية.</p>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-secondary/20 rounded-2xl">
+                  <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">3</div>
+                  <p className="text-xs font-bold text-slate-700 leading-relaxed">تمتلك إدارة كارينجو صلاحية "التطهير الشامل" للحائط العام لضمان بيئة آمنة وخالية من المنشورات العشوائية.</p>
+                </div>
               </div>
             </Card>
           </div>
@@ -86,11 +95,11 @@ export default function InstructionsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
                     { t: "حصانة الحماسة (Streak Freeze)", d: "لن تفقد سجل التزامك أو نقاطك في حالة الغياب المفاجئ.", i: ShieldCheck },
-                    { t: "نقاط مضاعفة (2x Points)", d: "احصل على ضعف النقاط في المسار العام (تحديات الأساطير).", i: Trophy },
+                    { t: "نشر غير محدود", d: "انشر محتواك الملهم في المجتمع دون قيود يومية.", i: Globe },
                     { t: "رفع صورة شخصية مخصصة", d: "إمكانية رفع صورتك الحقيقية بدلاً من الإيموجي في ملفك.", i: ImageIcon },
                     { t: "تجربة نقية وبدون إعلانات", d: "تصفح التطبيق بسرعة فائقة ودون أي مقاطعة إعلانية.", i: Zap },
                     { t: "التاج الملكي وتوثيق الحساب", d: "ظهور أيقونة التاج بجانب اسمك في كافة القوائم.", i: Crown },
-                    { t: "تقارير النمو الأسبوعية", d: "بطاقة إنجازات خاصة نهاية كل أسبوع لمشاركتها.", i: ListChecks }
+                    { t: "نقاط مضاعفة 2x", d: "احصل على ضعف النقاط في تحديات المسار العام.", i: Trophy }
                   ].map((feat, i) => (
                     <div key={i} className="flex items-start gap-3 p-4 bg-white/60 rounded-2xl border border-yellow-100">
                       <div className="w-8 h-8 bg-yellow-100 text-yellow-600 rounded-lg flex items-center justify-center shrink-0"><feat.i size={16}/></div>

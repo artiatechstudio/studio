@@ -4,20 +4,33 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction, remove } from 'firebase/database';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Send, ArrowLeft, Heart, Crown } from 'lucide-react';
+import { Send, ArrowLeft, Heart, Crown, Trash2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ChatRoomPage({ params }: { params: Promise<{ userId: string }> }) {
   const { userId: otherId } = use(params);
   const { user } = useUser();
   const { database } = useFirebase();
   const [msgText, setMsgText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const chatId = useMemo(() => {
@@ -25,6 +38,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     return [user.uid, otherId].sort().join('_');
   }, [user, otherId]);
 
+  const chatRootRef = useMemoFirebase(() => chatId ? ref(database, `chats/${chatId}`) : null, [database, chatId]);
   const messagesRef = useMemoFirebase(() => chatId ? ref(database, `chats/${chatId}/messages`) : null, [database, chatId]);
   const messagesQuery = useMemoFirebase(() => messagesRef ? query(messagesRef, limitToLast(50)) : null, [messagesRef]);
   const { data: messagesData } = useDatabase(messagesQuery);
@@ -60,6 +74,21 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setMsgText('');
   };
 
+  const handleDeleteConversation = async () => {
+    if (!chatRootRef) return;
+    setIsDeleting(true);
+    playSound('click');
+    try {
+      await remove(chatRootRef);
+      toast({ title: "تم حذف المحادثة نهائياً من الطرفين" });
+      setShowDeleteDialog(false);
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل حذف المحادثة" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const handleToggleLike = () => {
     if (!user || !otherId) return;
     playSound('click');
@@ -91,7 +120,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
 
   const messages = useMemo(() => {
     if (!messagesData) return [];
-    return Object.values(messagesData).sort((a: any, b: any) => (a.timestamp || 0) - (a.timestamp || 0));
+    return Object.values(messagesData).sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
   }, [messagesData]);
 
   const isLikedByMe = otherUserData?.likedBy?.[user?.uid || ''];
@@ -104,8 +133,12 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
       <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-4 mt-4 sticky top-4 z-30">
         <div className="flex items-center gap-4">
           <Link href={`/user/${otherId}`} onClick={() => playSound('click')} className="shrink-0">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border hover:scale-110 transition-transform shadow-sm">
-              {otherUserData?.avatar || "🐱"}
+            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border hover:scale-110 transition-transform shadow-sm overflow-hidden">
+              {otherUserData?.avatar?.startsWith('http') ? (
+                <img src={otherUserData.avatar} alt={otherUserData.name} className="w-full h-full object-cover" />
+              ) : (
+                <span>{otherUserData?.avatar || "🐱"}</span>
+              )}
             </div>
           </Link>
           <div className="text-right">
@@ -122,6 +155,29 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           <Button onClick={handleToggleLike} variant="ghost" size="icon" className={cn("rounded-full", isLikedByMe ? "text-red-500" : "text-muted-foreground")}>
             <Heart fill={isLikedByMe ? "currentColor" : "none"} size={20} />
           </Button>
+          
+          <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full text-destructive hover:bg-destructive/10">
+                <Trash2 size={20} />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-2xl font-black text-primary text-right">حذف المحادثة؟</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm font-bold text-muted-foreground leading-relaxed mt-2 text-right">
+                  سيتم مسح كافة الرسائل في هذه المحادثة من **الطرفين** نهائياً. لا يمكن التراجع عن هذه العملية! 🐱⚠️
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
+                <AlertDialogAction onClick={handleDeleteConversation} disabled={isDeleting} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">
+                  {isDeleting ? "جاري الحذف..." : "نعم، احذف المحادثة"}
+                </AlertDialogAction>
+                <AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="rounded-full">
               <ArrowLeft className="rotate-180" />

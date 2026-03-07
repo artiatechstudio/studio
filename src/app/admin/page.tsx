@@ -1,25 +1,37 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update } from 'firebase/database';
+import { ref, update, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ShieldCheck, Search, Trophy, TrendingUp, AlertTriangle, LogOut, Crown } from 'lucide-react';
+import { ShieldCheck, Search, Trophy, TrendingUp, AlertTriangle, LogOut, Crown, Trash2, Users } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { signOut } from 'firebase/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function AdminDashboardPage() {
   const { user } = useUser();
   const { database, auth } = useFirebase();
   const router = useRouter();
   const [searchTerm, setSearchTerm] = React.useState('');
+  const [isClearingPosts, setIsClearingPosts] = useState(false);
 
   const usersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
   const { data: usersData, isLoading } = useDatabase(usersRef);
@@ -27,7 +39,6 @@ export default function AdminDashboardPage() {
   const currentUserRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: myData } = useDatabase(currentUserRef);
 
-  // حماية المسار بالاسم
   React.useEffect(() => {
     if (myData && myData.name !== 'admin') {
       toast({ variant: "destructive", title: "دخول غير مصرح" });
@@ -41,6 +52,20 @@ export default function AdminDashboardPage() {
       .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
   }, [usersData, searchTerm]);
+
+  const handleGlobalClearPosts = async () => {
+    setIsClearingPosts(true);
+    playSound('click');
+    try {
+      await remove(ref(database, 'publicPosts'));
+      toast({ title: "تم تطهير المجتمع بنجاح ✅", description: "تم حذف كافة المنشورات العامة." });
+      playSound('success');
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل العملية" });
+    } finally {
+      setIsClearingPosts(false);
+    }
+  };
 
   const togglePremium = (targetUserId: string, currentStatus: number) => {
     playSound('click');
@@ -91,6 +116,31 @@ export default function AdminDashboardPage() {
           </Button>
         </header>
 
+        <section className="mx-2 space-y-3">
+          <h3 className="text-xs font-black text-primary px-2">إجراءات سريعة</h3>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-destructive/20 text-destructive font-black gap-2 hover:bg-destructive/5">
+                <Trash2 size={18} /> تطهير المجتمع (حذف كافة المنشورات)
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="text-2xl font-black text-primary text-right">هل أنت متأكد؟</AlertDialogTitle>
+                <AlertDialogDescription className="text-sm font-bold text-muted-foreground leading-relaxed mt-2 text-right">
+                  هذا الإجراء سيمسح **كافة** المنشورات العامة من المجتمع نهائياً. لا يمكن التراجع عن هذا! ⚠️
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
+                <AlertDialogAction onClick={handleGlobalClearPosts} disabled={isClearingPosts} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">
+                  {isClearingPosts ? "جاري التطهير..." : "نعم، احذف الكل"}
+                </AlertDialogAction>
+                <AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </section>
+
         <div className="grid grid-cols-2 gap-3 mx-2">
            <Card className="p-4 rounded-[1.5rem] bg-secondary/20 border-none shadow-sm text-center">
               <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء</p>
@@ -120,8 +170,12 @@ export default function AdminDashboardPage() {
             )}>
               <CardContent className="p-4 flex items-center justify-between flex-row-reverse">
                 <div className="flex items-center gap-3 flex-row-reverse">
-                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-2xl border border-border shadow-sm">
-                    {u.avatar || "🐱"}
+                  <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-2xl border border-border shadow-sm overflow-hidden">
+                    {u.avatar?.startsWith('http') ? (
+                      <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{u.avatar || "🐱"}</span>
+                    )}
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-1 justify-end">
@@ -161,7 +215,7 @@ export default function AdminDashboardPage() {
             <AlertTriangle size={12} /> تنبيه الإدارة
           </div>
           <p className="text-[9px] font-bold text-red-900/70 leading-relaxed">
-            استخدم صلاحياتك بحكمة. تفعيل البريميوم يمنح العضو وصولاً كاملاً للميزات ويزيل الإعلانات. بصفتك مدير النظام، اشتراكك دائم ولا يخضع لانتهاء الصلاحية.
+            استخدم صلاحياتك بحكمة. تفعيل البريميوم يمنح العضو وصولاً كاملاً للميزات ويزيل الإعلانات. بصفتك مدير النظام، اشتراكك دائم ولا يخضع لانتهاء الصلاحية. يمكنك أيضاً تطهير الحائط العام في حالات الطوارئ.
           </p>
         </section>
       </div>

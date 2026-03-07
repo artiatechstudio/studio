@@ -6,7 +6,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * يعرض أيقونة splash.png بعرض الشاشة بالكامل في منتصف الشاشة بخلفية بيضاء تماماً لمدة 2.5 ثانية.
+ * يعرض أيقونة splash.png مع كلمة "تقدم" تحتها بشكل موسط ومزاح للأعلى قليلاً.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
@@ -17,15 +17,18 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   }, [onComplete]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-white flex items-center justify-center overflow-hidden p-0">
-      <div className="relative w-full h-full flex items-center justify-center animate-pulse">
-        <Image 
-          src="/splash.png" 
-          alt="Careingo Icon" 
-          fill
-          className="object-contain"
-          priority
-        />
+    <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden p-0">
+      <div className="flex flex-col items-center gap-4 animate-pulse -translate-y-16">
+        <div className="relative w-44 h-44 md:w-60 md:h-56">
+          <Image 
+            src="/splash.png" 
+            alt="Careingo Icon" 
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
+        <h1 className="text-4xl md:text-6xl font-black text-primary tracking-tighter">تقدم</h1>
       </div>
       
       <div className="absolute bottom-12 left-0 right-0 text-center">

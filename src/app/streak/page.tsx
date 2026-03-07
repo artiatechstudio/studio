@@ -32,7 +32,8 @@ export default function StreakPage() {
       const dateB = new Date(b.registrationDate || 0).getTime();
       return dateA - dateB;
     });
-    return sortedUsers.findIndex(u => u.id === user.uid) + 1;
+    const idx = sortedUsers.findIndex(u => u.id === user.uid);
+    return idx >= 0 ? idx + 1 : 0;
   }, [allUsersData, user]);
 
   const isDoneToday = useMemo(() => {

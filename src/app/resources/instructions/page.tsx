@@ -93,7 +93,7 @@ export default function InstructionsPage() {
               <div className="bg-destructive text-destructive-foreground p-4 rounded-2xl text-center font-black animate-pulse shadow-lg border border-white/20">
                 تنبيه هام: السيرفر متوقف حالياً إلى أجل غير مسمى 🛑
               </div>
-              <p className="font-black text-base md:text-lg leading-relaxed text-primary">
+              <p className="font-black text-base md:text-lg leading-relaxed text-slate-900">
                 كاري ليس مجرد أيقونة، إنه رفيقك المدعوم بأحدث تقنيات الذكاء الاصطناعي (Gemini 1.5):
               </p>
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">

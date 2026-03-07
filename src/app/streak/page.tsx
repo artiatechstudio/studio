@@ -85,10 +85,12 @@ export default function StreakPage() {
 
   if (isUserLoading || isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
-        <div className="text-8xl animate-bounce">🐱</div>
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-6">
+           <div className="text-8xl animate-bounce">🐱</div>
+           <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+           <p className="text-primary font-black text-xl animate-pulse">كاري ينتظرك بشوق...</p>
+        </div>
       </div>
     );
   }

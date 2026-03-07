@@ -111,22 +111,22 @@ export default function StreakPage() {
           </div>
         </header>
 
-        <section className="px-2">
-          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-6 overflow-hidden">
-            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2 px-2">
+        <section className="px-1 sm:px-2">
+          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-4 sm:p-6">
+            <h3 className="text-sm font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
               زخم الأسبوع الحالي <Flame size={18} className="text-orange-500" />
             </h3>
-            <div className="flex justify-between items-center gap-1 px-2">
+            <div className="flex justify-around items-center gap-1">
               {currentWeek.map((day, i) => (
-                <div key={i} className="flex flex-col items-center gap-2 flex-1">
+                <div key={i} className="flex flex-col items-center gap-2 flex-1 min-w-0">
                   <div className={cn(
-                    "w-9 h-9 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2 shrink-0",
+                    "w-8 h-8 sm:w-10 sm:h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all shadow-inner border-2 shrink-0",
                     day.isCompleted ? "bg-orange-500 border-orange-400 text-white animate-pulse shadow-orange-500/20" : 
                     day.isToday ? "bg-secondary border-primary/30 text-primary" : "bg-secondary border-transparent text-muted-foreground/40"
                   )}>
-                    {day.isCompleted ? <Flame size={16} fill="currentColor" /> : <span className="text-[9px] font-black">{day.label[0]}</span>}
+                    {day.isCompleted ? <Flame size={14} fill="currentColor" /> : <span className="text-[8px] sm:text-[9px] font-black">{day.label[0]}</span>}
                   </div>
-                  <span className={cn("text-[7px] md:text-[9px] font-black text-center truncate w-full", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
+                  <span className={cn("text-[6px] sm:text-[8px] md:text-[9px] font-black text-center truncate w-full", day.isToday ? "text-primary" : "text-muted-foreground opacity-60")}>
                     {day.label}
                   </span>
                 </div>
@@ -135,8 +135,8 @@ export default function StreakPage() {
           </Card>
         </section>
 
-        <section className="px-2">
-          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-6 overflow-hidden">
+        <section className="px-1 sm:px-2">
+          <Card className="rounded-[2.5rem] border-none shadow-lg bg-card p-4 sm:p-6 overflow-hidden">
             <CardHeader className="p-0 mb-6 flex flex-row items-center justify-between flex-row-reverse">
               <CardTitle className="text-sm font-black text-primary flex items-center gap-2">
                 خريطة الإنجاز (30 يوم) <CalendarIcon size={16} />
@@ -174,7 +174,7 @@ export default function StreakPage() {
             <div className="text-right">
               <h4 className="font-black text-xs text-primary">حالة اليوم</h4>
               <p className="text-[10px] font-bold text-muted-foreground leading-tight mt-1">
-                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم تبدأ بعد؟ كاري ينتظرك بشوق!"}
+                {isDoneToday ? "أنت أسطورة! حافظ على اشتعال الشعلة." : "لم بدأت بعد؟ كاري ينتظرك بشوق!"}
               </p>
             </div>
           </Card>
@@ -189,7 +189,7 @@ export default function StreakPage() {
                 أنت العضو رقم <span className="text-primary font-black">{membershipRank || '--'}</span> في مجتمعنا.
               </p>
             </div>
-          </Card>
+          </div>
         </div>
 
         <footer className="text-center opacity-20 font-black text-[8px] pt-4">

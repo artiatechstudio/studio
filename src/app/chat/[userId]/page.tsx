@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, set } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction } from 'firebase/database';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, ArrowLeft, Heart } from 'lucide-react';
@@ -60,10 +60,41 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     setMsgText('');
   };
 
+  const handleToggleLike = () => {
+    if (!user || !otherId) return;
+    playSound('click');
+    const userLikesRef = ref(database, `users/${otherId}/likesCount`);
+    const likedByRef = ref(database, `users/${otherId}/likedBy/${user.uid}`);
+    const targetNotifRef = ref(database, `users/${otherId}/notifications`);
+
+    runTransaction(likedByRef, (isLiked) => {
+      if (isLiked) {
+        runTransaction(userLikesRef, (count) => (count || 1) - 1);
+        toast({ title: "تم إلغاء الإعجاب" });
+        return null;
+      } else {
+        runTransaction(userLikesRef, (count) => (count || 0) + 1);
+        push(targetNotifRef, {
+          type: 'like',
+          title: 'إعجاب جديد! ❤️',
+          message: `لقد أعجب أحدهم بملفك الشخصي.`,
+          fromId: user.uid,
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+        toast({ title: "تم إرسال إعجاب! ❤️" });
+        playSound('success');
+        return true;
+      }
+    });
+  };
+
   const messages = useMemo(() => {
     if (!messagesData) return [];
     return Object.values(messagesData).sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
   }, [messagesData]);
+
+  const isLikedByMe = otherUserData?.likedBy?.[user?.uid || ''];
 
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
@@ -84,6 +115,9 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           </div>
         </div>
         <div className="flex items-center gap-1">
+          <Button onClick={handleToggleLike} variant="ghost" size="icon" className={cn("rounded-full", isLikedByMe ? "text-red-500" : "text-muted-foreground")}>
+            <Heart fill={isLikedByMe ? "currentColor" : "none"} size={20} />
+          </Button>
           <Link href="/chat">
             <Button variant="ghost" size="icon" className="rounded-full">
               <ArrowLeft className="rotate-180" />
@@ -114,7 +148,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
           })}
         </div>
 
-        {/* Input Form with safe margin for mobile navigation */}
         <div className="absolute bottom-24 md:bottom-6 left-4 right-4 z-40">
           <form onSubmit={handleSendMessage} className="p-2 bg-card/95 backdrop-blur-xl border-2 border-primary/20 rounded-2xl flex gap-2 shadow-2xl">
             <Input 

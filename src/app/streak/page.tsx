@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, ShieldCheck, Crown, Share2, Sparkles, Star } from 'lucide-react';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, ShieldCheck, Crown, Share2, Sparkles, Star, Snowflake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
@@ -31,7 +31,7 @@ export default function StreakPage() {
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const streakFreezes = userData?.streakFreezes ?? 2;
 
-  const handleShare = () => {
+  const handleShare = async () => {
     playSound('click');
     if (!isPremium) {
       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز الأسبوعية حصرية للمشتركين." });
@@ -39,12 +39,22 @@ export default function StreakPage() {
     }
     
     const shareText = `أنا في اليوم ${userData?.streak || 0} من رحلة النمو في تطبيق Careingo! 🐱🔥 رصيد نقاطي: ${userData?.points || 0}. انضم إلينا الآن!`;
+    
     if (navigator.share) {
-      navigator.share({
-        title: 'إنجازي في Careingo',
-        text: shareText,
-        url: window.location.origin
-      });
+      try {
+        await navigator.share({
+          title: 'إنجازي في Careingo',
+          text: shareText,
+          url: window.location.origin
+        });
+      } catch (error: any) {
+        // في حال تم رفض الصلاحية أو فشل الفتح، نقوم بالنسخ للحافظة
+        navigator.clipboard.writeText(shareText);
+        toast({ 
+          title: "تم نسخ نص الإنجاز! 📋", 
+          description: "تعذر فتح نافذة المشاركة، تم نسخ النص بدلاً من ذلك لتشاركه يدوياً." 
+        });
+      }
     } else {
       navigator.clipboard.writeText(shareText);
       toast({ title: "تم نسخ نص الإنجاز! 📋" });
@@ -130,7 +140,7 @@ export default function StreakPage() {
               <div className="text-right">
                 <h3 className="font-black text-sm flex items-center gap-2 justify-end">
                   تجميد الحماسة 🧊
-                  <ShieldCheck size={18} className={isPremium ? "text-blue-200" : "text-slate-400"} />
+                  <Snowflake size={18} className={isPremium ? "text-blue-200" : "text-slate-400"} />
                 </h3>
                 <p className={cn("text-[10px] font-bold mt-1", isPremium ? "text-blue-100" : "text-slate-500")}>
                   {isPremium 

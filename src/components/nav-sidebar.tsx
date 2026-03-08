@@ -132,9 +132,12 @@ export function NavSidebar() {
 
           {!isAdmin ? (
             <div className="flex items-center gap-2">
-              <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1 bg-orange-50 px-2 py-1 rounded-full border border-orange-100 shadow-inner">
+              <Link href="/streak" onClick={() => playSound('click')} className="flex items-center gap-1.5 bg-orange-50 px-3 py-1.5 rounded-full border border-orange-100 shadow-inner">
                 <Flame size={14} className="text-orange-600" fill="currentColor" />
-                <span className="text-[10px] font-black text-orange-600">{userData?.streak || 0}</span>
+                <div className="flex flex-col items-center">
+                  <span className="text-[10px] font-black text-orange-600 leading-none">{userData?.streak || 0}</span>
+                  <span className="text-[6px] font-black text-orange-400 uppercase tracking-tighter">حماسة</span>
+                </div>
               </Link>
               <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-full border border-yellow-100 shadow-inner">
                 <Star size={14} className="text-yellow-600" fill="currentColor" />

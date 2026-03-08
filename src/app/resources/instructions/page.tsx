@@ -44,7 +44,7 @@ export default function InstructionsPage() {
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-8">
               <div className="space-y-4">
                 <h4 className="font-black text-primary text-lg flex items-center gap-2"><Flame className="text-orange-500" /> عداد الحماسة (Streak)</h4>
-                <p className="text-xs font-bold text-slate-700 leading-relaxed">يزداد عداد الحماسة بمقدار يوم واحد فور إنجازك لأول مهمة في اليوم الجديد. الاستمرارية هي مفتاح الحصول على الأوسمة النادرة في ملفك الشخصي.</p>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">يزداد عداد الحماسة بمقدار يوم واحد فور إنجازك لأول مهمة في اليوم الجديد. الاستمرارية هي مفتاح الحصول على الأوسمة النادرة في ملفك الشخصي. إذا غبت يوماً كاملاً دون "تجميد حماسة"، سيعود العداد للصفر وسيتم خصم نقاط غياب.</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -69,8 +69,8 @@ export default function InstructionsPage() {
                 <h4 className="font-black text-primary text-sm flex items-center gap-2"><Sparkles size={16}/> الميزات الملكية الحصرية:</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   {[
-                    { t: "تجميد الحماسة (Streak Freeze)", d: "تحصل على 2 تجميد شهرياً؛ يحميك التجميد من فقدان سجل التزامك في حالة الغياب المفاجئ.", i: Snowflake },
-                    { t: "بطاقة التميز الأسبوعية", d: "بطاقة رقمية احترافية تلخص إنجازاتك الأسبوعية لتشاركها مع أصدقائك بضغطة زر.", i: Medal },
+                    { t: "تجميد الحماسة (Streak Freeze)", d: "تحصل على 2 تجميد شهرياً؛ يحميك التجميد من فقدان سجل التزامك في حالة الغياب المفاجئ ويعمل تلقائياً عند فتحك للتطبيق بعد يوم غياب.", i: Snowflake },
+                    { t: "بطاقة التميز الأسبوعية", d: "بطاقة رقمية احترافية في سجل الحماسة تلخص إنجازاتك الأسبوعية لتشاركها مع أصدقائك بضغطة زر.", i: Medal },
                     { t: "نشر غير محدود", d: "انشر محتواك الملهم في المجتمع العام دون قيود المنشورين اليوميين.", i: Globe },
                     { t: "رفع صورة شخصية مخصصة", d: "إمكانية رفع صورتك الحقيقية بدلاً من الإيموجي في ملفك الشخصي.", i: ImageIcon },
                     { t: "تجربة نقية بدون إعلانات", d: "تصفح التطبيق بسرعة فائقة ودون أي مقاطعة إعلانية.", i: Zap },

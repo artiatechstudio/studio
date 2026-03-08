@@ -64,12 +64,12 @@ export default function Home() {
       }
 
       // منطق الحماية وكسر الحماسة
-      if (!isPremium) {
-        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-        const lastActive = userData.lastActiveDate;
-        const lastPenaltyDate = userData.lastStreakPenaltyDate;
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+      const lastActive = userData.lastActiveDate;
+      const lastPenaltyDate = userData.lastStreakPenaltyDate;
 
+      if (!isPremium) {
         if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
           const penalty = 150;
           const currentPoints = userData.points || 0;
@@ -77,7 +77,7 @@ export default function Home() {
           updates.points = Math.max(0, currentPoints - penalty);
           updates.streak = 0;
           updates.lastStreakPenaltyDate = todayStr;
-          updates.lastActiveDate = todayStr;
+          // لا نقوم بتحديث lastActiveDate إلى اليوم هنا لنسمح لصفحة المهام ببدء حماسة جديدة (رقم 1)
           needsUpdate = true;
 
           if (currentPoints > 0) {
@@ -93,16 +93,11 @@ export default function Home() {
         }
       } else {
         // ميزة بريميوم: حصانة الحماسة (Streak Freeze)
-        // يتم التجميد تلقائياً إذا كان العضو بريميوم ولديه رصيد تجميد
-        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-        const lastActive = userData.lastActiveDate;
-        
         if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr) {
           const currentFreezes = userData.streakFreezes ?? 2;
           if (currentFreezes > 0) {
             updates.streakFreezes = currentFreezes - 1;
-            updates.lastActiveDate = yesterdayStr; // تمويه كأن المستخدم كان نشطاً بالأمس
+            updates.lastActiveDate = yesterdayStr; // تمويه كأن المستخدم كان نشطاً بالأمس ليتمكن من التمديد اليوم
             needsUpdate = true;
             push(ref(database, `users/${user.uid}/notifications`), {
               type: 'bonus',
@@ -112,16 +107,10 @@ export default function Home() {
               timestamp: serverTimestamp()
             });
           } else if (userData.lastStreakPenaltyDate !== todayStr) {
-            // انتهت رصيد التجميد
             updates.streak = 0;
             updates.lastStreakPenaltyDate = todayStr;
             needsUpdate = true;
           }
-        }
-
-        if (userData.lastActiveDate && userData.lastActiveDate !== todayStr) {
-           updates.lastActiveDate = todayStr;
-           needsUpdate = true;
         }
       }
 
@@ -200,7 +189,7 @@ export default function Home() {
                     <Flame size={20} fill="currentColor" />
                   </div>
                   <div className="overflow-hidden flex-1">
-                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">سجل الحماسة</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">سجل الحماسة</p>
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-black text-orange-600">{userData?.streak || 0}ي</span>
                       <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
@@ -216,7 +205,7 @@ export default function Home() {
                     <HeartPulse size={20} />
                   </div>
                   <div className="overflow-hidden flex-1">
-                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
+                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
                     <div className="flex items-center gap-2">
                       <span className={cn("text-lg font-black", bmiInfo.color)}>{bmiInfo.value}</span>
                       <span className={cn("text-[8px] font-black uppercase opacity-60", bmiInfo.color)}>{bmiInfo.status}</span>

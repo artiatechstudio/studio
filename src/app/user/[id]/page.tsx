@@ -107,6 +107,15 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const isLikedByMe = userData.likedBy?.[currentUser?.uid || ''];
   const isImageAvatar = userData.avatar && (userData.avatar.startsWith('http') || userData.avatar.startsWith('data:image'));
 
+  const getRankName = (points: number = 0) => {
+    if (userData.name === 'admin') return "مدير النظام الرسمي 🛡️";
+    if (points >= 10000) return "أسطورة خالدة 👑";
+    if (points >= 5000) return "نخبة كاري 🏅";
+    if (points >= 2000) return "بطل صاعد 🔥";
+    if (points >= 500) return "مكافح مجتهد 🐱";
+    return "مكتشف جديد 🌱";
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
@@ -134,8 +143,8 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                  {userData.likesCount || 0} <Heart size={12} fill={isLikedByMe ? "currentColor" : "none"} />
               </Button>
             </div>
-            <p className="text-muted-foreground font-bold text-xs bg-secondary/30 inline-block px-3 py-0.5 rounded-full italic truncate">
-               {userData.name === 'admin' ? "مدير النظام الرسمي 🛡️" : (userData.bio || "عضو طموح في كارينجو 🌱")}
+            <p className="text-muted-foreground font-black text-xs bg-secondary/30 inline-block px-3 py-0.5 rounded-full italic truncate">
+               {getRankName(userData.points)}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
               <div className="bg-primary/10 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] border border-primary/10">

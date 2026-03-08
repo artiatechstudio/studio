@@ -247,7 +247,9 @@ export default function MasterTrackPage() {
 
     setTimeout(async () => {
       await updateStreakAndPoints(pointsToAdd);
+      // استخدام remove بدلاً من update مع null لإصلاح الخطأ البرمجي
       await remove(ref(database, `users/${user.uid}/todos/${todo.id}`));
+      
       if (pointsToAdd > 0) { 
         toast({ title: "مهمة ناجحة! +5 نقاط وتمديد حماسة 🔥" }); 
         playSound('success'); 

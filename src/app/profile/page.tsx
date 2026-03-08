@@ -172,14 +172,17 @@ export default function ProfilePage() {
           </div>
           
           <Card className="rounded-[2.5rem] bg-card p-6 border border-border shadow-xl">
-            <TooltipProvider>
+            <TooltipProvider delayDuration={0}>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
                 {ALL_ACHIEVEMENTS.map((badge) => {
                   const isEarned = badge.criteria(userData);
                   return (
                     <Tooltip key={badge.id}>
                       <TooltipTrigger asChild>
-                        <div className="group relative flex flex-col items-center cursor-help">
+                        <button 
+                          className="group relative flex flex-col items-center cursor-pointer outline-none focus:ring-2 focus:ring-primary/20 rounded-2xl p-1 transition-all"
+                          onClick={() => { if(isEarned) playSound('success'); else playSound('click'); }}
+                        >
                           <div className={cn(
                             "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-500 shadow-md border",
                             isEarned 
@@ -194,12 +197,14 @@ export default function ProfilePage() {
                           )}>
                             {badge.name}
                           </p>
-                        </div>
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent className="bg-card border border-border text-primary p-3 rounded-2xl shadow-xl max-w-[200px] text-right" dir="rtl">
-                        <p className="font-black text-xs mb-1">{badge.name}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
-                        {!isEarned && <p className="text-[8px] text-destructive mt-2 font-black italic">لم يتم إحراز هذا الوسام بعد 🔒</p>}
+                      <TooltipContent className="bg-card border-2 border-primary/20 text-primary p-4 rounded-2xl shadow-2xl max-w-[220px] text-right z-[100]" dir="rtl">
+                        <div className="space-y-1">
+                          <p className="font-black text-sm flex items-center justify-end gap-2">{badge.name} {isEarned && "✅"}</p>
+                          <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                          {!isEarned && <p className="text-[8px] text-destructive mt-2 font-black italic border-t border-border pt-1">لم يتم إحراز هذا الوسام بعد 🔒</p>}
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   );

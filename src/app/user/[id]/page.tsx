@@ -101,10 +101,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
     );
   }
 
-  const bmiValue = userData.weight && userData.height 
-    ? (userData.weight / ((userData.height / 100) * (userData.height / 100))).toFixed(1)
-    : '--';
-
   const isLikedByMe = userData.likedBy?.[currentUser?.uid || ''];
   const isImageAvatar = userData.avatar && (userData.avatar.startsWith('http') || userData.avatar.startsWith('data:image'));
 
@@ -169,21 +165,26 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           
           <Card className="rounded-[2rem] bg-card p-5 border border-border shadow-lg">
             {earnedBadges.length > 0 ? (
-              <TooltipProvider>
+              <TooltipProvider delayDuration={0}>
                 <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
                   {earnedBadges.map((badge) => (
                     <Tooltip key={badge.id}>
                       <TooltipTrigger asChild>
-                        <div className="flex flex-col items-center group relative cursor-help">
+                        <button 
+                          className="flex flex-col items-center group relative cursor-pointer outline-none focus:ring-2 focus:ring-primary/20 rounded-xl p-1 transition-all"
+                          onClick={() => playSound('click')}
+                        >
                           <div className="w-12 h-12 rounded-xl bg-white border border-primary/10 shadow-sm flex items-center justify-center text-2xl hover:scale-110 transition-transform">
                             {badge.icon}
                           </div>
                           <p className="text-[7px] font-black text-primary mt-1 text-center">{badge.name}</p>
-                        </div>
+                        </button>
                       </TooltipTrigger>
-                      <TooltipContent className="bg-card border border-border text-primary p-3 rounded-2xl shadow-xl max-w-[200px] text-right" dir="rtl">
-                        <p className="font-black text-xs mb-1">{badge.name}</p>
-                        <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                      <TooltipContent className="bg-card border-2 border-primary/20 text-primary p-4 rounded-2xl shadow-2xl max-w-[220px] text-right z-[100]" dir="rtl">
+                        <div className="space-y-1">
+                          <p className="font-black text-xs flex items-center justify-end gap-2">{badge.name} ✨</p>
+                          <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                        </div>
                       </TooltipContent>
                     </Tooltip>
                   ))}

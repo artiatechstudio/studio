@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useEffect, useState } from 'react';
@@ -6,7 +5,7 @@ import Image from 'next/image';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * تم إيقاف تشغيل الصوت التلقائي لمنع انهيار التطبيق في وضع PWA Standalone.
+ * تم إيقاف تشغيل الصوت التلقائي تماماً لضمان استقرار الـ PWA.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [mounted, setMounted] = useState(false);
@@ -14,6 +13,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     setMounted(true);
     
+    // مؤقت للانتقال للصفحة الرئيسية بعد 2.5 ثانية
     const timer = setTimeout(() => {
       onComplete();
     }, 2500);

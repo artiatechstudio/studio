@@ -1,20 +1,23 @@
-
-/**
- * Careingo Service Worker
- * يساعد في استقرار التطبيق عند العمل كـ PWA وتوفير تجربة سريعة.
- */
-
+// Careingo PWA Service Worker
 const CACHE_NAME = 'careingo-v1';
+const ASSETS_TO_CACHE = [
+  '/',
+  '/logo.png',
+  '/manifest.json'
+];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
 });
 
 self.addEventListener('fetch', (event) => {
-  // يكتفي بالتمرير للمتصفح لضمان عدم حدوث تعارض مع API الفايربيس
-  event.respondWith(fetch(event.request));
+  event.respondWith(
+    caches.match(event.request).then((response) => {
+      return response || fetch(event.request);
+    })
+  );
 });

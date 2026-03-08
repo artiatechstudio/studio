@@ -18,12 +18,14 @@ import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { requestNotificationPermission } from '@/lib/fcm-setup';
+import { OnboardingTour } from '@/components/onboarding-tour';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
   const { database, auth } = useFirebase();
   const router = useRouter();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showTour, setShowTour] = useState(false);
   const hasCheckedStatus = useRef(false);
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
@@ -47,18 +49,29 @@ export default function Home() {
       const updates: any = {};
       let needsUpdate = false;
 
+      // إظهار الجولة التعريفية للمستخدمين الجدد
+      if (userData.hasSeenTour !== true) {
+        setShowTour(true);
+      }
+
       // طلب إذن الإشعارات لأول مرة
       if (!userData.notificationsEnabled && Notification.permission === 'default') {
         requestNotificationPermission(auth, database);
       }
 
-      // رصد انتهاء البريميوم
+      // رصد انتهاء البريميوم (تحديث: إعادة الأفاتار لإيموجي عند الانتهاء)
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
+        
+        // إذا كان واضعاً صورة (تبدأ بـ data أو http)، تعود لقطة افتراضية
+        if (userData.avatar?.startsWith('data:') || userData.avatar?.startsWith('http')) {
+          updates.avatar = "🐱";
+        }
+
         needsUpdate = true;
-        toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
+        toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، تم إعادة ضبط ميزات البريميوم. يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
       // رصد تفعيل البريميوم الجديد
@@ -162,6 +175,8 @@ export default function Home() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
+        {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
+
         {isAdmin ? (
           <section className="bg-card rounded-[2rem] p-6 border border-border mx-2 shadow-lg space-y-6">
             <div className="flex flex-col items-center text-center gap-3">

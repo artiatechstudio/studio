@@ -46,7 +46,6 @@ export default function StreakPage() {
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const streakFreezes = userData?.streakFreezes ?? 2;
 
-  // وظيفة متقدمة لتوليد الصورة ومشاركتها مباشرة عبر نظام الجهاز
   const generateCardAndShare = async () => {
     if (!isPremium) {
       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز المصورة حصرية للمشتركين." });
@@ -62,19 +61,16 @@ export default function StreakPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // 1. إعداد الخلفية (تدرج فاخر)
       const gradient = ctx.createLinearGradient(0, 0, 0, 600);
-      gradient.addColorStop(0, '#4F46E5'); // الأساسي
-      gradient.addColorStop(1, '#9333EA'); // اللكنة
+      gradient.addColorStop(0, '#4F46E5'); 
+      gradient.addColorStop(1, '#9333EA'); 
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, 400, 600);
 
-      // 2. دوائر زينة خلفية
       ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.beginPath(); ctx.arc(0, 0, 150, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(400, 600, 100, 0, Math.PI * 2); ctx.fill();
 
-      // 3. رسم الصورة الشخصية (دائرة)
       ctx.save();
       ctx.beginPath();
       ctx.arc(200, 120, 60, 0, Math.PI * 2);
@@ -85,7 +81,7 @@ export default function StreakPage() {
       const avatar = userData?.avatar || "🐱";
       if (avatar.startsWith('data:image') || avatar.startsWith('http')) {
         const img = new Image();
-        img.crossOrigin = "anonymous"; // هام جداً للمشاركة
+        img.crossOrigin = "anonymous"; 
         img.src = avatar;
         await new Promise((resolve) => {
           img.onload = resolve;
@@ -100,22 +96,17 @@ export default function StreakPage() {
       }
       ctx.restore();
 
-      // 4. رسم المحتوى النصي
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'center';
       
-      // الاسم
-      ctx.font = 'bold 28px "Cairo", Arial';
+      ctx.font = 'bold 28px Arial';
       ctx.fillText(userData?.name || 'Careingo User', 200, 220);
       
-      // الشارة الملكية
       ctx.font = '20px Arial';
       ctx.fillText('👑 Premium Member', 200, 255);
 
-      // صناديق الإحصائيات
       const drawInfoBox = (y: number, label: string, value: string, icon: string) => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-        // رسم مستطيل بزوايا مستديرة (دعم المتصفحات القديمة)
         if (ctx.roundRect) {
           ctx.beginPath();
           ctx.roundRect(40, y, 320, 75, 20);
@@ -139,13 +130,11 @@ export default function StreakPage() {
       drawInfoBox(380, 'إجمالي النقاط', `${(userData?.points || 0).toLocaleString()} نقطة`, '⭐');
       drawInfoBox(470, 'الترتيب العالمي', `#${stats.rank}`, '🏆');
 
-      // توقيع التطبيق
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
       ctx.fillText('CAREINGO | GROWTH ECOSYSTEM 2026', 200, 575);
 
-      // 5. تحويل الـ Canvas إلى ملف ومشاركته
       canvas.toBlob(async (blob) => {
         if (!blob) {
           setIsGenerating(false);
@@ -154,7 +143,6 @@ export default function StreakPage() {
 
         const file = new File([blob], 'careingo-achievement.png', { type: 'image/png' });
         
-        // المحاولة 1: استخدام مشاركة النظام المباشرة (Share Sheet)
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
@@ -165,14 +153,12 @@ export default function StreakPage() {
             setIsGenerating(false);
           } catch (e: any) {
             if (e.name !== 'AbortError') {
-              // إذا لم يكن خطأ إلغاء من المستخدم، نقوم بالتحميل كخطة بديلة
               downloadFallback(blob);
             } else {
               setIsGenerating(false);
             }
           }
         } else {
-          // المحاولة 2: تحميل الصورة إذا كان المتصفح لا يدعم المشاركة المباشرة للملفات
           downloadFallback(blob);
         }
       }, 'image/png');
@@ -248,7 +234,6 @@ export default function StreakPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
-        {/* الـ Canvas المخفي الذي يتم الرسم عليه */}
         <canvas ref={canvasRef} width="400" height="600" className="hidden" />
 
         <header className="bg-gradient-to-br from-primary to-accent p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
@@ -346,7 +331,7 @@ export default function StreakPage() {
                   className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black gap-3 shadow-xl"
                 >
                   {isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={20} />}
-                  مشاركة كصورة على وسائل التواصل 📲
+                  مشاركة
                 </Button>
               </div>
             </Card>

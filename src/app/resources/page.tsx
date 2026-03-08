@@ -1,4 +1,3 @@
-
 "use client"
 
 import React from 'react';
@@ -24,7 +23,7 @@ export default function ResourcesPage() {
       description: "شرح تفصيلي لكافة التمارين الرياضية ونظام التغذية المتوازن.",
       icon: Dumbbell,
       href: "/resources/health",
-      color: "text-red-50",
+      color: "text-red-600",
       bgColor: "bg-red-50"
     },
     {

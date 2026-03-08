@@ -109,7 +109,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
 
   const getRankName = (points: number = 0) => {
     if (userData.name === 'admin') return "مدير النظام الرسمي 🛡️";
-    if (points >= 10000) return "أسطورة خالدة 👑";
+    if (points >= 10000) return "الأسطورة 👑";
     if (points >= 5000) return "نخبة كاري 🏅";
     if (points >= 2000) return "بطل صاعد 🔥";
     if (points >= 500) return "مكافح مجتهد 🐱";
@@ -144,7 +144,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
               </Button>
             </div>
             <p className="text-muted-foreground font-black text-xs bg-secondary/30 inline-block px-3 py-0.5 rounded-full italic truncate">
-               {getRankName(userData.points)}
+               الرتبة : {getRankName(userData.points)}
             </p>
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
               <div className="bg-primary/10 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] border border-primary/10">

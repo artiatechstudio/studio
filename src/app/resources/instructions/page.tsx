@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet, Image as ImageIcon, MessageSquare, Snowflake } from 'lucide-react';
+import { ArrowLeft, Info, Star, Timer as TimerIcon, Zap, AlertTriangle, ListChecks, Crown, Sparkles, Globe, Brain, AlertCircle, Trophy, Skull, Medal, Flame, Heart, Swords, CheckCircle2, ShieldCheck, Wallet, Image as ImageIcon, MessageSquare, Snowflake, Milestone } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -59,10 +59,37 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* القسم الثاني: ميزات البريميوم الملكية */}
+          {/* القسم الجديد: نظام الرتب */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
+              <Milestone className="text-blue-500" /> <h2>2. نظام الرتب (Rank System)</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
+              <p className="text-xs font-bold text-slate-700 leading-relaxed">تحدد رتبتك في كارينجو بناءً على إجمالي النقاط التي جمعتها منذ انضمامك. كل رتبة جديدة تفتح لك هيبة أكبر في المجتمع العام:</p>
+              
+              <div className="space-y-3">
+                {[
+                  { r: "الأسطورة 👑", p: "10,000+ نقطة", d: "لقد وصلت لقمة الجبل، اسمك يتردد في كل أرجاء كاري." },
+                  { r: "نخبة كاري 🏅", p: "5,000 - 9,999 نقطة", d: "أنت الآن ضمن صفوة المستخدمين وأكثرهم انضباطاً." },
+                  { r: "بطل صاعد 🔥", p: "2,000 - 4,999 نقطة", d: "تجاوزت مرحلة الهواة وأصبحت منافساً حقيقياً." },
+                  { r: "مكافح مجتهد 🐱", p: "500 - 1,999 نقطة", d: "بدأت عاداتك بالاستقرار، استمر في السعي." },
+                  { r: "مكتشف جديد 🌱", p: "0 - 499 نقطة", d: "بدايتك في الرحلة، كل بطل بدأ هكذا." }
+                ].map((rank, i) => (
+                  <div key={i} className="flex items-start gap-4 p-4 bg-secondary/20 rounded-2xl border border-border/50">
+                    <div className="text-right flex-1">
+                      <p className="font-black text-primary text-sm">{rank.r} <span className="text-[9px] font-bold text-muted-foreground mr-2">({rank.p})</span></p>
+                      <p className="text-[10px] font-bold text-muted-foreground mt-1">{rank.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* القسم الثالث: ميزات البريميوم الملكية */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-yellow-600">
-              <Crown className="text-yellow-500" fill="currentColor" /> <h2>2. عضوية Careingo الملكية (Premium)</h2>
+              <Crown className="text-yellow-500" fill="currentColor" /> <h2>3. عضوية Careingo الملكية (Premium)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-yellow-100 bg-yellow-50/20 space-y-6">
               <div className="space-y-4 pt-4">
@@ -96,10 +123,10 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* القسم الثالث: المجتمع والخصوصية */}
+          {/* القسم الرابع: المجتمع والخصوصية */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <MessageSquare className="text-primary" /> <h2>3. ميثاق المجتمع والخصوصية</h2>
+              <MessageSquare className="text-primary" /> <h2>4. ميثاق المجتمع والخصوصية</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-6">
               <div className="space-y-4">
@@ -114,6 +141,10 @@ export default function InstructionsPage() {
                 <div className="flex items-start gap-3 p-4 bg-secondary/20 rounded-2xl">
                   <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">3</div>
                   <p className="text-xs font-bold text-slate-700 leading-relaxed">الانسحاب من المهمة بعد بدئها يترتب عليه **خصم 75 نقطة** من رصيدك لتعزيز مبدأ الالتزام.</p>
+                </div>
+                <div className="flex items-start gap-3 p-4 bg-secondary/20 rounded-2xl">
+                  <div className="w-8 h-8 bg-primary/10 text-primary rounded-lg flex items-center justify-center shrink-0">4</div>
+                  <p className="text-xs font-bold text-slate-700 leading-relaxed">المشاركة لبطاقة التميز متاحة **مرتين شهرياً** للمستخدمين العاديين، وغير محدودة للمشتركين الملكيين.</p>
                 </div>
               </div>
             </Card>

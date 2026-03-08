@@ -73,7 +73,7 @@ export default function ProfilePage() {
 
   const getRankName = (points: number = 0) => {
     if (userData.name === 'admin') return "مدير النظام الرسمي 🛡️";
-    if (points >= 10000) return "أسطورة خالدة 👑";
+    if (points >= 10000) return "الأسطورة 👑";
     if (points >= 5000) return "نخبة كاري 🏅";
     if (points >= 2000) return "بطل صاعد 🔥";
     if (points >= 500) return "مكافح مجتهد 🐱";
@@ -105,7 +105,7 @@ export default function ProfilePage() {
                 {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
               </span>
             </div>
-            <p className="text-muted-foreground font-black text-sm italic">{getRankName(userData.points)}</p>
+            <p className="text-muted-foreground font-black text-sm italic">الرتبة : {getRankName(userData.points)}</p>
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
               <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-primary/10">
                 <CalendarIcon size={12} /> {userData.age || '--'} سنة

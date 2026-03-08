@@ -4,10 +4,10 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref } from 'firebase/database';
+import { ref, update, get, serverTimestamp } from 'firebase/database';
 import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, CheckCircle2, TrendingUp, Crown, Share2, Snowflake, Loader2 } from 'lucide-react';
+import { Flame, CheckCircle2, TrendingUp, Crown, Share2, Snowflake, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
@@ -43,12 +43,30 @@ export default function StreakPage() {
     return { rank: rank > 0 ? rank : 1, total: usersArray.length };
   }, [allUsersData, user, userData]);
 
+  const getRankName = (points: number = 0) => {
+    if (userData?.name === 'admin') return "مدير النظام الرسمي 🛡️";
+    if (points >= 10000) return "الأسطورة 👑";
+    if (points >= 5000) return "نخبة كاري 🏅";
+    if (points >= 2000) return "بطل صاعد 🔥";
+    if (points >= 500) return "مكافح مجتهد 🐱";
+    return "مكتشف جديد 🌱";
+  };
+
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const streakFreezes = userData?.streakFreezes ?? 2;
 
   const generateCardAndShare = async () => {
-    if (!isPremium) {
-      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز المصورة حصرية للمشتركين." });
+    if (!user || !userData) return;
+
+    const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+    const monthlyShareCount = userData.monthlyShareCount?.[currentMonth] || 0;
+
+    if (!isPremium && monthlyShareCount >= 2) {
+      toast({ 
+        variant: "destructive", 
+        title: "وصلت للحد الشهري 🛑", 
+        description: "يمكن للمستخدمين العاديين مشاركة البطاقة مرتين في الشهر فقط. اشترك في بريميوم لمشاركة غير محدودة! 👑" 
+      });
       return;
     }
 
@@ -102,8 +120,8 @@ export default function StreakPage() {
       ctx.font = 'bold 28px Arial';
       ctx.fillText(userData?.name || 'Careingo User', 200, 220);
       
-      ctx.font = '20px Arial';
-      ctx.fillText('👑 Premium Member', 200, 255);
+      ctx.font = 'bold 16px Arial';
+      ctx.fillText(`الرتبة: ${getRankName(userData.points)}`, 200, 255);
 
       const drawInfoBox = (y: number, label: string, value: string, icon: string) => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
@@ -150,6 +168,12 @@ export default function StreakPage() {
               title: 'إنجازي في كاري 🐱✨',
               text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو: https://www.artiatechstudio.com.ly/2026/03/careingo.html`
             });
+            
+            // تحديث عداد المشاركة الشهري
+            await update(ref(database, `users/${user.uid}/monthlyShareCount`), {
+              [currentMonth]: monthlyShareCount + 1
+            });
+
             setIsGenerating(false);
           } catch (e: any) {
             if (e.name !== 'AbortError') {
@@ -229,6 +253,9 @@ export default function StreakPage() {
     );
   }
 
+  const currentMonthStr = new Date().toISOString().slice(0, 7);
+  const sharesLeft = Math.max(0, 2 - (userData?.monthlyShareCount?.[currentMonthStr] || 0));
+
   return (
     <div className="min-h-screen bg-background pb-32 md:pr-72 pt-4 md:pt-0 overflow-x-hidden" dir="rtl">
       <NavSidebar />
@@ -306,25 +333,38 @@ export default function StreakPage() {
           </Card>
         </div>
 
-        {isPremium && (
-          <div className="px-2">
-            <Card className="rounded-[2.5rem] border-4 border-yellow-400 bg-white p-8 shadow-2xl relative overflow-hidden group">
-              <div className="absolute -top-4 -left-4 w-20 h-20 bg-yellow-400 rotate-45 opacity-20" />
-              <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-yellow-400 rotate-45 opacity-20" />
+        <div className="px-2">
+          <Card className={cn(
+            "rounded-[2.5rem] border-4 p-8 shadow-2xl relative overflow-hidden group",
+            isPremium ? "border-yellow-400 bg-white" : "border-primary/20 bg-secondary/10"
+          )}>
+            {isPremium && (
+              <>
+                <div className="absolute -top-4 -left-4 w-20 h-20 bg-yellow-400 rotate-45 opacity-20" />
+                <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-yellow-400 rotate-45 opacity-20" />
+              </>
+            )}
+            
+            <div className="text-center space-y-4 relative z-10">
+              {isPremium ? <Crown className="w-12 h-12 text-yellow-500 mx-auto animate-bounce" /> : <Sparkles className="w-12 h-12 text-primary mx-auto opacity-40" />}
+              <h3 className="text-2xl font-black text-primary">بطاقة التميز {isPremium && "الملكية"}</h3>
               
-              <div className="text-center space-y-4 relative z-10">
-                <Crown className="w-12 h-12 text-yellow-500 mx-auto animate-bounce" />
-                <h3 className="text-2xl font-black text-primary">بطاقة التميز الملكية</h3>
-                <div className="grid grid-cols-2 gap-4 py-4">
-                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
-                    <p className="text-[10px] font-black text-yellow-700 uppercase">الترتيب</p>
-                    <p className="text-xl font-black text-primary">#{stats.rank}</p>
-                  </div>
-                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
-                    <p className="text-[10px] font-black text-yellow-700 uppercase">الحماسة</p>
-                    <p className="text-xl font-black text-primary">{userData?.streak || 0} يوم</p>
-                  </div>
+              <div className="text-center">
+                <p className="text-sm font-black text-muted-foreground italic">الرتبة : {getRankName(userData?.points)}</p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 py-4">
+                <div className={cn("p-4 rounded-2xl border", isPremium ? "bg-yellow-50 border-yellow-100" : "bg-white border-border")}>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase">الترتيب</p>
+                  <p className="text-xl font-black text-primary">#{stats.rank}</p>
                 </div>
+                <div className={cn("p-4 rounded-2xl border", isPremium ? "bg-yellow-50 border-yellow-100" : "bg-white border-border")}>
+                  <p className="text-[10px] font-black text-muted-foreground uppercase">الحماسة</p>
+                  <p className="text-xl font-black text-primary">{userData?.streak || 0} يوم</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
                 <Button 
                   onClick={generateCardAndShare} 
                   disabled={isGenerating}
@@ -333,10 +373,16 @@ export default function StreakPage() {
                   {isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={20} />}
                   مشاركة
                 </Button>
+                
+                {!isPremium && (
+                  <p className="text-[10px] font-bold text-muted-foreground">
+                    المتبقي لك هذا الشهر: <span className="text-primary">{sharesLeft} مشاركة</span>
+                  </p>
+                )}
               </div>
-            </Card>
-          </div>
-        )}
+            </div>
+          </Card>
+        </div>
 
         <div className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-6">

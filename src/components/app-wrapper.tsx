@@ -11,7 +11,7 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
     setMounted(true);
 
     // تسجيل الـ Service Worker لضمان عمل الـ PWA بشكل صحيح
-    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
+    if ('serviceWorker' in navigator && typeof window !== 'undefined') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {

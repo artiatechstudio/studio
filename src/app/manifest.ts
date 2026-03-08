@@ -6,7 +6,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Careingo',
     description: 'كارينجو | تواصل، تحدى، تطور',
     start_url: '/',
-    display: 'standalone',
+    display: 'browser',
     background_color: '#ffffff',
     theme_color: '#4F46E5',
     icons: [
@@ -14,16 +14,12 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/logo.png',
         sizes: '192x192',
         type: 'image/png',
-        purpose: 'maskable',
       },
       {
         src: '/logo.png',
         sizes: '512x512',
         type: 'image/png',
-        purpose: 'any',
       },
     ],
-    categories: ['health', 'lifestyle', 'education'],
-    orientation: 'portrait',
   }
 }

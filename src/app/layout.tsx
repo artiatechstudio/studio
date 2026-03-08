@@ -3,18 +3,11 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 import { AppWrapper } from '@/components/app-wrapper';
-import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Careingo | تواصل، تحدى، تطور',
   description: 'كارينجو هي منصتك التفاعلية للنمو الشخصي: تواصل مع المجتمع، تحدى نفسك في مسارات متنوعة، وتطور يومياً.',
-  manifest: '/manifest.json',
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: 'default',
-    title: 'Careingo',
-  },
   formatDetection: {
     telephone: false,
   },
@@ -41,11 +34,6 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet" />
         
-        {/* Meta tags for PWA reliability */}
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        
         <Script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2754396305908181" 
@@ -60,6 +48,8 @@ export default function RootLayout({
                 const theme = localStorage.getItem('theme') || 'light';
                 if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
+                } else {
+                  document.documentElement.classList.remove('dark');
                 }
               } catch (e) {}
             })();
@@ -74,7 +64,6 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
-            <PWAInstallPrompt />
             <Toaster />
           </FirebaseClientProvider>
         </AppWrapper>

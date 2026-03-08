@@ -24,7 +24,7 @@ export default function ResourcesPage() {
       description: "شرح تفصيلي لكافة التمارين الرياضية ونظام التغذية المتوازن.",
       icon: Dumbbell,
       href: "/resources/health",
-      color: "text-red-500",
+      color: "text-red-50",
       bgColor: "bg-red-50"
     },
     {
@@ -108,8 +108,9 @@ export default function ResourcesPage() {
                   <AccordionTrigger className="text-right font-black text-lg">قوانين المجتمع والاستخدام</AccordionTrigger>
                   <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
                     <p>● <span className="text-primary font-black">السلوك العام:</span> يُحظر تماماً التنمر، التحرش، أو نشر محتوى غير لائق في الدردشة العامة أو الخاصة. يتم حظر الحسابات المخالفة نهائياً دون سابق إنذار.</p>
-                    <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> تطبيق "كارينجو" هو أداة تحفيزية. التمارين والنصائح الغذائية المقدمة لا تغني عن استشارة الطبيب المختص، خاصة للأشخاص الذين يعانون من مشاكل صحية مزمنة.</p>
-                    <p>● <span className="text-primary font-black">النقاط والحماسة:</span> النظام يعتمد على مبدأ الالتزام الشخصي. أي تلاعب في إكمال المهام يضر بمصداقية سجل إنجازاتك. عقوبة الانسحاب من المهام تهدف لتعزيز الانضباط.</p>
+                    <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> تطبيق "كارينجو" هو أداة تحفيزية. التمارين والنصائح الغذائية المقدمة لا تغني عن استشارة الطبيب المختص.</p>
+                    <p>● <span className="text-primary font-black">سياسة استرداد الأموال:</span> لا يتم استرداد الأموال إلا في حال وجود عطل فني في خوادم النظام أو مشكلة تقنية من جانب التطبيق تمنع الاستفادة من ميزات الاشتراك. يحق للمستخدم طلب الاسترداد فقط خلال **اليوم الأول (24 ساعة)** من تاريخ تفعيل الاشتراك، ولا يمكن الاسترداد بعد ذلك لأي سبب آخر.</p>
+                    <p>● <span className="text-primary font-black">النقاط والحماسة:</span> النظام يعتمد على مبدأ الالتزام الشخصي. أي تلاعب في إكمال المهام يضر بمصداقية سجل إنجازاتك.</p>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>
@@ -125,19 +126,19 @@ export default function ResourcesPage() {
                 <AccordionItem value="faq-streak">
                   <AccordionTrigger className="text-right font-black text-lg">لماذا فقدت حماستي (Streak)؟</AccordionTrigger>
                   <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
-                    يتم تمديد الحماسة عند إكمال أول مهمة في اليوم الجديد. إذا لم تقم بأي نشاط لمدة 24 ساعة (تنتهي عند منتصف الليل)، ستفقد الحماسة ما لم تكن مشتركاً في البريميوم ولديك رصيد "تجميد حماسة".
+                    يتم تمديد الحماسة عند إكمال أول مهمة في اليوم الجديد. إذا لم تقم بأي نشاط لمدة 24 ساعة، ستفقد الحماسة ما لم تكن مشتركاً في البريميوم ولديك رصيد "تجميد حماسة".
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="faq-points">
                   <AccordionTrigger className="text-right font-black text-lg">كيف أحصل على رتبة "أسطورة كاري"؟</AccordionTrigger>
                   <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
-                    تعتمد الرتب على إجمالي النقاط. رتبة الأسطورة تتطلب الوصول إلى 10,000 نقطة. يمكنك جمع النقاط عبر إكمال المهام اليومية، التبكير في الإنجاز، والالتزام بالمسار العام.
+                    تعتمد الرتب على إجمالي النقاط. رتبة الأسطورة تتطلب الوصول إلى 10,000 نقطة من خلال المهام اليومية والالتزام المستمر.
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="faq-premium">
                   <AccordionTrigger className="text-right font-black text-lg">كيف يتم تفعيل اشتراك البريميوم؟</AccordionTrigger>
                   <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
-                    بعد تقديم الطلب من الإعدادات وتحويل الرصيد، يقوم فريق الإدارة بمراجعة الطلب يدوياً وتفعيله خلال مدة لا تتجاوز 24 ساعة. ستصلك إشعار فوري فور التفعيل.
+                    بعد تقديم الطلب من الإعدادات وتحويل الرصيد، يتم تفعيل الطلب يدوياً من الإدارة خلال 24 ساعة. ستصلك إشعار فوري فور التفعيل لتستمتع بالمميزات الملكية.
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

@@ -1,70 +1,94 @@
 
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card } from './ui/card';
 import { Button } from './ui/button';
 import { Mascot } from './mascot';
 import { useUser, useFirebase } from '@/firebase';
 import { ref, update } from 'firebase/database';
-import { X, ChevronLeft, ChevronRight, Sparkles, ShieldAlert, Trash2, Crown, Trophy, MessageCircle } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Settings, ShieldAlert, Trash2, Smartphone, Download, Share2, HelpCircle, PhoneCall } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
 const TOUR_STEPS = [
   {
     title: "مرحباً بك في عالم كارينجو! 🐱",
-    content: "أنا 'كاري'، رفيقك في هذه الرحلة. سآخذك في جولة سريعة لنفهم معاً كيف يعمل التطبيق لتصبح بطلاً حقيقياً.",
+    content: "أنا 'كاري'، مساعدك الذكي للتحسين من ذاتك. نستخدم نظاماً مجتمعياً فريداً يساعدك على التحفيز اليومي لتصبح نسخة أفضل من نفسك.",
     icon: Sparkles,
     color: "text-primary"
   },
   {
-    title: "مسارات النمو الأربعة 🧗‍♂️",
-    content: "لدينا 4 مسارات: لياقة، تغذية، سلوك، ودراسة. كل مسار به 30 مرحلة. يمكنك إنجاز مرحلة واحدة فقط في كل مسار يومياً لبناء عادة حقيقية.",
-    icon: Trophy,
+    title: "تواصل، تحدى، تطور 🚀",
+    content: "هذا هو شعارنا وهدفنا. كارينجو ليس مجرد تطبيق، بل هو رفيق دربك في رحلة التغيير الحقيقية والنمو المستمر.",
+    icon: Sparkles,
     color: "text-accent"
   },
   {
+    title: "مسارات النمو الأربعة 🧗‍♂️",
+    content: "لدينا 4 مسارات أساسية: لياقة، تغذية، سلوك، ودراسة. كل مسار به 30 مرحلة. يمكنك إنجاز مرحلة واحدة فقط في كل مسار يومياً لبناء عادة حقيقية.",
+    icon: Trophy,
+    color: "text-primary"
+  },
+  {
+    title: "المسار العام (Master) 👑",
+    content: "للأبطال الذين تجاوزوا الحدود! هنا تجد 'تحديات الأساطير' العشوائية، وقائمة مهامك الشخصية (Todos) التي تمنحك نقاطاً إضافية وتمدد حماستك.",
+    icon: Crown,
+    color: "text-yellow-600"
+  },
+  {
     title: "سجل الحماسة (Streak) 🔥",
-    content: "هنا نبض التزامك! كل يوم تنجز فيه مهمة تزداد حماستك. إذا غبت يوماً واحداً سيفقد العداد حرارته ويعود للصفر.. لا تستسلم!",
+    content: "نبض التزامك! كل يوم تنجز فيه أي مهمة تزداد حماستك. إذا غبت يوماً واحداً سيفقد العداد حرارته ويعود للصفر.. لا تستسلم أبداً!",
     icon: Crown,
     color: "text-orange-500"
   },
   {
-    title: "قائمة العظماء والمتصدرين 🏆",
+    title: "قائمة العظماء 🏆",
     content: "نافس أصدقاءك! الترتيب يعتمد على نشاطك في آخر 3 أيام. احذر من التكاسل لكي لا يظهر اسمك في 'جدار العار' باللون الأحمر!",
     icon: Trophy,
     color: "text-yellow-500"
   },
   {
     title: "المجتمع والدردشة 🌍",
-    content: "انشر إلهامك في المجتمع العام. يمكنك حذف منشورك في أي وقت. وفي الدردشة الخاصة، الحذف يتم من الطرفين لضمان خصوصيتك الكاملة.",
+    content: "انشر إلهامك في المجتمع العام. وفي الدردشة الخاصة، الحذف يتم من الطرفين نهائياً لضمان خصوصيتك وأمانك الكامل.",
     icon: MessageCircle,
     color: "text-blue-500"
   },
   {
-    title: "الأوسمة والإنجازات 🏅",
-    content: "كلما تطورت، حصلت على أوسمة نادرة تظهر في ملفك الشخصي. اجمعها كلها لتثبت أنك أسطورة من أساطير كارينجو.",
-    icon: ShieldAlert,
-    color: "text-purple-500"
+    title: "الموارد والدعم 📚",
+    content: "في قسم 'الموارد' ستجد أدلة شاملة للياقة والتعلم. وإذا واجهت أي مشكلة، قسم 'تواصل معنا' في الإعدادات يربطك مباشرة بفريق الدعم.",
+    icon: HelpCircle,
+    color: "text-green-600"
   },
   {
     title: "العضوية الملكية (Premium) 👑",
-    content: "مشتركو البريميوم يحصلون على 'تجميد الحماسة' عند الغياب، وإمكانية رفع صورة شخصية حقيقية بدلاً من الإيموجي، وتجربة بدون إعلانات.",
+    content: "احصل على 'تجميد الحماسة' لحمايتك عند الغياب، وإمكانية رفع صورة شخصية حقيقية، وتجربة نقية بدون إعلانات.",
     icon: Crown,
     color: "text-yellow-600"
   },
   {
-    title: "إدارة الحساب والأفاتار ⚙️",
-    content: "من الإعدادات يمكنك تغيير اسمك، عمرك، وتغيير رفيقك (الأفاتار). البريميوم فقط هم من يمكنهم رفع صور مخصصة من الاستوديو.",
-    icon: ShieldAlert,
-    color: "text-slate-600"
-  },
-  {
     title: "منطقة الأمان والحذف ⚠️",
-    content: "نحن نحترم قرارك دائماً. يمكنك حذف حسابك نهائياً من الإعدادات، مما سيؤدي لمسح كافة بياناتك ونقاطك من النظام فوراً.",
+    content: "نحن نحترم قرارك. يمكنك حذف حسابك نهائياً من الإعدادات، مما سيؤدي لمسح كافة بياناتك ونقاطك من النظام فوراً دون تراجع.",
     icon: Trash2,
     color: "text-destructive"
+  },
+  {
+    title: "تطبيق ويب تقدمي (PWA) 📱",
+    content: "كارينجو هو تطبيق ويب متطور! يمكنك تثبيته على شاشتك الرئيسية ليعمل كأي تطبيق أصلي وبسرعة البرق.",
+    icon: Smartphone,
+    color: "text-primary"
+  },
+  {
+    title: "التثبيت على Android 🤖",
+    content: "من متصفح Chrome، اضغط على النقاط الثلاث (⋮) في الأعلى، ثم اختر 'تثبيت التطبيق' (Install App) ليظهر في قائمة تطبيقاتك.",
+    icon: Download,
+    color: "text-green-600"
+  },
+  {
+    title: "التثبيت على iPhone 🍎",
+    content: "من متصفح Safari، اضغط على زر 'مشاركة' (Share) في الأسفل، ثم مرر واختر 'إضافة للشاشة الرئيسية' (Add to Home Screen).",
+    icon: Share2,
+    color: "text-slate-800"
   },
   {
     title: "جاهز للانطلاق؟ 🚀",
@@ -112,9 +136,9 @@ export function OnboardingTour({ onComplete }: { onComplete: () => void }) {
     <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="rtl">
       <Card className="w-full max-w-md rounded-[3rem] overflow-hidden border-none shadow-2xl bg-card animate-in zoom-in duration-300">
         <div className="p-2 flex justify-end">
-          <Button onClick={handleFinish} variant="ghost" size="icon" className="rounded-full text-muted-foreground">
+          <button onClick={handleFinish} className="p-2 rounded-full text-muted-foreground hover:bg-secondary">
             <X size={20} />
-          </Button>
+          </button>
         </div>
         
         <div className="px-8 pb-10 space-y-6 text-center">
@@ -149,7 +173,7 @@ export function OnboardingTour({ onComplete }: { onComplete: () => void }) {
         </div>
 
         <div className="bg-primary/5 p-4 flex items-center justify-center border-t border-border/50">
-          <Mascot messageOnly customMessage="لا تتردد في سؤالي عن أي شيء لاحقاً! 🐱" />
+          <Mascot messageOnly customMessage="استمتع برحلتك في كارينجو! 🐱" />
         </div>
       </Card>
     </div>

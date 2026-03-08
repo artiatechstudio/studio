@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase';
 import { AppWrapper } from '@/components/app-wrapper';
+import { PWAInstallPrompt } from '@/components/pwa-install-prompt';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -80,6 +81,7 @@ export default function RootLayout({
                 {children}
               </main>
             </div>
+            <PWAInstallPrompt />
             <Toaster />
           </FirebaseClientProvider>
         </AppWrapper>

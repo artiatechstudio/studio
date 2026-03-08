@@ -17,10 +17,11 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { requestNotificationPermission } from '@/lib/fcm-setup';
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
-  const { database } = useFirebase();
+  const { database, auth } = useFirebase();
   const router = useRouter();
   const [showCelebration, setShowCelebration] = useState(false);
   const hasCheckedStatus = useRef(false);
@@ -45,6 +46,11 @@ export default function Home() {
       const now = Date.now();
       const updates: any = {};
       let needsUpdate = false;
+
+      // طلب إذن الإشعارات لأول مرة
+      if (!userData.notificationsEnabled && Notification.permission === 'default') {
+        requestNotificationPermission(auth, database);
+      }
 
       // رصد انتهاء البريميوم
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
@@ -77,7 +83,6 @@ export default function Home() {
           updates.points = Math.max(0, currentPoints - penalty);
           updates.streak = 0;
           updates.lastStreakPenaltyDate = todayStr;
-          // لا نقوم بتحديث lastActiveDate إلى اليوم هنا لنسمح لصفحة المهام ببدء حماسة جديدة (رقم 1)
           needsUpdate = true;
 
           if (currentPoints > 0) {
@@ -97,7 +102,7 @@ export default function Home() {
           const currentFreezes = userData.streakFreezes ?? 2;
           if (currentFreezes > 0) {
             updates.streakFreezes = currentFreezes - 1;
-            updates.lastActiveDate = yesterdayStr; // تمويه كأن المستخدم كان نشطاً بالأمس ليتمكن من التمديد اليوم
+            updates.lastActiveDate = yesterdayStr; 
             needsUpdate = true;
             push(ref(database, `users/${user.uid}/notifications`), {
               type: 'bonus',
@@ -118,7 +123,7 @@ export default function Home() {
         update(ref(database, `users/${user.uid}`), updates).catch(e => console.error("Update failed", e));
       }
     }
-  }, [userData, user, database, isAdmin, isPremium]);
+  }, [userData, user, database, auth, isAdmin, isPremium]);
 
   const progressPercent = useMemo(() => {
     if (!userData?.trackProgress) return 0;

@@ -1,21 +1,24 @@
 
 "use client"
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
 import { Card, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, ShieldCheck, Crown, Share2, Sparkles, Star, Snowflake } from 'lucide-react';
+import { Flame, CheckCircle2, TrendingUp, Crown, Share2, Snowflake, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 export default function StreakPage() {
   const { user, isUserLoading } = useUser();
   const { database } = useFirebase();
   const [todayStr, setTodayStr] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     setTodayStr(new Date().toLocaleDateString('en-CA'));
@@ -28,36 +31,141 @@ export default function StreakPage() {
 
   const { data: userData, isLoading: isUserDataLoading } = useDatabase(userRef);
 
+  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
+  const { data: allUsersData } = useDatabase(allUsersRef);
+
+  const stats = useMemo(() => {
+    if (!allUsersData || !user || !userData) return { rank: 0, total: 0 };
+    const usersArray = Object.values(allUsersData)
+      .filter((u: any) => u.name !== 'admin')
+      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
+    const rank = usersArray.findIndex((u: any) => u.id === user.uid) + 1;
+    return { rank: rank > 0 ? rank : 1, total: usersArray.length };
+  }, [allUsersData, user, userData]);
+
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const streakFreezes = userData?.streakFreezes ?? 2;
 
-  const handleShare = async () => {
-    playSound('click');
+  const generateCardAndShare = async () => {
     if (!isPremium) {
-      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز الأسبوعية حصرية للمشتركين." });
+      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز المصورة حصرية للمشتركين." });
       return;
     }
-    
-    const shareText = `أنا في اليوم ${userData?.streak || 0} من رحلة النمو في تطبيق Careingo! 🐱🔥 رصيد نقاطي: ${userData?.points || 0}. انضم إلينا الآن!`;
-    
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: 'إنجازي في Careingo',
-          text: shareText,
-          url: window.location.origin
-        });
-      } catch (error: any) {
-        // في حال تم رفض الصلاحية أو فشل الفتح، نقوم بالنسخ للحافظة
-        navigator.clipboard.writeText(shareText);
-        toast({ 
-          title: "تم نسخ نص الإنجاز! 📋", 
-          description: "تعذر فتح نافذة المشاركة، تم نسخ النص بدلاً من ذلك لتشاركه يدوياً." 
-        });
+
+    setIsGenerating(true);
+    playSound('click');
+
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      // 1. إعداد الخلفية
+      const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+      gradient.addColorStop(0, '#4F46E5'); // Primary
+      gradient.addColorStop(1, '#9333EA'); // Accent
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 400, 600);
+
+      // 2. رسم دوائر زينة
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.beginPath(); ctx.arc(0, 0, 150, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(400, 600, 100, 0, Math.PI * 2); ctx.fill();
+
+      // 3. رسم الصورة الشخصية (الأفاتار)
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(200, 120, 60, 0, Math.PI * 2);
+      ctx.clip();
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(140, 60, 120, 120);
+      
+      // إذا كانت الصورة Base64 أو رابط
+      const avatar = userData?.avatar || "🐱";
+      if (avatar.startsWith('data:image') || avatar.startsWith('http')) {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = avatar;
+        await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
+        ctx.drawImage(img, 140, 60, 120, 120);
+      } else {
+        ctx.font = '60px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(avatar, 200, 120);
       }
-    } else {
-      navigator.clipboard.writeText(shareText);
-      toast({ title: "تم نسخ نص الإنجاز! 📋" });
+      ctx.restore();
+
+      // 4. النصوص
+      ctx.fillStyle = '#FFFFFF';
+      ctx.textAlign = 'center';
+      
+      // الاسم
+      ctx.font = 'bold 28px Tahoma, Arial';
+      ctx.fillText(userData?.name || 'Careingo User', 200, 220);
+      
+      // التاج
+      ctx.font = '20px Arial';
+      ctx.fillText('👑 Premium Member', 200, 250);
+
+      // رسم بطاقات البيانات
+      const drawInfoBox = (y: number, label: string, value: string, icon: string) => {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.roundRect ? ctx.roundRect(40, y, 320, 70, 20) : ctx.fillRect(40, y, 320, 70);
+        ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 12px Arial';
+        ctx.textAlign = 'right';
+        ctx.fillText(label, 340, y + 25);
+        ctx.font = 'bold 24px Arial';
+        ctx.fillText(value, 340, y + 55);
+        ctx.font = '30px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillText(icon, 60, y + 45);
+      };
+
+      drawInfoBox(280, 'الحماسة الحالية', `${userData?.streak || 0} يوم`, '🔥');
+      drawInfoBox(365, 'إجمالي النقاط', `${(userData?.points || 0).toLocaleString()} نقطة`, '⭐');
+      drawInfoBox(450, 'الترتيب العالمي', `#${stats.rank}`, '🏆');
+
+      // الشعار في الأسفل
+      ctx.font = 'bold 14px Arial';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.fillText('CAREINGO | GROWTH ECOSYSTEM', 200, 560);
+
+      // 5. المشاركة
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'careingo-streak.png', { type: 'image/png' });
+        
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({
+              files: [file],
+              title: 'إنجازي في كاري',
+              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! 🐱🔥`
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        } else {
+          // Fallback: Download or Clipboard
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'careingo-achievement.png';
+          a.click();
+          toast({ title: "تم تحميل بطاقة الإنجاز! 📸", description: "يمكنك الآن مشاركتها يدوياً." });
+        }
+        setIsGenerating(false);
+      }, 'image/png');
+
+    } catch (err) {
+      console.error(err);
+      setIsGenerating(false);
+      toast({ variant: "destructive", title: "فشل توليد البطاقة" });
     }
   };
 
@@ -110,6 +218,9 @@ export default function StreakPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
+        {/* Canvas المخفي لتوليد الصورة */}
+        <canvas ref={canvasRef} width="400" height="600" className="hidden" />
+
         <header className="bg-gradient-to-br from-primary to-accent p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
           <div className="absolute top-0 left-0 w-32 h-32 bg-white/10 rounded-full -translate-x-16 -translate-y-16" />
           <div className="flex items-center justify-between relative z-10">
@@ -123,14 +234,13 @@ export default function StreakPage() {
                 <p className="text-[10px] font-black opacity-70">يوم</p>
               </div>
               <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl text-center border border-white/20">
-                <p className="text-2xl font-black">{userData?.points || 0}</p>
+                <p className="text-2xl font-black">{(userData?.points || 0).toLocaleString()}</p>
                 <p className="text-[10px] font-black opacity-70">نقطة</p>
               </div>
             </div>
           </div>
         </header>
 
-        {/* ميزة تجميد الحماسة */}
         <div className="px-2">
           <Card className={cn(
             "rounded-[2rem] border-none shadow-xl p-6 relative overflow-hidden",
@@ -181,7 +291,6 @@ export default function StreakPage() {
           </Card>
         </div>
 
-        {/* بطاقة الإنجاز الأسبوعية (حصرياً للبريميوم) */}
         {isPremium && (
           <div className="px-2">
             <Card className="rounded-[2.5rem] border-4 border-yellow-400 bg-white p-8 shadow-2xl relative overflow-hidden group">
@@ -193,16 +302,21 @@ export default function StreakPage() {
                 <h3 className="text-2xl font-black text-primary">بطاقة التميز الملكية</h3>
                 <div className="grid grid-cols-2 gap-4 py-4">
                   <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
+                    <p className="text-[10px] font-black text-yellow-700 uppercase">الترتيب</p>
+                    <p className="text-xl font-black text-primary">#{stats.rank}</p>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
                     <p className="text-[10px] font-black text-yellow-700 uppercase">الحماسة</p>
                     <p className="text-xl font-black text-primary">{userData?.streak || 0} يوم</p>
                   </div>
-                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
-                    <p className="text-[10px] font-black text-yellow-700 uppercase">النقاط</p>
-                    <p className="text-xl font-black text-primary">{userData?.points || 0}</p>
-                  </div>
                 </div>
-                <Button onClick={handleShare} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black gap-2">
-                  <Share2 size={18} /> مشاركة إنجازي مع العالم
+                <Button 
+                  onClick={generateCardAndShare} 
+                  disabled={isGenerating}
+                  className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black gap-2"
+                >
+                  {isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={18} />}
+                  مشاركة إنجازي كصورة 📸
                 </Button>
               </div>
             </Card>
@@ -212,7 +326,7 @@ export default function StreakPage() {
         <div className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-6">
             <div className="flex items-center justify-between mb-6 flex-row-reverse">
-              <CardTitle className="text-lg font-black text-primary flex items-center gap-2">خريطة الإنجاز <CalendarIcon size={20} /></CardTitle>
+              <CardTitle className="text-lg font-black text-primary flex items-center gap-2">خريطة الإنجاز <CheckCircle2 size={20} /></CardTitle>
               <div className="flex items-center gap-1 text-[10px] font-black text-muted-foreground uppercase">
                 <span>أقل</span>
                 <div className="w-3 h-3 bg-secondary rounded-sm" />

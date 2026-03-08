@@ -1,11 +1,12 @@
+
 "use client"
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock, Trophy, XCircle, Lock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, Crown, Infinity, Clock, XCircle, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -78,6 +79,47 @@ export default function MasterTrackPage() {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, [timerActive, timeLeft]);
 
+  // دالة موحدة لتحديث الحماسة والنقاط
+  const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
+    if (!user || !userData) return;
+
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+    
+    let newStreak = userData.streak || 0;
+    let streakUpdated = false;
+
+    // تمديد الحماسة إذا كان أول نشاط اليوم
+    if (userData.lastActiveDate !== todayStr) {
+      if (userData.lastActiveDate === yesterdayStr) {
+        newStreak += 1;
+      } else {
+        newStreak = 1;
+      }
+      streakUpdated = true;
+    }
+
+    const updates: any = {
+      points: (userData.points || 0) + pointsToAdd,
+      [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsToAdd,
+      lastActiveDate: todayStr,
+      streak: newStreak
+    };
+
+    await update(ref(database, `users/${user.uid}`), updates);
+
+    if (streakUpdated) {
+      push(ref(database, `users/${user.uid}/notifications`), {
+        type: 'achievement',
+        title: 'تمديد الحماسة! 🔥',
+        message: `لقد بدأ نشاطك اليوم. حماستك الآن ${newStreak} يوماً!`,
+        isRead: false,
+        timestamp: serverTimestamp()
+      });
+    }
+  }, [user, userData, database]);
+
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
     if (pool.length === 0) {
@@ -112,32 +154,29 @@ export default function MasterTrackPage() {
   const handleCompleteChallenge = async () => {
     if (!user || !currentChallenge || !userData) return;
 
-    // التحقق من القفل الزمني
     if (currentChallenge.isTimeLocked && timeLeft > 0) {
       toast({ variant: "destructive", title: "مهمة زمنية ⏳", description: "يجب إكمال الوقت المخصص لهذه المهمة بالكامل." });
       return;
     }
 
     playSound('success');
-    
     localStorage.removeItem('master_timer_end');
     localStorage.removeItem('master_current_challenge');
 
     const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
     const isLegend = userData?.trackProgress && tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
 
+    const basePoints = currentChallenge.points || 50;
+    const finalPoints = isLegend ? (isPremium ? basePoints * 2 : basePoints) : 0;
+
+    await updateStreakAndPoints(finalPoints);
+
     if (isLegend) {
-      const basePoints = currentChallenge.points || 50;
-      const points = isPremium ? basePoints * 2 : basePoints;
-      
-      await update(ref(database, `users/${user.uid}`), {
-        points: (userData.points || 0) + points,
-        [`dailyPoints/${today}`]: (userData.dailyPoints?.[today] || 0) + points
-      });
-      toast({ title: isPremium ? "إنجاز ملكي! (نقاط 2x) 🎉" : "إنجاز أسطوري! 🎉", description: `حصلت على ${points} نقطة.` });
+      toast({ title: isPremium ? "إنجاز ملكي! (نقاط 2x) 🎉" : "إنجاز أسطوري! 🎉", description: `حصلت على ${finalPoints} نقطة وتمديد حماسة.` });
     } else {
-      toast({ title: "أحسنت التدريب! 🐱", description: "أكمل المسارات الأساسية أولاً للحصول على نقاط هنا." });
+      toast({ title: "تم تمديد الحماسة! 🔥", description: "أكمل المسارات الأساسية للحصول على نقاط الماستر." });
     }
+
     setStep('done');
     setTimerActive(false);
   };
@@ -147,12 +186,12 @@ export default function MasterTrackPage() {
     playSound('click');
     
     try {
-      const userRef = ref(database, `users/${user.uid}`);
-      const snap = await get(userRef);
+      const uRef = ref(database, `users/${user.uid}`);
+      const snap = await get(uRef);
       const data = snap.val();
       const todayStr = new Date().toLocaleDateString('en-CA');
 
-      await update(userRef, {
+      await update(uRef, {
         points: Math.max(0, (data.points || 0) - 75),
         [`dailyPoints/${todayStr}`]: Math.max(0, (data.dailyPoints?.[todayStr] || 0) - 75)
       });
@@ -205,20 +244,25 @@ export default function MasterTrackPage() {
     setTodoMinutes('');
   };
 
-  const handleToggleTodo = (todo: any) => {
+  const handleToggleTodo = async (todo: any) => {
     if (!user || completingId || !userData) return;
     playSound('click');
     setCompletingId(todo.id);
+    
     const now = Date.now();
     const isExpired = todo.expiry <= now;
     const pointsToAdd = isExpired ? 0 : 5;
-    const updates: any = {};
-    updates[`users/${user.uid}/points`] = (userData.points || 0) + pointsToAdd;
-    updates[`users/${user.uid}/dailyPoints/${today}`] = (userData.dailyPoints?.[today] || 0) + pointsToAdd;
-    updates[`users/${user.uid}/todos/${todo.id}`] = null;
+
     setTimeout(async () => {
-      await update(ref(database), updates);
-      if (pointsToAdd > 0) { toast({ title: "أحسنت في الوقت! +5 نقاط 🌟" }); playSound('success'); }
+      await updateStreakAndPoints(pointsToAdd);
+      await update(ref(database, `users/${user.uid}/todos/${todo.id}`), null);
+      
+      if (pointsToAdd > 0) { 
+        toast({ title: "مهمة ناجحة! +5 نقاط وتمديد حماسة 🔥" }); 
+        playSound('success'); 
+      } else {
+        toast({ title: "تمديد حماسة فقط! 🔥", description: "المهمة انتهت زمنياً فلم تحصل على نقاط." });
+      }
       setCompletingId(null);
     }, 800);
   };

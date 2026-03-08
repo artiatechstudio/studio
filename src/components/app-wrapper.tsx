@@ -4,10 +4,6 @@
 import React, { useState, useEffect } from 'react';
 import { SplashScreen } from './splash-screen';
 
-/**
- * مكون غلاف التطبيق (App Wrapper)
- * يقوم بتسجيل Service Worker لضمان استقرار تطبيق PWA ومنع إغلاقه المفاجئ.
- */
 export function AppWrapper({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -15,22 +11,21 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
 
-    // تسجيل الـ Service Worker لضمان استقرار الـ PWA
-    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+    if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {
-            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            console.log('SW registered:', registration.scope);
           },
           (err) => {
-            console.error('ServiceWorker registration failed: ', err);
+            console.log('SW registration failed:', err);
           }
         );
       });
     }
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) return <div className="bg-white min-h-screen" />;
 
   if (!isReady) {
     return <SplashScreen onComplete={() => setIsReady(true)} />;

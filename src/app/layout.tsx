@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -10,7 +11,6 @@ export const metadata: Metadata = {
   title: 'Careingo | تواصل، تحدى، تطور',
   description: 'كارينجو هي منصتك التفاعلية للنمو الشخصي: تواصل مع المجتمع، تحدى نفسك في مسارات متنوعة، وتطور يومياً.',
   manifest: '/manifest.json',
-  metadataBase: new URL('https://app.artiatechstudio.com.ly'),
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
@@ -18,10 +18,6 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
-  },
-  icons: {
-    icon: '/logo.png',
-    apple: '/logo.png',
   },
 };
 
@@ -31,6 +27,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -44,13 +41,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet" />
-        <meta name="application-name" content="Careingo" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Careingo" />
-        <meta name="mobile-web-app-capable" content="yes" />
         
-        {/* Google AdSense Global Script */}
         <Script 
           async 
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2754396305908181" 
@@ -65,8 +56,6 @@ export default function RootLayout({
                 const theme = localStorage.getItem('theme') || 'light';
                 if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
-                } else {
-                  document.documentElement.classList.remove('dark');
                 }
               } catch (e) {}
             })();

@@ -31,6 +31,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAutoCompleted = useRef(false);
 
   const challenge = STATIC_CHALLENGES[trackKey][stageId - 1];
 
@@ -49,6 +50,106 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     setBonusValue(calculateBonus());
   }, [calculateBonus]);
 
+  const handleComplete = useCallback(async () => {
+    if (!user || !database || isUpdating || completed || onCooldown) return;
+    
+    setIsUpdating(true);
+    
+    try {
+      const currentProgress = progressData || { currentStage: 1, completedStages: [] };
+      const completedStages = [...(currentProgress.completedStages || [])];
+      const todayStr = new Date().toLocaleDateString('en-CA');
+      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+      
+      const basePoints = challenge?.points || 50;
+      const pointsEarned = basePoints + calculateBonus();
+      
+      if (!completedStages.includes(stageId)) {
+        completedStages.push(stageId);
+      }
+
+      let nextStage = currentProgress.currentStage || 1;
+      if (stageId === nextStage) {
+        nextStage = stageId + 1;
+      }
+
+      const userRef = ref(database, `users/${user.uid}`);
+      const userSnap = await get(userRef);
+      const userData = userSnap.val();
+
+      let newStreak = userData.streak || 0;
+      let streakUpdated = false;
+
+      if (!userData.lastActiveDate) {
+        newStreak = 1;
+        streakUpdated = true;
+      } else if (userData.lastActiveDate !== todayStr) {
+        if (userData.lastActiveDate === yesterdayStr) {
+          newStreak = newStreak + 1;
+          streakUpdated = true;
+        } else {
+          newStreak = 1;
+          streakUpdated = true;
+        }
+      }
+
+      const newBadges = [...(userData.badges || [])];
+      if (completedStages.length === 1 && !newBadges.includes("أول خطوة 🐾")) newBadges.push("أول خطوة 🐾");
+      if (completedStages.length === 5 && !newBadges.includes("المنضبط الصغير 🐣")) newBadges.push("المنضبط الصغير 🐣");
+      if (completedStages.length === 15 && !newBadges.includes("المكافح ⚔️")) newBadges.push("المكافح ⚔️");
+      if (completedStages.length === 30 && !newBadges.includes(`سيد مسار ${trackKey} 👑`)) {
+        newBadges.push(`سيد مسار ${trackKey} 👑`);
+      }
+      
+      const totalPoints = (userData.points || 0) + pointsEarned;
+      if (totalPoints >= 1000 && !newBadges.includes("نادي الألف 🌟")) newBadges.push("نادي الألف 🌟");
+      if (totalPoints >= 5000 && !newBadges.includes("الأسطورة الفضية 🥈")) newBadges.push("الأسطورة الفضية 🥈");
+      if (totalPoints >= 10000 && !newBadges.includes("الأسطورة الذهبية 🥇")) newBadges.push("الأسطورة الذهبية 🥇");
+
+      await update(userRef, {
+        points: totalPoints,
+        streak: newStreak,
+        lastActiveDate: todayStr,
+        badges: newBadges,
+        [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsEarned,
+        [`trackProgress/${trackKey}`]: {
+          completedStages,
+          currentStage: nextStage,
+          lastCompletedDate: todayStr
+        }
+      });
+
+      push(ref(database, `users/${user.uid}/notifications`), {
+        type: 'achievement',
+        title: 'إنجاز رائع! 🏆',
+        message: `لقد أكملت المستوى ${stageId}. حصلت على ${pointsEarned} نقطة!`,
+        isRead: false,
+        timestamp: serverTimestamp()
+      });
+
+      if (streakUpdated) {
+        push(ref(database, `users/${user.uid}/notifications`), {
+          type: 'achievement',
+          title: 'تمديد الحماسة! 🔥',
+          message: `حماستك الآن ${newStreak} يوماً!`,
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+      }
+
+      localStorage.removeItem(`timer_end_${trackKey}_${stageId}`);
+      setCompleted(true);
+      setTimerActive(false);
+      playSound('success');
+      toast({ title: "تم الإنجاز! 🎉" });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsUpdating(false);
+    }
+  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus, challenge]);
+
   useEffect(() => {
     const timerKey = `timer_end_${trackKey}_${stageId}`;
     const savedEnd = localStorage.getItem(timerKey);
@@ -58,20 +159,28 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       if (remaining > 0) {
         setTimeLeft(remaining);
         setTimerActive(true);
-      } else {
-        localStorage.removeItem(timerKey);
+      } else if (!completed && !onCooldown && !hasAutoCompleted.current) {
+        // إذا انتهى الوقت والمستخدم عاد للصفحة
+        hasAutoCompleted.current = true;
+        handleComplete();
       }
     }
-  }, [trackKey, stageId]);
+  }, [trackKey, stageId, completed, onCooldown, handleComplete]);
 
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
+            clearInterval(timerRef.current!);
             setTimerActive(false);
             const timerKey = `timer_end_${trackKey}_${stageId}`;
             localStorage.removeItem(timerKey);
+            // الإكمال التلقائي عند انتهاء الوقت والصفحة مفتوحة
+            if (!hasAutoCompleted.current) {
+              hasAutoCompleted.current = true;
+              handleComplete();
+            }
             return 0;
           }
           return prev - 1;
@@ -79,7 +188,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       }, 1000);
     }
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timerActive, timeLeft, trackKey, stageId]);
+  }, [timerActive, timeLeft, trackKey, stageId, handleComplete]);
 
   useEffect(() => {
     if (progressData) {
@@ -114,12 +223,12 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     playSound('click');
     
     try {
-      const userRef = ref(database, `users/${user.uid}`);
-      const snap = await get(userRef);
+      const uRef = ref(database, `users/${user.uid}`);
+      const snap = await get(uRef);
       const userData = snap.val();
       const todayStr = new Date().toLocaleDateString('en-CA');
 
-      await update(userRef, {
+      await update(uRef, {
         points: Math.max(0, (userData.points || 0) - 75),
         [`dailyPoints/${todayStr}`]: Math.max(0, (userData.dailyPoints?.[todayStr] || 0) - 75)
       });
@@ -139,128 +248,11 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     }
   };
 
-  const handleComplete = useCallback(async () => {
-    if (!user || !database || isUpdating || completed || onCooldown) return;
-    
-    // التحقق من القفل الزمني
-    if (challenge.isTimeLocked && timeLeft > 0) {
-      toast({ variant: "destructive", title: "مهمة زمنية ⏳", description: "يجب إكمال الوقت المخصص لهذه المهمة بالكامل." });
-      return;
-    }
-
-    setIsUpdating(true);
-    playSound('click');
-    
-    try {
-      const currentProgress = progressData || { currentStage: 1, completedStages: [] };
-      const completedStages = [...(currentProgress.completedStages || [])];
-      const todayStr = new Date().toLocaleDateString('en-CA');
-      const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-      
-      const basePoints = challenge?.points || 50;
-      const pointsEarned = basePoints + calculateBonus();
-      
-      if (!completedStages.includes(stageId)) {
-        completedStages.push(stageId);
-      }
-
-      let nextStage = currentProgress.currentStage || 1;
-      if (stageId === nextStage) {
-        nextStage = stageId + 1;
-      }
-
-      const userRef = ref(database, `users/${user.uid}`);
-      const userSnap = await get(userRef);
-      const userData = userSnap.val();
-
-      // منطق الحماسة الفوري
-      let newStreak = userData.streak || 0;
-      let streakUpdated = false;
-
-      if (!userData.lastActiveDate) {
-        newStreak = 1;
-        streakUpdated = true;
-      } else if (userData.lastActiveDate !== todayStr) {
-        if (userData.lastActiveDate === yesterdayStr) {
-          newStreak = newStreak + 1;
-          streakUpdated = true;
-        } else {
-          // إذا لم يكن بالأمس، فقد كسر الحماسة سابقاً أو تم استخدام تجميد
-          newStreak = 1;
-          streakUpdated = true;
-        }
-      }
-
-      const newBadges = [...(userData.badges || [])];
-      
-      if (completedStages.length === 1 && !newBadges.includes("أول خطوة 🐾")) newBadges.push("أول خطوة 🐾");
-      if (completedStages.length === 5 && !newBadges.includes("المنضبط الصغير 🐣")) newBadges.push("المنضبط الصغير 🐣");
-      if (completedStages.length === 15 && !newBadges.includes("المكافح ⚔️")) newBadges.push("المكافح ⚔️");
-      if (completedStages.length === 30 && !newBadges.includes(`سيد مسار ${trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'} 👑`)) {
-        newBadges.push(`سيد مسار ${trackKey === 'Fitness' ? 'اللياقة' : trackKey === 'Nutrition' ? 'التغذية' : trackKey === 'Behavior' ? 'السلوك' : 'الدراسة'} 👑`);
-      }
-      
-      const totalPoints = (userData.points || 0) + pointsEarned;
-      if (totalPoints >= 1000 && !newBadges.includes("نادي الألف 🌟")) newBadges.push("نادي الألف 🌟");
-      if (totalPoints >= 5000 && !newBadges.includes("الأسطورة الفضية 🥈")) newBadges.push("الأسطورة الفضية 🥈");
-      if (totalPoints >= 10000 && !newBadges.includes("الأسطورة الذهبية 🥇")) newBadges.push("الأسطورة الذهبية 🥇");
-
-      if (newStreak >= 7 && !newBadges.includes("المثابر الأسبوعي 🔥")) newBadges.push("المثابر الأسبوعي 🔥");
-      if (newStreak >= 30 && !newBadges.includes("وحش الالتزام 🦁")) newBadges.push("وحش الالتزام 🦁");
-
-      await update(userRef, {
-        points: totalPoints,
-        streak: newStreak,
-        lastActiveDate: todayStr,
-        badges: newBadges,
-        [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsEarned,
-        [`trackProgress/${trackKey}`]: {
-          completedStages,
-          currentStage: nextStage,
-          lastCompletedDate: todayStr
-        }
-      });
-
-      // إشعار الإنجاز
-      push(ref(database, `users/${user.uid}/notifications`), {
-        type: 'achievement',
-        title: 'إنجاز رائع! 🏆',
-        message: `لقد أكملت المستوى ${stageId} في مسار ${trackKey}. حصلت على ${pointsEarned} نقطة!`,
-        isRead: false,
-        timestamp: serverTimestamp()
-      });
-
-      // إشعار تمديد الحماسة
-      if (streakUpdated) {
-        push(ref(database, `users/${user.uid}/notifications`), {
-          type: 'achievement',
-          title: 'تمديد الحماسة! 🔥',
-          message: `تهانينا! لقد تم تمديد حماستك إلى ${newStreak} يوماً متتالياً.`,
-          isRead: false,
-          timestamp: serverTimestamp()
-        });
-      }
-
-      localStorage.removeItem(`timer_end_${trackKey}_${stageId}`);
-      setCompleted(true);
-      setTimerActive(false);
-      playSound('success');
-      toast({ title: "تم الإنجاز! 🎉" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "خطأ في الحفظ" });
-    } finally {
-      setIsUpdating(false);
-    }
-  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus, challenge, timeLeft]);
-
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
-
-  const isButtonLocked = challenge.isTimeLocked && timerActive && timeLeft > 0;
 
   if (onCooldown) {
     return (
@@ -310,19 +302,19 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                 {timerActive ? (
                   <div className="space-y-6">
                     <div className="bg-primary/5 p-8 rounded-[2rem] text-center space-y-2 border border-primary/10">
-                      <p className="text-xs font-black text-primary uppercase">الوقت المتبقي (يعمل في الخلفية)</p>
+                      <p className="text-xs font-black text-primary uppercase">يعمل في الخلفية... 🐱📡</p>
                       <p className="text-6xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
                     </div>
                     <div className="flex flex-col gap-3">
                       <Button 
                         onClick={handleComplete} 
-                        disabled={isUpdating || isButtonLocked} 
+                        disabled={isUpdating || (challenge.isTimeLocked && timeLeft > 0)} 
                         className={cn(
                           "w-full h-16 rounded-2xl text-xl font-black shadow-xl transition-all",
-                          isButtonLocked ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
+                          (challenge.isTimeLocked && timeLeft > 0) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
                         )}
                       >
-                        {isButtonLocked ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
+                        {(challenge.isTimeLocked && timeLeft > 0) ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
                       </Button>
                       <Button onClick={handleCancelTimer} variant="ghost" className="text-destructive font-black gap-2">
                         <XCircle size={18} /> إلغاء التحدي (خصم 75ن)
@@ -330,8 +322,8 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                     </div>
                   </div>
                 ) : (
-                  <Button onClick={handleStartTimer} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl shadow-primary/20">
-                    ابدأ التحدي 🐱🚀
+                  <Button onClick={handleStartTimer} className="w-full h-16 rounded-2xl bg-primary text-xl font-black shadow-xl">
+                    ابدأ التحدي 🚀
                   </Button>
                 )}
               </div>

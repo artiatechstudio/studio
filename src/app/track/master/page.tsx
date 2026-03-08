@@ -6,12 +6,12 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, Crown, Infinity, Clock, XCircle, Lock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, Crown, Infinity, Clock, XCircle, Lock, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, get } from 'firebase/database';
+import { ref, update, push, serverTimestamp, get, remove } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -27,6 +27,7 @@ export default function MasterTrackPage() {
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const hasAutoCompletedMaster = useRef(false);
 
   const [todoInput, setTodoInput] = useState('');
   const [todoMinutes, setTodoMinutes] = useState('');
@@ -44,42 +45,6 @@ export default function MasterTrackPage() {
   const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
   const todoCountToday = userData?.dailyTodoCount?.[today] || 0;
 
-  useEffect(() => {
-    const savedEnd = localStorage.getItem('master_timer_end');
-    const savedChallenge = localStorage.getItem('master_current_challenge');
-    
-    if (savedEnd && savedChallenge) {
-      const remaining = Math.round((parseInt(savedEnd) - Date.now()) / 1000);
-      if (remaining > 0) {
-        setCurrentChallenge(JSON.parse(savedChallenge));
-        setTimeLeft(remaining);
-        setTimerActive(true);
-        setStep('active');
-      } else {
-        localStorage.removeItem('master_timer_end');
-        localStorage.removeItem('master_current_challenge');
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (timerActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft(prev => {
-          if (prev <= 1) {
-            localStorage.removeItem('master_timer_end');
-            localStorage.removeItem('master_current_challenge');
-            setTimerActive(false);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
-  }, [timerActive, timeLeft]);
-
-  // دالة موحدة لتحديث الحماسة والنقاط
   const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
     if (!user || !userData) return;
 
@@ -90,7 +55,6 @@ export default function MasterTrackPage() {
     let newStreak = userData.streak || 0;
     let streakUpdated = false;
 
-    // تمديد الحماسة إذا كان أول نشاط اليوم
     if (userData.lastActiveDate !== todayStr) {
       if (userData.lastActiveDate === yesterdayStr) {
         newStreak += 1;
@@ -120,6 +84,73 @@ export default function MasterTrackPage() {
     }
   }, [user, userData, database]);
 
+  const handleCompleteChallenge = useCallback(async () => {
+    if (!user || !currentChallenge || !userData) return;
+
+    playSound('success');
+    localStorage.removeItem('master_timer_end');
+    localStorage.removeItem('master_current_challenge');
+
+    const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
+    const isLegend = userData?.trackProgress && tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
+
+    const basePoints = currentChallenge.points || 50;
+    const finalPoints = isLegend ? (isPremium ? basePoints * 2 : basePoints) : 0;
+
+    await updateStreakAndPoints(finalPoints);
+
+    if (isLegend) {
+      toast({ title: isPremium ? "إنجاز ملكي! (نقاط 2x) 🎉" : "إنجاز أسطوري! 🎉", description: `حصلت على ${finalPoints} نقطة.` });
+    } else {
+      toast({ title: "تم تمديد الحماسة! 🔥", description: "أكمل المسارات الأساسية للحصول على نقاط الماستر." });
+    }
+
+    setStep('done');
+    setTimerActive(false);
+  }, [user, currentChallenge, userData, isPremium, updateStreakAndPoints]);
+
+  useEffect(() => {
+    const savedEnd = localStorage.getItem('master_timer_end');
+    const savedChallenge = localStorage.getItem('master_current_challenge');
+    
+    if (savedEnd && savedChallenge) {
+      const remaining = Math.round((parseInt(savedEnd) - Date.now()) / 1000);
+      const parsedChallenge = JSON.parse(savedChallenge);
+      if (remaining > 0) {
+        setCurrentChallenge(parsedChallenge);
+        setTimeLeft(remaining);
+        setTimerActive(true);
+        setStep('active');
+      } else if (!hasAutoCompletedMaster.current) {
+        hasAutoCompletedMaster.current = true;
+        setCurrentChallenge(parsedChallenge);
+        handleCompleteChallenge();
+      }
+    }
+  }, [handleCompleteChallenge]);
+
+  useEffect(() => {
+    if (timerActive && timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            localStorage.removeItem('master_timer_end');
+            localStorage.removeItem('master_current_challenge');
+            setTimerActive(false);
+            if (!hasAutoCompletedMaster.current) {
+              hasAutoCompletedMaster.current = true;
+              handleCompleteChallenge();
+            }
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerActive, timeLeft, handleCompleteChallenge]);
+
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
     if (pool.length === 0) {
@@ -135,6 +166,7 @@ export default function MasterTrackPage() {
     const random = pool[Math.floor(Math.random() * pool.length)];
     setCurrentChallenge(random);
     setStep('active');
+    hasAutoCompletedMaster.current = false;
     
     const durationSeconds = (random.time || 5) * 60;
     const endTime = Date.now() + (durationSeconds * 1000);
@@ -151,64 +183,24 @@ export default function MasterTrackPage() {
     playSound('click');
   };
 
-  const handleCompleteChallenge = async () => {
-    if (!user || !currentChallenge || !userData) return;
-
-    if (currentChallenge.isTimeLocked && timeLeft > 0) {
-      toast({ variant: "destructive", title: "مهمة زمنية ⏳", description: "يجب إكمال الوقت المخصص لهذه المهمة بالكامل." });
-      return;
-    }
-
-    playSound('success');
-    localStorage.removeItem('master_timer_end');
-    localStorage.removeItem('master_current_challenge');
-
-    const tracks = ['Fitness', 'Nutrition', 'Behavior', 'Study'] as const;
-    const isLegend = userData?.trackProgress && tracks.every(t => (userData.trackProgress[t]?.completedStages?.length || 0) >= 30);
-
-    const basePoints = currentChallenge.points || 50;
-    const finalPoints = isLegend ? (isPremium ? basePoints * 2 : basePoints) : 0;
-
-    await updateStreakAndPoints(finalPoints);
-
-    if (isLegend) {
-      toast({ title: isPremium ? "إنجاز ملكي! (نقاط 2x) 🎉" : "إنجاز أسطوري! 🎉", description: `حصلت على ${finalPoints} نقطة وتمديد حماسة.` });
-    } else {
-      toast({ title: "تم تمديد الحماسة! 🔥", description: "أكمل المسارات الأساسية للحصول على نقاط الماستر." });
-    }
-
-    setStep('done');
-    setTimerActive(false);
-  };
-
   const handleCancelChallenge = async () => {
     if (!user) return;
     playSound('click');
-    
     try {
       const uRef = ref(database, `users/${user.uid}`);
       const snap = await get(uRef);
       const data = snap.val();
       const todayStr = new Date().toLocaleDateString('en-CA');
-
       await update(uRef, {
         points: Math.max(0, (data.points || 0) - 75),
         [`dailyPoints/${todayStr}`]: Math.max(0, (data.dailyPoints?.[todayStr] || 0) - 75)
       });
-
       setStep('setup');
       localStorage.removeItem('master_timer_end');
       localStorage.removeItem('master_current_challenge');
       setTimerActive(false);
-      
-      toast({ 
-        variant: "destructive", 
-        title: "تم الانسحاب 🛑", 
-        description: "تم خصم 75 نقطة من رصيدك لعقوبة إلغاء المهمة." 
-      });
-    } catch (e) {
-      console.error(e);
-    }
+      toast({ variant: "destructive", title: "تم الانسحاب 🛑", description: "خصم 75 نقطة." });
+    } catch (e) { console.error(e); }
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -255,16 +247,29 @@ export default function MasterTrackPage() {
 
     setTimeout(async () => {
       await updateStreakAndPoints(pointsToAdd);
-      await update(ref(database, `users/${user.uid}/todos/${todo.id}`), null);
-      
+      await remove(ref(database, `users/${user.uid}/todos/${todo.id}`));
       if (pointsToAdd > 0) { 
         toast({ title: "مهمة ناجحة! +5 نقاط وتمديد حماسة 🔥" }); 
         playSound('success'); 
       } else {
-        toast({ title: "تمديد حماسة فقط! 🔥", description: "المهمة انتهت زمنياً فلم تحصل على نقاط." });
+        toast({ title: "تمديد حماسة فقط! 🔥", description: "المهمة انتهت زمنياً." });
       }
       setCompletingId(null);
     }, 800);
+  };
+
+  const handleCancelTodo = async (todoId: string) => {
+    if (!user || !userData) return;
+    playSound('click');
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    try {
+      await update(ref(database, `users/${user.uid}`), {
+        points: Math.max(0, (userData.points || 0) - 30),
+        [`dailyPoints/${todayStr}`]: Math.max(0, (userData.dailyPoints?.[todayStr] || 0) - 30)
+      });
+      await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
+      toast({ variant: "destructive", title: "تم إلغاء المهمة 🛑", description: "تم خصم 30 نقطة." });
+    } catch (e) { console.error(e); }
   };
 
   const formatTime = (s: number) => {
@@ -272,8 +277,6 @@ export default function MasterTrackPage() {
     const sec = s % 60;
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
-
-  const isButtonLocked = currentChallenge?.isTimeLocked && timerActive && timeLeft > 0;
 
   function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
     const [display, setDisplay] = useState("");
@@ -360,7 +363,7 @@ export default function MasterTrackPage() {
               </div>
             </div>
 
-            <Button onClick={handleStart} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl shadow-primary/20">
+            <Button onClick={handleStart} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">
               ابدأ التحدي 🚀
             </Button>
           </Card>
@@ -370,11 +373,11 @@ export default function MasterTrackPage() {
           <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl mx-2">
             <CardHeader className="bg-primary text-white p-5">
               <div className="flex items-center justify-between flex-row-reverse gap-4">
-                <CardTitle className="text-lg font-black leading-tight flex-1 text-right whitespace-normal">
+                <CardTitle className="text-lg font-black leading-tight flex-1 text-right">
                   {currentChallenge.title}
                 </CardTitle>
                 <div className="flex flex-col items-center gap-1">
-                  <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{currentChallenge.difficulty}</span>
+                  <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black">{currentChallenge.difficulty}</span>
                   {currentChallenge.isTimeLocked && <span className="bg-red-500/40 px-1.5 py-0.5 rounded-md text-[7px] font-black flex items-center gap-0.5"><Lock size={8}/> مقفلة</span>}
                 </div>
               </div>
@@ -383,20 +386,20 @@ export default function MasterTrackPage() {
               <p className="text-base font-bold text-muted-foreground leading-relaxed text-right">{currentChallenge.description}</p>
               
               <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
-                <p className="text-[9px] font-black text-primary uppercase">الوقت المتبقي</p>
+                <p className="text-[9px] font-black text-primary uppercase">يعمل في الخلفية... 🐱📡</p>
                 <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
               </div>
 
               <div className="flex flex-col gap-2">
                 <Button 
                   onClick={handleCompleteChallenge} 
-                  disabled={isButtonLocked}
+                  disabled={currentChallenge.isTimeLocked && timeLeft > 0}
                   className={cn(
                     "h-14 rounded-2xl text-lg font-black shadow-lg transition-all",
-                    isButtonLocked ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
+                    (currentChallenge.isTimeLocked && timeLeft > 0) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
                   )}
                 >
-                  {isButtonLocked ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
+                  {(currentChallenge.isTimeLocked && timeLeft > 0) ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
                 </Button>
                 <Button onClick={handleCancelChallenge} variant="ghost" className="text-destructive font-black text-xs h-10 gap-2">
                   <XCircle size={16} /> إلغاء التحدي (خصم 75ن)
@@ -412,7 +415,7 @@ export default function MasterTrackPage() {
               <CheckCircle size={48} />
             </div>
             <h2 className="text-2xl font-black text-primary">عمل رائع!</h2>
-            <p className="text-xs font-bold text-muted-foreground leading-relaxed">كل خطوة إضافية هي حجر أساس في بناء أسطورتك الشخصية.</p>
+            <p className="text-xs font-bold text-muted-foreground">كل خطوة إضافية هي حجر أساس في بناء أسطورتك الشخصية.</p>
             <Button onClick={() => setStep('setup')} className="w-full h-12 rounded-xl font-black">تحدي جديد 🐱</Button>
           </Card>
         )}
@@ -444,10 +447,13 @@ export default function MasterTrackPage() {
                 <div key={todo.id} className={cn("flex items-center justify-between p-3.5 bg-secondary/20 rounded-xl", completingId === todo.id && "opacity-0 scale-95 blur-sm transition-all duration-700")}>
                   <div className="flex items-center gap-3 overflow-hidden flex-1">
                     <button onClick={() => handleToggleTodo(todo)} disabled={!!completingId} className="w-7 h-7 rounded-lg bg-white border-2 border-primary/20" > <CheckSquare size={16} className="text-transparent" /> </button>
-                    <div className="flex flex-col text-right overflow-hidden">
+                    <div className="flex flex-col text-right overflow-hidden flex-1">
                       <span className="font-bold text-[11px] text-primary break-words leading-tight"> {todo.title} </span>
                       <TodoExpiryTimer expiry={todo.expiry} hasCustomTimer={todo.hasCustomTimer} />
                     </div>
+                    <Button onClick={() => handleCancelTodo(todo.id)} variant="ghost" size="icon" className="h-8 w-8 text-destructive/40 hover:text-destructive shrink-0">
+                      <Trash2 size={14} />
+                    </Button>
                   </div>
                 </div>
               )) : ( <div className="text-center py-8 opacity-20"> <ListChecks size={32} className="mx-auto mb-2" /> <p className="font-black text-[10px] italic">لا توجد مهام نشطة حالياً.</p> </div> )}

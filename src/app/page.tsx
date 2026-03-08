@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, HeartPulse, Crown, ShieldCheck, Sparkles } from 'lucide-react';
+import { Activity, HeartPulse, Crown, ShieldCheck, Sparkles, Flame } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -46,6 +46,7 @@ export default function Home() {
       const updates: any = {};
       let needsUpdate = false;
 
+      // رصد انتهاء البريميوم
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
@@ -54,6 +55,7 @@ export default function Home() {
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، يمكنك التجديد عبر الإعدادات! 🐱" });
       }
 
+      // رصد تفعيل البريميوم الجديد
       if (userData.showPremiumCelebration) {
         setShowCelebration(true);
         playSound('success');
@@ -61,6 +63,7 @@ export default function Home() {
         needsUpdate = true;
       }
 
+      // منطق الحماية وكسر الحماسة
       if (!isPremium) {
         const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
         const yesterdayStr = yesterday.toLocaleDateString('en-CA');
@@ -89,6 +92,33 @@ export default function Home() {
           }
         }
       } else {
+        // ميزة بريميوم: حصانة الحماسة (Streak Freeze)
+        // يتم التجميد تلقائياً إذا كان العضو بريميوم ولديه رصيد تجميد
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = yesterday.toLocaleDateString('en-CA');
+        const lastActive = userData.lastActiveDate;
+        
+        if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr) {
+          const currentFreezes = userData.streakFreezes ?? 2;
+          if (currentFreezes > 0) {
+            updates.streakFreezes = currentFreezes - 1;
+            updates.lastActiveDate = yesterdayStr; // تمويه كأن المستخدم كان نشطاً بالأمس
+            needsUpdate = true;
+            push(ref(database, `users/${user.uid}/notifications`), {
+              type: 'bonus',
+              title: 'تم استخدام تجميد الحماسة 🧊',
+              message: 'لقد حافظت العضوية الملكية على سجل التزامك اليوم رغم غيابك!',
+              isRead: false,
+              timestamp: serverTimestamp()
+            });
+          } else if (userData.lastStreakPenaltyDate !== todayStr) {
+            // انتهت رصيد التجميد
+            updates.streak = 0;
+            updates.lastStreakPenaltyDate = todayStr;
+            needsUpdate = true;
+          }
+        }
+
         if (userData.lastActiveDate && userData.lastActiveDate !== todayStr) {
            updates.lastActiveDate = todayStr;
            needsUpdate = true;
@@ -166,15 +196,15 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-3 mx-2">
               <Link href="/streak" className="block">
                 <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-                  <div className="w-10 h-10 bg-accent/10 rounded-xl flex items-center justify-center text-accent shrink-0">
-                    <Activity size={20} />
+                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 shrink-0">
+                    <Flame size={20} fill="currentColor" />
                   </div>
                   <div className="overflow-hidden flex-1">
-                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">الإنجاز الكلي</p>
+                    <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">سجل الحماسة</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-lg font-black text-primary">{progressPercent}%</span>
+                      <span className="text-lg font-black text-orange-600">{userData?.streak || 0}ي</span>
                       <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-accent h-full transition-all duration-1000" style={{ width: `${progressPercent}%` }} />
+                        <div className="bg-orange-500 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} />
                       </div>
                     </div>
                   </div>

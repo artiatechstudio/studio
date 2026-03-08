@@ -5,9 +5,12 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Card, CardTitle } from '@/components/ui/card';
-import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp } from 'lucide-react';
+import { Card, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Flame, CheckCircle2, AlertCircle, UserCheck, Calendar as CalendarIcon, TrendingUp, ShieldCheck, Crown, Share2, Sparkles, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { playSound } from '@/lib/sounds';
+import { toast } from '@/hooks/use-toast';
 
 export default function StreakPage() {
   const { user, isUserLoading } = useUser();
@@ -25,25 +28,28 @@ export default function StreakPage() {
 
   const { data: userData, isLoading: isUserDataLoading } = useDatabase(userRef);
 
-  const allUsersRef = useMemoFirebase(() => {
-    if (!database) return null;
-    return ref(database, 'users');
-  }, [database]);
+  const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
+  const streakFreezes = userData?.streakFreezes ?? 2;
 
-  const { data: allUsersData } = useDatabase(allUsersRef);
-
-  const membershipRank = useMemo(() => {
-    if (!allUsersData || !user) return 0;
-    const usersArray = Object.values(allUsersData) as any[];
-    const sorted = usersArray.filter((u: any) => u.name !== 'admin').sort((a, b) => new Date(a.registrationDate || 0).getTime() - new Date(b.registrationDate || 0).getTime());
-    const idx = sorted.findIndex(u => u.id === user.uid);
-    return idx >= 0 ? idx + 1 : 0;
-  }, [allUsersData, user]);
-
-  const isDoneToday = useMemo(() => {
-    if (!todayStr || !userData?.dailyPoints) return false;
-    return !!userData.dailyPoints[todayStr];
-  }, [userData, todayStr]);
+  const handleShare = () => {
+    playSound('click');
+    if (!isPremium) {
+      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز الأسبوعية حصرية للمشتركين." });
+      return;
+    }
+    
+    const shareText = `أنا في اليوم ${userData?.streak || 0} من رحلة النمو في تطبيق Careingo! 🐱🔥 رصيد نقاطي: ${userData?.points || 0}. انضم إلينا الآن!`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'إنجازي في Careingo',
+        text: shareText,
+        url: window.location.origin
+      });
+    } else {
+      navigator.clipboard.writeText(shareText);
+      toast({ title: "تم نسخ نص الإنجاز! 📋" });
+    }
+  };
 
   const currentWeek = useMemo(() => {
     const week = [];
@@ -114,6 +120,33 @@ export default function StreakPage() {
           </div>
         </header>
 
+        {/* ميزة تجميد الحماسة */}
+        <div className="px-2">
+          <Card className={cn(
+            "rounded-[2rem] border-none shadow-xl p-6 relative overflow-hidden",
+            isPremium ? "bg-blue-600 text-white" : "bg-slate-100 border border-dashed border-slate-300"
+          )}>
+            <div className="flex items-center justify-between relative z-10">
+              <div className="text-right">
+                <h3 className="font-black text-sm flex items-center gap-2 justify-end">
+                  تجميد الحماسة 🧊
+                  <ShieldCheck size={18} className={isPremium ? "text-blue-200" : "text-slate-400"} />
+                </h3>
+                <p className={cn("text-[10px] font-bold mt-1", isPremium ? "text-blue-100" : "text-slate-500")}>
+                  {isPremium 
+                    ? `رصيدك الحالي: ${streakFreezes} من أصل 2 تجميدات هذا الشهر.` 
+                    : "اشترك في بريميوم لتحصل على 2 تجميد حماسة شهرياً."}
+                </p>
+              </div>
+              {!isPremium && (
+                <Link href="/settings">
+                  <Button size="sm" className="bg-primary text-[10px] h-8 rounded-xl font-black">اشترك الآن</Button>
+                </Link>
+              )}
+            </div>
+          </Card>
+        </div>
+
         <div className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-4 sm:p-6">
             <h3 className="text-base sm:text-lg font-black text-primary mb-6 text-right flex items-center justify-end gap-2">
@@ -138,6 +171,34 @@ export default function StreakPage() {
           </Card>
         </div>
 
+        {/* بطاقة الإنجاز الأسبوعية (حصرياً للبريميوم) */}
+        {isPremium && (
+          <div className="px-2">
+            <Card className="rounded-[2.5rem] border-4 border-yellow-400 bg-white p-8 shadow-2xl relative overflow-hidden group">
+              <div className="absolute -top-4 -left-4 w-20 h-20 bg-yellow-400 rotate-45 opacity-20" />
+              <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-yellow-400 rotate-45 opacity-20" />
+              
+              <div className="text-center space-y-4 relative z-10">
+                <Crown className="w-12 h-12 text-yellow-500 mx-auto animate-bounce" />
+                <h3 className="text-2xl font-black text-primary">بطاقة التميز الملكية</h3>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
+                    <p className="text-[10px] font-black text-yellow-700 uppercase">الحماسة</p>
+                    <p className="text-xl font-black text-primary">{userData?.streak || 0} يوم</p>
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-2xl border border-yellow-100">
+                    <p className="text-[10px] font-black text-yellow-700 uppercase">النقاط</p>
+                    <p className="text-xl font-black text-primary">{userData?.points || 0}</p>
+                  </div>
+                </div>
+                <Button onClick={handleShare} className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black gap-2">
+                  <Share2 size={18} /> مشاركة إنجازي مع العالم
+                </Button>
+              </div>
+            </Card>
+          </div>
+        )}
+
         <div className="px-2">
           <Card className="rounded-[2.5rem] border-none shadow-xl bg-card p-6">
             <div className="flex items-center justify-between mb-6 flex-row-reverse">
@@ -161,30 +222,6 @@ export default function StreakPage() {
                   {day.isCompleted ? <CheckCircle2 size={14} /> : day.dayNum}
                 </div>
               ))}
-            </div>
-          </Card>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-2">
-          <Card className="rounded-[2rem] border-none shadow-lg bg-card p-6 flex items-center gap-4">
-            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shrink-0", isDoneToday ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600")}>
-              {isDoneToday ? <CheckCircle2 size={28} /> : <AlertCircle size={28} />}
-            </div>
-            <div className="text-right">
-              <h4 className="font-black text-primary">حالة اليوم</h4>
-              <p className="text-xs font-bold text-muted-foreground mt-1">
-                {isDoneToday ? "أنت أسطورة! حافظ على التقدم." : "لم بدأت بعد؟ كاري ينتظرك!"}
-              </p>
-            </div>
-          </Card>
-
-          <Card className="rounded-[2rem] border-none shadow-lg bg-primary/5 p-6 flex items-center gap-4">
-            <div className="w-14 h-14 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shrink-0">
-              <UserCheck size={28} />
-            </div>
-            <div className="text-right">
-              <h4 className="font-black text-primary">رقم العضوية</h4>
-              <p className="text-xs font-bold text-muted-foreground mt-1">أنت العضو رقم <span className="text-primary font-black">{membershipRank || '--'}</span> بمجتمعنا.</p>
             </div>
           </Card>
         </div>

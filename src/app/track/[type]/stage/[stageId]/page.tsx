@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { use, useState, useEffect, useCallback, useRef } from 'react';
@@ -173,10 +174,22 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const userSnap = await get(userRef);
       const userData = userSnap.val();
 
+      // منطق الحماسة الفوري
       let newStreak = userData.streak || 0;
-      if (!userData.lastActiveDate) newStreak = 1;
-      else if (userData.lastActiveDate !== todayStr) {
-        newStreak = userData.lastActiveDate === yesterdayStr ? newStreak + 1 : 1;
+      let streakUpdated = false;
+
+      if (!userData.lastActiveDate) {
+        newStreak = 1;
+        streakUpdated = true;
+      } else if (userData.lastActiveDate !== todayStr) {
+        if (userData.lastActiveDate === yesterdayStr) {
+          newStreak = newStreak + 1;
+          streakUpdated = true;
+        } else {
+          // إذا لم يكن بالأمس، فقد كسر الحماسة سابقاً أو تم استخدام تجميد
+          newStreak = 1;
+          streakUpdated = true;
+        }
       }
 
       const newBadges = [...(userData.badges || [])];
@@ -209,6 +222,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         }
       });
 
+      // إشعار الإنجاز
       push(ref(database, `users/${user.uid}/notifications`), {
         type: 'achievement',
         title: 'إنجاز رائع! 🏆',
@@ -216,6 +230,17 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         isRead: false,
         timestamp: serverTimestamp()
       });
+
+      // إشعار تمديد الحماسة
+      if (streakUpdated) {
+        push(ref(database, `users/${user.uid}/notifications`), {
+          type: 'achievement',
+          title: 'تمديد الحماسة! 🔥',
+          message: `تهانينا! لقد تم تمديد حماستك إلى ${newStreak} يوماً متتالياً.`,
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+      }
 
       localStorage.removeItem(`timer_end_${trackKey}_${stageId}`);
       setCompleted(true);

@@ -128,7 +128,7 @@ export default function ProfilePage() {
               </DialogTrigger>
               <DialogContent className="rounded-[3rem] p-10 text-center max-w-sm" dir="rtl">
                 <DialogHeader>
-                  <DialogTitle className="text-2xl font-black text-primary text-center">رمز QR الخاص بك</DialogTitle>
+                  <DialogTitle className="text-2xl font-black text-primary text-center">شارك تطبيق كارينجو</DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col items-center gap-6 mt-4">
                   <div className="w-64 h-64 bg-white p-4 rounded-[2rem] shadow-inner border-4 border-primary/10 relative overflow-hidden flex items-center justify-center">
@@ -142,7 +142,7 @@ export default function ProfilePage() {
                     />
                   </div>
                   <p className="text-xs font-bold text-muted-foreground leading-relaxed text-center px-4">
-                    امسح الرمز ضوئياً لمشاركة ملفك الشخصي مع أصدقائك في مجتمع كارينجو! 🐱✨
+                    امسح الرمز ضوئياً لمشاركة تطبيق كارينجو مع أصدقائك والبدء في رحلة النمو معاً! 🐱✨
                   </p>
                   <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-xl font-black bg-primary">إغلاق</Button>
                 </div>

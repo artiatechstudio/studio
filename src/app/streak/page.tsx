@@ -46,6 +46,7 @@ export default function StreakPage() {
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const streakFreezes = userData?.streakFreezes ?? 2;
 
+  // وظيفة متقدمة لتوليد الصورة ومشاركتها مباشرة عبر نظام الجهاز
   const generateCardAndShare = async () => {
     if (!isPremium) {
       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "مشاركة بطاقة التميز المصورة حصرية للمشتركين." });
@@ -61,19 +62,19 @@ export default function StreakPage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
-      // 1. إعداد الخلفية
+      // 1. إعداد الخلفية (تدرج فاخر)
       const gradient = ctx.createLinearGradient(0, 0, 0, 600);
-      gradient.addColorStop(0, '#4F46E5'); // Primary
-      gradient.addColorStop(1, '#9333EA'); // Accent
+      gradient.addColorStop(0, '#4F46E5'); // الأساسي
+      gradient.addColorStop(1, '#9333EA'); // اللكنة
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, 400, 600);
 
-      // 2. رسم دوائر زينة
+      // 2. دوائر زينة خلفية
       ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
       ctx.beginPath(); ctx.arc(0, 0, 150, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath(); ctx.arc(400, 600, 100, 0, Math.PI * 2); ctx.fill();
 
-      // 3. رسم الصورة الشخصية (الأفاتار)
+      // 3. رسم الصورة الشخصية (دائرة)
       ctx.save();
       ctx.beginPath();
       ctx.arc(200, 120, 60, 0, Math.PI * 2);
@@ -81,13 +82,15 @@ export default function StreakPage() {
       ctx.fillStyle = '#FFFFFF';
       ctx.fillRect(140, 60, 120, 120);
       
-      // إذا كانت الصورة Base64 أو رابط
       const avatar = userData?.avatar || "🐱";
       if (avatar.startsWith('data:image') || avatar.startsWith('http')) {
         const img = new Image();
-        img.crossOrigin = "anonymous";
+        img.crossOrigin = "anonymous"; // هام جداً للمشاركة
         img.src = avatar;
-        await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
+        await new Promise((resolve) => {
+          img.onload = resolve;
+          img.onerror = resolve;
+        });
         ctx.drawImage(img, 140, 60, 120, 120);
       } else {
         ctx.font = '60px Arial';
@@ -97,76 +100,103 @@ export default function StreakPage() {
       }
       ctx.restore();
 
-      // 4. النصوص
+      // 4. رسم المحتوى النصي
       ctx.fillStyle = '#FFFFFF';
       ctx.textAlign = 'center';
       
       // الاسم
-      ctx.font = 'bold 28px Tahoma, Arial';
+      ctx.font = 'bold 28px "Cairo", Arial';
       ctx.fillText(userData?.name || 'Careingo User', 200, 220);
       
-      // التاج
+      // الشارة الملكية
       ctx.font = '20px Arial';
-      ctx.fillText('👑 Premium Member', 200, 250);
+      ctx.fillText('👑 Premium Member', 200, 255);
 
-      // رسم بطاقات البيانات
+      // صناديق الإحصائيات
       const drawInfoBox = (y: number, label: string, value: string, icon: string) => {
         ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-        ctx.roundRect ? ctx.roundRect(40, y, 320, 70, 20) : ctx.fillRect(40, y, 320, 70);
-        ctx.fill();
+        // رسم مستطيل بزوايا مستديرة (دعم المتصفحات القديمة)
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(40, y, 320, 75, 20);
+          ctx.fill();
+        } else {
+          ctx.fillRect(40, y, 320, 75);
+        }
+        
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 12px Arial';
         ctx.textAlign = 'right';
-        ctx.fillText(label, 340, y + 25);
+        ctx.fillText(label, 340, y + 30);
         ctx.font = 'bold 24px Arial';
-        ctx.fillText(value, 340, y + 55);
+        ctx.fillText(value, 340, y + 60);
         ctx.font = '30px Arial';
         ctx.textAlign = 'left';
-        ctx.fillText(icon, 60, y + 45);
+        ctx.fillText(icon, 60, y + 50);
       };
 
-      drawInfoBox(280, 'الحماسة الحالية', `${userData?.streak || 0} يوم`, '🔥');
-      drawInfoBox(365, 'إجمالي النقاط', `${(userData?.points || 0).toLocaleString()} نقطة`, '⭐');
-      drawInfoBox(450, 'الترتيب العالمي', `#${stats.rank}`, '🏆');
+      drawInfoBox(290, 'الحماسة الحالية', `${userData?.streak || 0} يوم`, '🔥');
+      drawInfoBox(380, 'إجمالي النقاط', `${(userData?.points || 0).toLocaleString()} نقطة`, '⭐');
+      drawInfoBox(470, 'الترتيب العالمي', `#${stats.rank}`, '🏆');
 
-      // الشعار في الأسفل
+      // توقيع التطبيق
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.fillText('CAREINGO | GROWTH ECOSYSTEM', 200, 560);
+      ctx.fillText('CAREINGO | GROWTH ECOSYSTEM 2026', 200, 575);
 
-      // 5. المشاركة
+      // 5. تحويل الـ Canvas إلى ملف ومشاركته
       canvas.toBlob(async (blob) => {
-        if (!blob) return;
-        const file = new File([blob], 'careingo-streak.png', { type: 'image/png' });
+        if (!blob) {
+          setIsGenerating(false);
+          return;
+        }
+
+        const file = new File([blob], 'careingo-achievement.png', { type: 'image/png' });
         
+        // المحاولة 1: استخدام مشاركة النظام المباشرة (Share Sheet)
         if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
               files: [file],
-              title: 'إنجازي في كاري',
-              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! 🐱🔥`
+              title: 'إنجازي في كاري 🐱✨',
+              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو. 🔥`
             });
-          } catch (e) {
-            console.error(e);
+            setIsGenerating(false);
+          } catch (e: any) {
+            if (e.name !== 'AbortError') {
+              // إذا لم يكن خطأ إلغاء من المستخدم، نقوم بالتحميل كخطة بديلة
+              downloadFallback(blob);
+            } else {
+              setIsGenerating(false);
+            }
           }
         } else {
-          // Fallback: Download or Clipboard
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = 'careingo-achievement.png';
-          a.click();
-          toast({ title: "تم تحميل بطاقة الإنجاز! 📸", description: "يمكنك الآن مشاركتها يدوياً." });
+          // المحاولة 2: تحميل الصورة إذا كان المتصفح لا يدعم المشاركة المباشرة للملفات
+          downloadFallback(blob);
         }
-        setIsGenerating(false);
       }, 'image/png');
 
     } catch (err) {
-      console.error(err);
+      console.error("Canvas generation error:", err);
       setIsGenerating(false);
       toast({ variant: "destructive", title: "فشل توليد البطاقة" });
     }
+  };
+
+  const downloadFallback = (blob: Blob) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'careingo-achievement.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setIsGenerating(false);
+    toast({ 
+      title: "تم تحميل بطاقة الإنجاز! 📸", 
+      description: "متصفحك لا يدعم المشاركة المباشرة، تم حفظ الصورة في جهازك لتشاركها يدوياً." 
+    });
   };
 
   const currentWeek = useMemo(() => {
@@ -218,7 +248,7 @@ export default function StreakPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         
-        {/* Canvas المخفي لتوليد الصورة */}
+        {/* الـ Canvas المخفي الذي يتم الرسم عليه */}
         <canvas ref={canvasRef} width="400" height="600" className="hidden" />
 
         <header className="bg-gradient-to-br from-primary to-accent p-8 rounded-[2.5rem] shadow-2xl text-white relative overflow-hidden mx-2">
@@ -313,10 +343,10 @@ export default function StreakPage() {
                 <Button 
                   onClick={generateCardAndShare} 
                   disabled={isGenerating}
-                  className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black gap-2"
+                  className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black gap-3 shadow-xl"
                 >
-                  {isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={18} />}
-                  مشاركة إنجازي كصورة 📸
+                  {isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={20} />}
+                  مشاركة كصورة على وسائل التواصل 📲
                 </Button>
               </div>
             </Card>

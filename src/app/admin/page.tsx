@@ -171,7 +171,7 @@ export default function AdminDashboardPage() {
               <CardContent className="p-4 flex items-center justify-between flex-row-reverse">
                 <div className="flex items-center gap-3 flex-row-reverse">
                   <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-2xl border border-border shadow-sm overflow-hidden">
-                    {u.avatar?.startsWith('http') ? (
+                    {u.avatar?.startsWith('data:image') ? (
                       <img src={u.avatar} alt={u.name} className="w-full h-full object-cover" />
                     ) : (
                       <span>{u.avatar || "🐱"}</span>

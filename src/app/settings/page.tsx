@@ -130,7 +130,7 @@ export default function SettingsPage() {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_SIZE = 200; // 200x200px كافي جداً للأفاتار
+          const MAX_SIZE = 200; 
           let width = img.width;
           let height = img.height;
 
@@ -149,7 +149,7 @@ export default function SettingsPage() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7)); // جودة 70% لتقليل الحجم في الداتابيز
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); 
         };
         img.onerror = reject;
       };
@@ -170,20 +170,15 @@ export default function SettingsPage() {
     playSound('click');
     
     try {
-      // تحويل وضغط الصورة محلياً
       const base64Image = await compressAndConvertToBase64(file);
-      
-      // حفظ النص المشفر (Base64) مباشرة في الداتابيز كـ avatar
       await update(ref(database, `users/${user.uid}`), {
         avatar: base64Image
       });
-      
       setAvatar(base64Image);
       toast({ title: "تم التحديث بنجاح! 📸", description: "تم تغيير مظهرك الملكي بنجاح." });
       playSound('success');
     } catch (error: any) {
-      console.error("Upload error:", error);
-      toast({ variant: "destructive", title: "فشل المعالجة", description: "حدث خطأ أثناء معالجة الصورة، حاول مجدداً." });
+      toast({ variant: "destructive", title: "فشل المعالجة" });
     } finally {
       setIsUploading(false);
     }
@@ -219,13 +214,11 @@ export default function SettingsPage() {
 
     try {
       window.location.href = `tel:${ussdCode.replace('#', '%23')}`;
-
       await update(ref(database, `users/${user.uid}/premiumRequest`), {
         status: 'pending',
         duration: selectedPlan,
         requestedAt: Date.now()
       });
-
       toast({ title: "جاري المعالجة... ⏳", description: "طلبك تحت الإجراء حالياً، سيتم التفعيل يدوياً بعد التأكد من التحويل." });
       setIsRequestOpen(false);
     } catch (e) {
@@ -309,7 +302,7 @@ export default function SettingsPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 relative z-10">
-            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "تحميل صورة بروفايل شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
+            {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "صورة بروفايل شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
               <div key={i} className="flex items-center gap-2 justify-end bg-black/20 p-3 rounded-2xl">
                 <span className="text-[10px] font-black">{m.t}</span>
                 <m.i size={16} className="text-yellow-300" />
@@ -377,7 +370,7 @@ export default function SettingsPage() {
                    {isUploading && (
                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm z-20">
                        <Loader2 className="text-white animate-spin mb-2" size={32} />
-                       <span className="text-white font-black text-[10px]">جاري الرفع...</span>
+                       <span className="text-white font-black text-[10px]">جاري التحميل...</span>
                      </div>
                    )}
                  </div>

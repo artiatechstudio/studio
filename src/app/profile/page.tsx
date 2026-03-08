@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles, Users, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
@@ -172,45 +172,43 @@ export default function ProfilePage() {
           </div>
           
           <Card className="rounded-[2.5rem] bg-card p-6 border border-border shadow-xl">
-            <TooltipProvider delayDuration={0}>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-                {ALL_ACHIEVEMENTS.map((badge) => {
-                  const isEarned = badge.criteria(userData);
-                  return (
-                    <Tooltip key={badge.id}>
-                      <TooltipTrigger asChild>
-                        <button 
-                          className="group relative flex flex-col items-center cursor-pointer outline-none focus:ring-2 focus:ring-primary/20 rounded-2xl p-1 transition-all"
-                          onClick={() => { if(isEarned) playSound('success'); else playSound('click'); }}
-                        >
-                          <div className={cn(
-                            "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-500 shadow-md border",
-                            isEarned 
-                              ? "bg-white border-primary/20 scale-100 rotate-0" 
-                              : "bg-secondary/20 border-transparent opacity-20 grayscale scale-90"
-                          )}>
-                            {isEarned ? badge.icon : <Lock className="w-6 h-6 text-muted-foreground" />}
-                          </div>
-                          <p className={cn(
-                            "text-[7px] font-black text-center mt-1 transition-opacity",
-                            isEarned ? "text-primary opacity-100" : "text-muted-foreground opacity-40"
-                          )}>
-                            {badge.name}
-                          </p>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-card border-2 border-primary/20 text-primary p-4 rounded-2xl shadow-2xl max-w-[220px] text-right z-[100]" dir="rtl">
-                        <div className="space-y-1">
-                          <p className="font-black text-sm flex items-center justify-end gap-2">{badge.name} {isEarned && "✅"}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
-                          {!isEarned && <p className="text-[8px] text-destructive mt-2 font-black italic border-t border-border pt-1">لم يتم إحراز هذا الوسام بعد 🔒</p>}
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+              {ALL_ACHIEVEMENTS.map((badge) => {
+                const isEarned = badge.criteria(userData);
+                return (
+                  <Popover key={badge.id}>
+                    <PopoverTrigger asChild>
+                      <button 
+                        className="group relative flex flex-col items-center cursor-pointer outline-none rounded-2xl p-1 transition-all"
+                        onClick={() => { if(isEarned) playSound('success'); else playSound('click'); }}
+                      >
+                        <div className={cn(
+                          "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-500 shadow-md border",
+                          isEarned 
+                            ? "bg-white border-primary/20 scale-100 rotate-0" 
+                            : "bg-secondary/20 border-transparent opacity-20 grayscale scale-90"
+                        )}>
+                          {isEarned ? badge.icon : <Lock className="w-6 h-6 text-muted-foreground" />}
                         </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  );
-                })}
-              </div>
-            </TooltipProvider>
+                        <p className={cn(
+                          "text-[7px] font-black text-center mt-1 transition-opacity",
+                          isEarned ? "text-primary opacity-100" : "text-muted-foreground opacity-40"
+                        )}>
+                          {badge.name}
+                        </p>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="bg-card border-2 border-primary/20 text-primary p-4 rounded-2xl shadow-2xl max-w-[220px] text-right z-[100]" dir="rtl">
+                      <div className="space-y-1">
+                        <p className="font-black text-sm flex items-center justify-end gap-2">{badge.name} {isEarned && "✅"}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                        {!isEarned && <p className="text-[8px] text-destructive mt-2 font-black italic border-t border-border pt-1">لم يتم إحراز هذا الوسام بعد 🔒</p>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                );
+              })}
+            </div>
           </Card>
         </section>
       </div>

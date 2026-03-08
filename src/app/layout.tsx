@@ -56,7 +56,6 @@ export default function RootLayout({
           __html: `
             (function() {
               try {
-                // فرض الوضع النهاري كوضع افتراضي دائم عند التشغيل الأول
                 const savedTheme = localStorage.getItem('theme');
                 if (!savedTheme) {
                   localStorage.setItem('theme', 'light');

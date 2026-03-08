@@ -49,32 +49,25 @@ export default function Home() {
       const updates: any = {};
       let needsUpdate = false;
 
-      // إظهار الجولة التعريفية للمستخدمين الجدد
       if (userData.hasSeenTour !== true) {
         setShowTour(true);
       }
 
-      // طلب إذن الإشعارات لأول مرة
       if (!userData.notificationsEnabled && Notification.permission === 'default') {
         requestNotificationPermission(auth, database);
       }
 
-      // رصد انتهاء البريميوم (تحديث: إعادة الأفاتار لإيموجي عند الانتهاء)
       if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
-        
-        // إذا كان واضعاً صورة (تبدأ بـ data أو http)، تعود لقطة افتراضية
         if (userData.avatar?.startsWith('data:') || userData.avatar?.startsWith('http')) {
           updates.avatar = "🐱";
         }
-
         needsUpdate = true;
-        toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، تم إعادة ضبط ميزات البريميوم. يمكنك التجديد عبر الإعدادات! 🐱" });
+        toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، تم تجديد اشتراكك عبر الإعدادات! 🐱" });
       }
 
-      // رصد تفعيل البريميوم الجديد
       if (userData.showPremiumCelebration) {
         setShowCelebration(true);
         playSound('success');
@@ -82,7 +75,6 @@ export default function Home() {
         needsUpdate = true;
       }
 
-      // منطق الحماية وكسر الحماسة
       const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
       const yesterdayStr = yesterday.toLocaleDateString('en-CA');
       const lastActive = userData.lastActiveDate;
@@ -92,12 +84,10 @@ export default function Home() {
         if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
           const penalty = 150;
           const currentPoints = userData.points || 0;
-          
           updates.points = Math.max(0, currentPoints - penalty);
           updates.streak = 0;
           updates.lastStreakPenaltyDate = todayStr;
           needsUpdate = true;
-
           if (currentPoints > 0) {
             push(ref(database, `users/${user.uid}/notifications`), {
               type: 'system',
@@ -110,7 +100,6 @@ export default function Home() {
           }
         }
       } else {
-        // ميزة بريميوم: حصانة الحماسة (Streak Freeze)
         if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr) {
           const currentFreezes = userData.streakFreezes ?? 2;
           if (currentFreezes > 0) {
@@ -137,16 +126,6 @@ export default function Home() {
       }
     }
   }, [userData, user, database, auth, isAdmin, isPremium]);
-
-  const progressPercent = useMemo(() => {
-    if (!userData?.trackProgress) return 0;
-    const totalStages = 120;
-    let completedCount = 0;
-    Object.values(userData.trackProgress).forEach((track: any) => {
-      completedCount += (track.completedStages?.length || 0);
-    });
-    return Math.round((completedCount / totalStages) * 100);
-  }, [userData]);
 
   const bmiInfo = useMemo(() => {
     if (!userData?.weight || !userData?.height) return { value: "--", status: "غير محدد", color: "text-muted-foreground" };

@@ -1,40 +1,38 @@
 
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Maximize } from 'lucide-react';
 
-/**
- * مكون شاشة الترحيب المحدثة (Splash Screen)
- * تتضمن الآن "شاشة دخول" تطلب من المستخدم الضغط لبدء الرحلة وتفعيل ملء الشاشة.
- */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [mounted, setMounted] = useState(false);
   const [showEntry, setShowEntry] = useState(true);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const handleFsChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  const handleStartApp = () => {
-    // محاولة تفعيل وضع ملء الشاشة عند الضغط (لأغراض أمنية يجب أن يكون بطلب مستخدم)
+  const requestFull = useCallback(async () => {
     try {
       if (document.documentElement.requestFullscreen) {
-        document.documentElement.requestFullscreen().catch(() => {
-          console.log("Full screen denied or not supported");
-        });
+        await document.documentElement.requestFullscreen();
       }
     } catch (e) {
-      console.warn("Fullscreen error", e);
+      console.warn("Fullscreen request failed", e);
     }
+  }, []);
 
+  const handleStartApp = async () => {
+    await requestFull();
     setShowEntry(false);
-    setIsAnimating(true);
-
-    // مؤقت للانتقال للصفحة الرئيسية بعد 2.5 ثانية من ظهور الشعار
     setTimeout(() => {
       onComplete();
     }, 2500);
@@ -45,19 +43,20 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden" dir="rtl">
       {showEntry ? (
-        <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700">
+        <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 px-6 w-full max-w-sm text-center">
           <div className="text-8xl animate-float mb-4">🐱</div>
-          <div className="text-center space-y-2">
+          <div className="space-y-2">
             <h1 className="text-3xl font-black text-primary">مرحباً بك في كارينجو</h1>
             <p className="text-muted-foreground font-bold">رفيقك الذكي لرحلة التغيير</p>
           </div>
           <Button 
             onClick={handleStartApp}
-            className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black shadow-2xl shadow-primary/20 gap-3 group"
+            className="h-16 w-full rounded-2xl bg-primary hover:bg-primary/90 text-xl font-black shadow-2xl shadow-primary/20 gap-3 group"
           >
             <Sparkles className="group-hover:rotate-12 transition-transform" />
             ابدأ تطوير ذاتك
           </Button>
+          <p className="text-[10px] text-muted-foreground/60 font-bold">سيتم فتح التطبيق في وضع ملء الشاشة لأفضل تجربة</p>
         </div>
       ) : (
         <>
@@ -82,6 +81,17 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             </div>
           </div>
         </>
+      )}
+
+      {/* زر إعادة ملء الشاشة في حال الخروج المفاجئ (يظهر فقط بعد بدء التطبيق) */}
+      {!showEntry && !isFullscreen && (
+        <Button 
+          onClick={requestFull}
+          size="icon"
+          className="fixed top-4 right-4 z-[10000] rounded-full bg-primary/20 text-primary backdrop-blur-md border border-primary/20"
+        >
+          <Maximize size={18} />
+        </Button>
       )}
     </div>
   );

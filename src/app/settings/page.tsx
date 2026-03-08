@@ -445,6 +445,9 @@ export default function SettingsPage() {
               <a href="https://wa.me/218929196425" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2"><Phone size={18} /> واتساب</Button></a>
               <a href="https://artiatechstudio.com.ly" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2"><Globe size={18} /> الموقع الرسمي</Button></a>
               <a href="https://x.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2"><Twitter size={18} /> منصة X</Button></a>
+              <a href="https://www.facebook.com/share/1ASsnGfZ4A/" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-800 font-black gap-2"><Facebook size={18} /> فيسبوك</Button></a>
+              <a href="https://instagram.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-pink-100 bg-pink-50/30 text-pink-700 font-black gap-2"><Instagram size={18} /> إنستقرام</Button></a>
+              <a href="https://youtube.com/@artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-red-100 bg-red-50/30 text-red-700 font-black gap-2"><Youtube size={18} /> يوتيوب</Button></a>
             </div>
           </CardContent>
         </Card>

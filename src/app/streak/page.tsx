@@ -148,7 +148,7 @@ export default function StreakPage() {
             await navigator.share({
               files: [file],
               title: 'إنجازي في كاري 🐱✨',
-              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو. 🔥`
+              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو: https://www.artiatechstudio.com.ly/2026/03/careingo.html`
             });
             setIsGenerating(false);
           } catch (e: any) {

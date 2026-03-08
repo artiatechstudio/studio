@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Dumbbell, Lightbulb, ChevronLeft, AlertTriangle, Info, ShieldCheck } from 'lucide-react';
+import { BookOpen, Dumbbell, Lightbulb, ChevronLeft, AlertTriangle, Info, ShieldCheck, Gavel, HelpCircle } from 'lucide-react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
@@ -78,23 +78,71 @@ export default function ResourcesPage() {
         </section>
 
         <section className="bg-card p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border mx-2 space-y-8">
-          <div className="flex items-center gap-3 text-primary">
-            <ShieldCheck size={32} />
-            <h2 className="text-2xl font-black">الخصوصية والسياسات</h2>
+          <div className="space-y-10">
+            {/* سياسة الخصوصية */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-primary">
+                <ShieldCheck size={28} />
+                <h2 className="text-2xl font-black">سياسة الخصوصية</h2>
+              </div>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="privacy-data">
+                  <AccordionTrigger className="text-right font-black text-lg">كيف نحمي بياناتك؟</AccordionTrigger>
+                  <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
+                    <p>● <span className="text-primary font-black">جمع المعلومات:</span> نقوم بجمع بيانات الطول، الوزن، والعمر حصرياً لحساب مؤشر كتلة الجسم (BMI) وتقديم تجربة نمو مخصصة لك. هذه البيانات مخزنة بشكل آمن في قواعد بيانات Firebase المشفرة.</p>
+                    <p>● <span className="text-primary font-black">الصور الشخصية:</span> في حال رفع صورة شخصية (لمشتركي البريميوم)، يتم ضغطها وتحويلها إلى كود مشفر داخل حسابك فقط ولا يتم استخدامها في أي غرض تجاري.</p>
+                    <p>● <span className="text-primary font-black">مشاركة البيانات:</span> نلتزم في "كارينجو" بعدم بيع أو مشاركة بياناتك مع أي طرف ثالث أو شركات إعلانية خارجية. بيانات نشاطك هي ملكك وحدك.</p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+
+            {/* الشروط والأحكام */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-accent">
+                <Gavel size={28} />
+                <h2 className="text-2xl font-black">الشروط والأحكام</h2>
+              </div>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="terms-rules">
+                  <AccordionTrigger className="text-right font-black text-lg">قوانين المجتمع والاستخدام</AccordionTrigger>
+                  <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
+                    <p>● <span className="text-primary font-black">السلوك العام:</span> يُحظر تماماً التنمر، التحرش، أو نشر محتوى غير لائق في الدردشة العامة أو الخاصة. يتم حظر الحسابات المخالفة نهائياً دون سابق إنذار.</p>
+                    <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> تطبيق "كارينجو" هو أداة تحفيزية. التمارين والنصائح الغذائية المقدمة لا تغني عن استشارة الطبيب المختص، خاصة للأشخاص الذين يعانون من مشاكل صحية مزمنة.</p>
+                    <p>● <span className="text-primary font-black">النقاط والحماسة:</span> النظام يعتمد على مبدأ الالتزام الشخصي. أي تلاعب في إكمال المهام يضر بمصداقية سجل إنجازاتك. عقوبة الانسحاب من المهام تهدف لتعزيز الانضباط.</p>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+
+            {/* الأسئلة الشائعة */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-orange-600">
+                <HelpCircle size={28} />
+                <h2 className="text-2xl font-black">الأسئلة الشائعة (FAQ)</h2>
+              </div>
+              <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="faq-streak">
+                  <AccordionTrigger className="text-right font-black text-lg">لماذا فقدت حماستي (Streak)؟</AccordionTrigger>
+                  <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
+                    يتم تمديد الحماسة عند إكمال أول مهمة في اليوم الجديد. إذا لم تقم بأي نشاط لمدة 24 ساعة (تنتهي عند منتصف الليل)، ستفقد الحماسة ما لم تكن مشتركاً في البريميوم ولديك رصيد "تجميد حماسة".
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="faq-points">
+                  <AccordionTrigger className="text-right font-black text-lg">كيف أحصل على رتبة "أسطورة كاري"؟</AccordionTrigger>
+                  <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
+                    تعتمد الرتب على إجمالي النقاط. رتبة الأسطورة تتطلب الوصول إلى 10,000 نقطة. يمكنك جمع النقاط عبر إكمال المهام اليومية، التبكير في الإنجاز، والالتزام بالمسار العام.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="faq-premium">
+                  <AccordionTrigger className="text-right font-black text-lg">كيف يتم تفعيل اشتراك البريميوم؟</AccordionTrigger>
+                  <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm">
+                    بعد تقديم الطلب من الإعدادات وتحويل الرصيد، يقوم فريق الإدارة بمراجعة الطلب يدوياً وتفعيله خلال مدة لا تتجاوز 24 ساعة. ستصلك إشعار فوري فور التفعيل.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
           </div>
-          
-          <Accordion type="single" collapsible className="w-full">
-            <AccordionItem value="privacy">
-              <AccordionTrigger className="text-right font-black text-lg">سياسة الخصوصية والأحكام</AccordionTrigger>
-              <AccordionContent className="text-right font-bold text-muted-foreground leading-relaxed text-sm space-y-4">
-                <div className="space-y-4">
-                  <p>● <span className="text-primary font-black">حماية البيانات:</span> نلتزم في "كارينجو" بحماية معلوماتك الشخصية واستخدامها فقط لتحسين تجربتك الصحية. لا يتم مشاركة هذه البيانات مع أطراف خارجية.</p>
-                  <p>● <span className="text-primary font-black">سلوك المستخدم:</span> يُتوقع الاحترام المتبادل في غرف الدردشة. أي تنمر سيؤدي إلى حظر الحساب نهائياً.</p>
-                  <p>● <span className="text-primary font-black">إخلاء مسؤولية طبية:</span> النصائح المقدمة من كاري تحفيزية فقط، وليست بديلاً عن الاستشارة الطبية.</p>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
         </section>
 
         <footer className="pt-10 opacity-40 font-black text-primary text-[10px] text-center">

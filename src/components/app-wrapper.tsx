@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect } from 'react';
@@ -11,14 +10,15 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
 
-    if ('serviceWorker' in navigator) {
+    // تسجيل الـ Service Worker لضمان عمل الـ PWA بشكل صحيح
+    if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
           (registration) => {
-            console.log('SW registered:', registration.scope);
+            console.log('SW registered successfully:', registration.scope);
           },
           (err) => {
-            console.log('SW registration failed:', err);
+            console.error('SW registration failed:', err);
           }
         );
       });

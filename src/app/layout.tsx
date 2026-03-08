@@ -9,6 +9,14 @@ import Script from 'next/script';
 export const metadata: Metadata = {
   title: 'Careingo | تواصل، تحدى، تطور',
   description: 'كارينجو هي منصتك التفاعلية للنمو الشخصي: تواصل مع المجتمع، تحدى نفسك في مسارات متنوعة، وتطور يومياً.',
+  icons: {
+    icon: [
+      { url: '/logo.png', size: '32x32' },
+      { url: '/logo.png', size: '192x192' },
+    ],
+    shortcut: '/logo.png',
+    apple: '/logo.png',
+  },
   formatDetection: {
     telephone: false,
   },
@@ -31,6 +39,8 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
       <head>
+        <link rel="icon" type="image/png" href="/logo.png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet" />

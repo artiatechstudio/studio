@@ -8,10 +8,10 @@ export interface Challenge {
   time: number;
   difficulty: 'سهل' | 'متوسط' | 'صعب';
   points: number;
-  type?: TrackKey; // تم إضافة النوع لتسهيل الفلترة في المسار العام
+  type?: TrackKey; 
 }
 
-// دالة لتوليد نقاط بناءً على الصعوبة الجديدة المطلوبة
+// دالة لتوليد نقاط بناءً على الصعوبة المطلوبة
 const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
   if (diff === 'سهل') return 50;
   if (diff === 'متوسط') return 70;
@@ -86,7 +86,7 @@ const nutritionChallenges: Challenge[] = [
 
 const behaviorChallenges: Challenge[] = [
   { title: "اليوم 1: وعي التنفس", description: "5 دقائق تنفس هادئ.", time: 5, difficulty: 'سهل', points: getPoints('سهل') },
-  { title: "اليوم 2: الامتنان", description: "اكتب 5 أشياء ممتن لها.", time: 10, difficulty: 'سهل', points: getPoints('سهل') },
+  { title: "اليوم 2: الامتتاح", description: "اكتب 5 أشياء ممتن لها.", time: 10, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 3: ديتوكس شاشات", description: "بدون هاتف قبل النوم بساعة.", time: 60, difficulty: 'متوسط', points: getPoints('متوسط') },
   { title: "اليوم 4: كلمة طيبة", description: "قدم مجاملة صادقة لشخص.", time: 2, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 5: ترتيب البيئة", description: "رتب ركناً واحداً في غرفتك.", time: 15, difficulty: 'سهل', points: getPoints('سهل') },
@@ -159,17 +159,9 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
 
 // الـ 120 تحدي الإضافية للمسار العام (حصرياً)
 export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [
-  // Fitness Master (30)
+  // Fitness Master (بعض الأمثلة اليدوية للبداية)
   { type: 'Fitness', title: "تحدي الأساطير: 100 ضغط", description: "أكمل 100 تمرين ضغط خلال اليوم (مقسمة كما تشاء).", time: 30, difficulty: 'صعب', points: 100 },
   { type: 'Fitness', title: "تحدي الأساطير: مشي 10كم", description: "مشي لمسافة 10 كيلومترات في الطبيعة لتعزيز قدرة التحمل.", time: 120, difficulty: 'صعب', points: 100 },
-  { type: 'Fitness', title: "تحدي الأساطير: تمرين الكوبرا", description: "تمدد بوضعية الكوبرا لـ 10 دقائق موزعة.", time: 10, difficulty: 'سهل', points: 50 },
-  { type: 'Fitness', title: "تحدي الأساطير: قفزة الضفدع", description: "25 قفزة ضفدع متتالية لزيادة قوة الانفجارية.", time: 5, difficulty: 'متوسط', points: 70 },
-  { type: 'Fitness', title: "تحدي الأساطير: تسلق الدرج", description: "اصعد وانزل الدرج لمدة 10 دقائق متواصلة.", time: 10, difficulty: 'متوسط', points: 70 },
-  { type: 'Fitness', title: "تحدي الأساطير: الوقوف على اليدين", description: "حاول الوقوف على اليدين بمساعدة الحائط لمدة دقيقة تراكمية.", time: 5, difficulty: 'صعب', points: 100 },
-  { type: 'Fitness', title: "تحدي الأساطير: ظل الملاكمة", description: "مارس الملاكمة مع الظل لمدة 15 دقيقة لتحسين التنسيق.", time: 15, difficulty: 'متوسط', points: 70 },
-  { type: 'Fitness', title: "تحدي الأساطير: قرفصاء السومو", description: "50 تكرار قرفصاء سومو بتركيز كامل.", time: 10, difficulty: 'سهل', points: 50 },
-  // ... (تكرار الأنماط للوصول لـ 120 تحدي موزع)
-  // سيتم اختصار البقية لضمان المساحة لكن الفكرة هي تنوع الـ 120 تحدي
 ];
 
 // توليد باقي الـ 120 تحدي برمجياً لضمان وجود قائمة كاملة للاختيار العشوائي
@@ -191,6 +183,6 @@ while (ADDITIONAL_MASTER_CHALLENGES.length < 120) {
 }
 
 export const getMasterPool = (type: TrackKey, difficulty: string): Challenge[] => {
-  // الآن يتم الاختيار حصرياً من قائمة الـ 120 تحدي الإضافية فقط
+  // الاختيار حصرياً من قائمة الـ 120 تحدي الإضافية فقط
   return ADDITIONAL_MASTER_CHALLENGES.filter(c => c.type === type && c.difficulty === difficulty);
 };

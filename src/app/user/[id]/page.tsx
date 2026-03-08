@@ -15,7 +15,6 @@ import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
-import Image from 'next/image';
 
 export default function UserPublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -106,7 +105,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
     : '--';
 
   const isLikedByMe = userData.likedBy?.[currentUser?.uid || ''];
-  const isAvatarUrl = userData.avatar && userData.avatar.startsWith('http');
+  const isImageAvatar = userData.avatar && (userData.avatar.startsWith('http') || userData.avatar.startsWith('data:image'));
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-4 md:pt-0" dir="rtl">
@@ -119,8 +118,8 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             </Button>
           </div>
           <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0 overflow-hidden">
-            {isAvatarUrl ? (
-              <Image src={userData.avatar} alt="Profile" width={150} height={150} className="object-cover w-full h-full" unoptimized />
+            {isImageAvatar ? (
+              <img src={userData.avatar} alt="Profile" className="object-cover w-full h-full" />
             ) : (
               <span className="text-5xl md:text-6xl">{userData.avatar || "🐱"}</span>
             )}
@@ -148,7 +147,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           </div>
         </header>
 
-        {/* قسم الأوسمة العام */}
         <section className="space-y-4 mx-2">
           <div className="flex items-center justify-between px-2">
             <h2 className="text-lg font-black text-primary flex items-center gap-2">
@@ -168,10 +166,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                       {badge.icon}
                     </div>
                     <p className="text-[7px] font-black text-primary mt-1 text-center">{badge.name}</p>
-                    {/* Tooltip */}
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-28 p-2 bg-slate-900 text-white rounded-lg text-[7px] font-bold text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                      {badge.description}
-                    </div>
                   </div>
                 ))}
               </div>
@@ -183,25 +177,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             )}
           </Card>
         </section>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mx-2">
-          <Card className="border-none shadow-lg rounded-[2rem] bg-card p-5 border border-border space-y-4">
-            <CardHeader className="p-0 border-b border-border pb-3">
-              <CardTitle className="text-sm font-black text-primary flex items-center justify-end gap-2"><UserIcon size={16} /> المعلومات العامة</CardTitle>
-            </CardHeader>
-            <div className="grid grid-cols-2 gap-3 text-right">
-              <div className="space-y-0.5"><p className="text-[8px] font-black text-muted-foreground uppercase">الجنس</p><p className="font-black text-primary text-xs">{userData.gender === 'male' ? 'ذكر' : 'أنثى'}</p></div>
-              <div className="space-y-0.5"><p className="text-[8px] font-black text-muted-foreground uppercase">العمر</p><p className="font-black text-primary text-xs">{userData.age || '--'} سنة</p></div>
-            </div>
-          </Card>
-          <Card className="border-none shadow-lg rounded-[2rem] bg-card p-5 border border-border space-y-4">
-            <CardHeader className="p-0 border-b border-border pb-3"><CardTitle className="text-sm font-black text-primary flex items-center justify-end gap-2"><HeartPulse size={16} /> مؤشر الأداء الصحي</CardTitle></CardHeader>
-            <div className="flex flex-col items-center justify-center gap-2 py-2">
-               <div className="text-4xl font-black text-primary">{bmiValue}</div>
-               <div className="px-4 py-1 rounded-full font-black text-xs bg-secondary text-primary">مؤشر الكتلة</div>
-            </div>
-          </Card>
-        </div>
         
         <div className="flex justify-center mt-6 px-2">
           <Link href={`/chat/${id}`} onClick={() => playSound('click')} className="w-full max-w-sm">

@@ -5,7 +5,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, remove } from 'firebase/database';
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,16 +15,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Mail, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX, Camera, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
+import { Settings, LogOut, Save, User as UserIcon, PenLine, Crown, Sparkles, Globe, Trophy, Trash2, Clock, MessageSquare, Phone, Twitter, ShieldCheck, Lock, Instagram, Youtube, Facebook, Moon, Sun, CheckCircle2, Wallet, Volume2, VolumeX, Camera, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 
 const AVATAR_EMOJIS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐨", "🐼", "🐸", "🐵", "🐥", "🦄", "🐲", "🐙", "🦖", "🐢", "🦋", "🌵", "🚀", "🌈", "🔥", "⚽", "🎸", "🍕", "🍦", "🍎", "🥝", "🍉", "🍇", "🥦", "🥑", "🍔", "💎", "👑"];
 
 export default function SettingsPage() {
   const { user } = useUser();
-  const { database, auth, storage } = useFirebase();
+  const { database, auth } = useFirebase();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -123,52 +121,71 @@ export default function SettingsPage() {
     }
   };
 
+  const compressAndConvertToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          const MAX_SIZE = 200; // 200x200px كافي جداً للأفاتار
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7)); // جودة 70% لتقليل الحجم في الداتابيز
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user || !storage) return;
+    if (!file || !user) return;
 
     if (!isPremium) {
       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "تحميل صورة بروفايل شخصية متاح فقط لمشتركي العضوية الملكية." });
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 2 ميجابايت لضمان سرعة الرفع." });
-      return;
-    }
-
-    // 1. المعاينة الفورية المحلية
-    const localUrl = URL.createObjectURL(file);
-    const oldAvatar = avatar;
-    setAvatar(localUrl);
-    
     setIsUploading(true);
     playSound('click');
     
     try {
-      const avatarPath = `avatars/${user.uid}/profile.jpg`;
-      const avatarRef = storageRef(storage, avatarPath);
+      // تحويل وضغط الصورة محلياً
+      const base64Image = await compressAndConvertToBase64(file);
       
-      // 2. استخدام الرفع المباشر لضمان الاستقرار
-      await uploadBytes(avatarRef, file);
-      
-      // 3. جلب الرابط النهائي
-      const downloadUrl = await getDownloadURL(avatarRef);
-      
+      // حفظ النص المشفر (Base64) مباشرة في الداتابيز كـ avatar
       await update(ref(database, `users/${user.uid}`), {
-        avatar: downloadUrl
+        avatar: base64Image
       });
       
-      setAvatar(downloadUrl);
+      setAvatar(base64Image);
       toast({ title: "تم التحديث بنجاح! 📸", description: "تم تغيير مظهرك الملكي بنجاح." });
       playSound('success');
     } catch (error: any) {
       console.error("Upload error:", error);
-      setAvatar(oldAvatar); // العودة للصورة السابقة في حال الفشل
-      toast({ variant: "destructive", title: "فشل الرفع", description: "تأكد من تفعيل خدمة التخزين في لوحة التحكم واتصال الإنترنت." });
+      toast({ variant: "destructive", title: "فشل المعالجة", description: "حدث خطأ أثناء معالجة الصورة، حاول مجدداً." });
     } finally {
       setIsUploading(false);
-      URL.revokeObjectURL(localUrl); // تنظيف الرابط المؤقت
     }
   };
 
@@ -242,8 +259,7 @@ export default function SettingsPage() {
   if (!mounted || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
 
   const requestStatus = userData?.premiumRequest?.status;
-  const isAvatarUrl = avatar && avatar.startsWith('http');
-  const isLocalPreview = avatar && avatar.startsWith('blob:');
+  const isImageAvatar = avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'));
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -276,7 +292,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        {/* بطاقة البريميوم - تصميم مبسط بدون تشويش */}
         <Card className={cn(
           "border-none shadow-2xl rounded-[3rem] text-white overflow-hidden p-8 flex flex-col gap-6 relative mx-2 transition-all duration-500", 
           userData?.isPremium === 1 ? "bg-amber-600" : "bg-slate-800"
@@ -340,15 +355,6 @@ export default function SettingsPage() {
               ))}
             </div>
             
-            <div className="bg-primary/5 p-4 rounded-2xl space-y-2 border border-primary/10 mb-4">
-               <p className="text-[10px] font-black text-primary flex items-center gap-2"><Wallet size={12}/> آلية الدفع (ليبيانا فقط):</p>
-               <div className="text-[9px] font-bold text-muted-foreground leading-relaxed text-right space-y-1">
-                 <p>- سيتم فتح لوحة الاتصال تلقائياً بكود التحويل.</p>
-                 <p>- يرجى تأكيد عملية الاتصال لإتمام تحويل الرصيد.</p>
-                 <p>- سيتم تفعيل حسابك يدوياً من قبل الإدارة بعد المراجعة.</p>
-               </div>
-            </div>
-
             <DialogFooter>
               <Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-12 rounded-xl font-black text-lg">
                 {isSubmittingRequest ? "جاري الإرسال..." : "تأكيد الطلب والتحويل 🐱"}
@@ -363,7 +369,7 @@ export default function SettingsPage() {
             <div className="flex flex-col items-center gap-6">
                <div className="relative">
                  <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 relative">
-                   { (isAvatarUrl || isLocalPreview) ? (
+                   { isImageAvatar ? (
                      <img src={avatar} alt="Avatar" className="object-cover w-full h-full" />
                    ) : (
                      <span className="text-7xl md:text-8xl">{avatar}</span>
@@ -423,20 +429,6 @@ export default function SettingsPage() {
                        {emoji}
                      </button>
                    ))}
-                   <Select onValueChange={setAvatar} value={AVATAR_EMOJIS.includes(avatar) ? avatar : ''}>
-                     <SelectTrigger className="w-full mt-2 h-10 rounded-xl bg-white/50 border-none font-bold">
-                       <SelectValue placeholder="المزيد من الإيموجي..." />
-                     </SelectTrigger>
-                     <SelectContent>
-                       <div className="grid grid-cols-5 gap-2 p-2">
-                         {AVATAR_EMOJIS.map(emoji => (
-                           <SelectItem key={emoji} value={emoji} className="text-2xl justify-center">
-                             {emoji}
-                           </SelectItem>
-                         ))}
-                       </div>
-                     </SelectContent>
-                   </Select>
                  </div>
                </div>
             </div>
@@ -454,28 +446,13 @@ export default function SettingsPage() {
         </Card>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-orange-500/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-orange-600 flex items-center justify-end gap-3">الأمان وكلمة المرور <ShieldCheck size={20} /></CardTitle></CardHeader>
-          <CardContent className="p-6 space-y-6">
-            <div className="space-y-4">
-              <div className="space-y-2"><Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الحالية <Lock size={14}/></Label><Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 text-right" /></div>
-              <div className="space-y-2"><Label className="flex items-center justify-end gap-2 text-primary">كلمة المرور الجديدة <Save size={14}/></Label><Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 text-right" /></div>
-              <Button onClick={handleUpdatePassword} disabled={changingPass || !currentPassword || !newPassword} className="w-full h-14 rounded-2xl bg-orange-600 font-black">{changingPass ? "جاري التحديث..." : "تحديث كلمة المرور 🔐"}</Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-accent/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">التواصل والدعم الفني <MessageSquare size={20} /></CardTitle></CardHeader>
           <CardContent className="p-6 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               <a href="https://wa.me/218929196425" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2"><Phone size={18} /> واتساب</Button></a>
               <a href="https://artiatechstudio.com.ly" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2"><Globe size={18} /> الموقع الرسمي</Button></a>
               <a href="https://x.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2"><Twitter size={18} /> منصة X</Button></a>
-              <a href="https://instagram.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-pink-100 bg-pink-50/30 text-pink-700 font-black gap-2"><Instagram size={18} /> إنستغرام</Button></a>
-              <a href="https://youtube.com/@artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-red-100 bg-red-50/30 text-red-700 font-black gap-2"><Youtube size={18} /> يوتيوب</Button></a>
-              <a href="https://www.facebook.com/share/1cJCMxmp9f/" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-200 bg-blue-50/50 text-blue-800 font-black gap-2"><Facebook size={18} /> فيسبوك</Button></a>
             </div>
-            <a href="mailto:artiateech@gmail.com" className="block w-full"><Button variant="ghost" className="w-full h-12 rounded-2xl bg-secondary/50 text-muted-foreground font-bold">{userData?.email || 'artiateech@gmail.com'}</Button></a>
           </CardContent>
         </Card>
 

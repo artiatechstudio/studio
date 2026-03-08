@@ -15,7 +15,6 @@ import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
 
@@ -80,7 +79,7 @@ export default function ProfilePage() {
     return "مبتدئ طموح 🌱";
   };
 
-  const isAvatarUrl = userData.avatar && typeof userData.avatar === 'string' && userData.avatar.startsWith('http');
+  const isImageAvatar = userData.avatar && (userData.avatar.startsWith('http') || userData.avatar.startsWith('data:image'));
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-64 pt-4 md:pt-0" dir="rtl">
@@ -88,8 +87,8 @@ export default function ProfilePage() {
       <div className="max-w-5xl mx-auto p-4 md:p-12 space-y-8">
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-8 rounded-[2.5rem] shadow-xl border border-border">
           <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-secondary shadow-lg bg-white flex items-center justify-center shrink-0 overflow-hidden rounded-[2.5rem]">
-            {isAvatarUrl ? (
-              <Image src={userData.avatar} alt="Profile" width={150} height={150} className="object-cover w-full h-full" unoptimized />
+            {isImageAvatar ? (
+              <img src={userData.avatar} alt="Profile" className="object-cover w-full h-full" />
             ) : (
               <span className="text-6xl md:text-7xl">{userData.avatar || "🐱"}</span>
             )}
@@ -161,57 +160,12 @@ export default function ProfilePage() {
                     )}>
                       {badge.name}
                     </p>
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 w-32 p-2 bg-slate-900 text-white rounded-lg text-[8px] font-bold text-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-                      {badge.description}
-                      {!isEarned && <p className="text-accent mt-1">لم يُنجز بعد 🔒</p>}
-                    </div>
                   </div>
                 );
               })}
             </div>
           </Card>
         </section>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className="rounded-[2.5rem] bg-card p-8 border border-border shadow-xl flex flex-col items-center justify-center text-center gap-4">
-             <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center text-accent">
-               <Users size={36} />
-             </div>
-             <div className="space-y-1">
-               <h3 className="font-black text-primary text-lg">شارك التطبيق مع أصدقائك</h3>
-               <p className="text-[10px] text-muted-foreground font-bold">ساعد الآخرين على بدء رحلة نموهم في كارينجو!</p>
-             </div>
-             <Dialog open={showQr} onOpenChange={setShowQr}>
-               <DialogTrigger asChild>
-                 <Button className="w-full h-12 rounded-2xl bg-accent hover:bg-accent/90 font-black gap-2">
-                   <QrCode size={18} /> إظهار رمز المشاركة
-                 </Button>
-               </DialogTrigger>
-               <DialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
-                 <DialogHeader><DialogTitle className="text-2xl font-black text-primary">تحميل تطبيق Careingo</DialogTitle></DialogHeader>
-                 <div className="flex flex-col items-center gap-6 mt-4">
-                   <div className="bg-white p-4 rounded-3xl border-4 border-accent shadow-inner">
-                      <Image src="/qr.png" alt="App QR" width={200} height={200} className="object-contain" />
-                   </div>
-                   <p className="text-xs font-bold text-muted-foreground">امسح المركز لمشاركة التطبيق مع من تحب 🐱</p>
-                   <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-xl font-black">إغلاق</Button>
-                 </div>
-               </DialogContent>
-             </Dialog>
-          </Card>
-
-          <Card className="rounded-[2.5rem] bg-primary text-white p-8 border-none shadow-xl flex flex-col items-center justify-center text-center gap-4 overflow-hidden relative">
-             <Sparkles className="absolute -top-4 -left-4 opacity-20" size={100} />
-             <Trophy size={48} className="relative z-10" />
-             <div className="relative z-10">
-               <h3 className="font-black text-xl">طريق الأساطير</h3>
-               <p className="text-[10px] font-bold opacity-80 mt-1">أكمل كافة المسارات لتحصل على الوسام الماسي 💠</p>
-             </div>
-             <Link href="/streak" className="w-full relative z-10">
-               <Button className="w-full h-12 rounded-2xl bg-white text-primary hover:bg-white/90 font-black">سجل الحماسة</Button>
-             </Link>
-          </Card>
-        </div>
       </div>
     </div>
   );

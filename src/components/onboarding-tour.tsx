@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { Mascot } from './mascot';
 import { useUser, useFirebase } from '@/firebase';
 import { ref, update } from 'firebase/database';
-import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Settings, ShieldAlert, Trash2, Smartphone, Download, Share2, HelpCircle, PhoneCall } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Settings, ShieldAlert, Trash2, Smartphone, Download, Share2, HelpCircle, PhoneCall, Milestone } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -41,6 +41,12 @@ const TOUR_STEPS = [
     content: "نبض التزامك! كل يوم تنجز فيه أي مهمة تزداد حماستك. إذا غبت يوماً واحداً سيفقد العداد حرارته ويعود للصفر.. لا تستسلم أبداً!",
     icon: Crown,
     color: "text-orange-500"
+  },
+  {
+    title: "نظام الرتب (Ranks) 🎖️",
+    content: "ارتقِ بمكانتك! تبدأ كـ 'مكتشف جديد' وتصل إلى 'الأسطورة' بجمع النقاط. كل رتبة تمنحك هيبة أكبر وتظهر بجانب اسمك في كل مكان.",
+    icon: Milestone,
+    color: "text-blue-600"
   },
   {
     title: "قائمة العظماء 🏆",
@@ -88,7 +94,7 @@ const TOUR_STEPS = [
     title: "التثبيت على iPhone 🍎",
     content: "من متصفح Safari، اضغط على زر 'مشاركة' (Share) في الأسفل، ثم مرر واختر 'إضافة للشاشة الرئيسية' (Add to Home Screen).",
     icon: Share2,
-    color: "text-slate-800"
+    color: "text-primary"
   },
   {
     title: "جاهز للانطلاق؟ 🚀",

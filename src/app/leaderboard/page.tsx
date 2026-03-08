@@ -218,7 +218,7 @@ export default function LeaderboardPage() {
                   </div>
                 );
               }) : (
-                <div className="p-10 text-center text-red-300 font-bold text-[10px]">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>
+                <div className="p-10 text-center text-red-500 font-black text-xs italic">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>
               )}
             </div>
             <div className="bg-red-100 p-2 text-center">

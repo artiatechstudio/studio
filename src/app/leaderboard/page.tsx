@@ -116,7 +116,7 @@ export default function LeaderboardPage() {
             </div>
             <div className="divide-y divide-border">
               {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => {
-                const isAvatarUrl = user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('http');
+                const isImageAvatar = user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:image'));
                 const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div 
@@ -142,8 +142,8 @@ export default function LeaderboardPage() {
                       
                       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
                         <div className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white rounded-full hover:scale-105 transition-transform overflow-hidden relative">
-                          {isAvatarUrl ? (
-                            <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full" unoptimized />
+                          {isImageAvatar ? (
+                            <img src={user.avatar} alt={user.name} className="object-cover w-full h-full" />
                           ) : (
                             <span className="text-xl">{user.avatar || "🐱"}</span>
                           )}
@@ -188,7 +188,7 @@ export default function LeaderboardPage() {
             </div>
             <div className="p-4 space-y-3">
               {stats.losers.length > 0 ? stats.losers.map((user: any) => {
-                const isAvatarUrl = user.avatar && typeof user.avatar === 'string' && user.avatar.startsWith('http');
+                const isImageAvatar = user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:image'));
                 const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
@@ -200,8 +200,8 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-3 flex-row-reverse">
                       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
                         <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden relative border border-border">
-                          {isAvatarUrl ? (
-                            <Image src={user.avatar} alt={user.name} width={40} height={40} className="object-cover w-full h-full opacity-50" unoptimized />
+                          {isImageAvatar ? (
+                            <img src={user.avatar} alt={user.name} className="object-cover w-full h-full opacity-50" />
                           ) : (
                             <span className="opacity-50">{user.avatar || "🐱"}</span>
                           )}

@@ -17,6 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
+import Image from 'next/image';
 
 export default function ProfilePage() {
   const { user, isUserLoading } = useUser();
@@ -119,8 +120,37 @@ export default function ProfilePage() {
           </div>
 
           <div className="flex gap-2">
+            <Dialog open={showQr} onOpenChange={setShowQr}>
+              <DialogTrigger asChild>
+                <Button onClick={() => playSound('click')} variant="outline" size="icon" className="rounded-2xl border-2 border-primary text-primary h-12 w-12 hover:bg-primary/5">
+                  <QrCode size={20} />
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[3rem] p-10 text-center max-w-sm" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black text-primary text-center">رمز QR الخاص بك</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col items-center gap-6 mt-4">
+                  <div className="w-64 h-64 bg-white p-4 rounded-[2rem] shadow-inner border-4 border-primary/10 relative overflow-hidden flex items-center justify-center">
+                    <Image 
+                      src="/qr.png" 
+                      alt="QR Code" 
+                      width={256} 
+                      height={256} 
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
+                  <p className="text-xs font-bold text-muted-foreground leading-relaxed text-center px-4">
+                    امسح الرمز ضوئياً لمشاركة ملفك الشخصي مع أصدقائك في مجتمع كارينجو! 🐱✨
+                  </p>
+                  <Button onClick={() => setShowQr(false)} className="w-full h-12 rounded-xl font-black bg-primary">إغلاق</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+
             <Link href="/settings">
-              <Button variant="outline" size="icon" className="rounded-2xl border-2 border-primary text-primary h-12 w-12 hover:bg-primary/5">
+              <Button onClick={() => playSound('click')} variant="outline" size="icon" className="rounded-2xl border-2 border-primary text-primary h-12 w-12 hover:bg-primary/5">
                 <SettingsIcon size={20} />
               </Button>
             </Link>

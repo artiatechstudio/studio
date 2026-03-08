@@ -15,7 +15,7 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setMounted(true);
 
-    // تسجيل الـ Service Worker
+    // تسجيل الـ Service Worker لضمان استقرار الـ PWA
     if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').then(
@@ -23,7 +23,7 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
             console.log('ServiceWorker registration successful with scope: ', registration.scope);
           },
           (err) => {
-            console.log('ServiceWorker registration failed: ', err);
+            console.error('ServiceWorker registration failed: ', err);
           }
         );
       });

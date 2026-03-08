@@ -8,6 +8,7 @@ import { ref, runTransaction, push, serverTimestamp } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Trophy, Flame, Heart, ArrowLeft, Star, HeartPulse, User as UserIcon, Crown, Medal, Lock } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
@@ -168,16 +169,26 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           
           <Card className="rounded-[2rem] bg-card p-5 border border-border shadow-lg">
             {earnedBadges.length > 0 ? (
-              <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
-                {earnedBadges.map((badge) => (
-                  <div key={badge.id} className="flex flex-col items-center group relative">
-                    <div className="w-12 h-12 rounded-xl bg-white border border-primary/10 shadow-sm flex items-center justify-center text-2xl hover:scale-110 transition-transform">
-                      {badge.icon}
-                    </div>
-                    <p className="text-[7px] font-black text-primary mt-1 text-center">{badge.name}</p>
-                  </div>
-                ))}
-              </div>
+              <TooltipProvider>
+                <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+                  {earnedBadges.map((badge) => (
+                    <Tooltip key={badge.id}>
+                      <TooltipTrigger asChild>
+                        <div className="flex flex-col items-center group relative cursor-help">
+                          <div className="w-12 h-12 rounded-xl bg-white border border-primary/10 shadow-sm flex items-center justify-center text-2xl hover:scale-110 transition-transform">
+                            {badge.icon}
+                          </div>
+                          <p className="text-[7px] font-black text-primary mt-1 text-center">{badge.name}</p>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-card border border-border text-primary p-3 rounded-2xl shadow-xl max-w-[200px] text-right" dir="rtl">
+                        <p className="font-black text-xs mb-1">{badge.name}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ))}
+                </div>
+              </TooltipProvider>
             ) : (
               <div className="py-8 text-center space-y-2 opacity-30">
                 <Lock size={32} className="mx-auto" />

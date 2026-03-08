@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles, Users, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
@@ -171,29 +172,40 @@ export default function ProfilePage() {
           </div>
           
           <Card className="rounded-[2.5rem] bg-card p-6 border border-border shadow-xl">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-              {ALL_ACHIEVEMENTS.map((badge) => {
-                const isEarned = badge.criteria(userData);
-                return (
-                  <div key={badge.id} className="group relative flex flex-col items-center">
-                    <div className={cn(
-                      "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-500 shadow-md border",
-                      isEarned 
-                        ? "bg-white border-primary/20 scale-100 rotate-0" 
-                        : "bg-secondary/20 border-transparent opacity-20 grayscale scale-90"
-                    )}>
-                      {isEarned ? badge.icon : <Lock className="w-6 h-6 text-muted-foreground" />}
-                    </div>
-                    <p className={cn(
-                      "text-[7px] font-black text-center mt-1 transition-opacity",
-                      isEarned ? "text-primary opacity-100" : "text-muted-foreground opacity-40"
-                    )}>
-                      {badge.name}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
+            <TooltipProvider>
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
+                {ALL_ACHIEVEMENTS.map((badge) => {
+                  const isEarned = badge.criteria(userData);
+                  return (
+                    <Tooltip key={badge.id}>
+                      <TooltipTrigger asChild>
+                        <div className="group relative flex flex-col items-center cursor-help">
+                          <div className={cn(
+                            "w-12 h-12 md:w-16 md:h-16 rounded-2xl flex items-center justify-center text-2xl md:text-3xl transition-all duration-500 shadow-md border",
+                            isEarned 
+                              ? "bg-white border-primary/20 scale-100 rotate-0" 
+                              : "bg-secondary/20 border-transparent opacity-20 grayscale scale-90"
+                          )}>
+                            {isEarned ? badge.icon : <Lock className="w-6 h-6 text-muted-foreground" />}
+                          </div>
+                          <p className={cn(
+                            "text-[7px] font-black text-center mt-1 transition-opacity",
+                            isEarned ? "text-primary opacity-100" : "text-muted-foreground opacity-40"
+                          )}>
+                            {badge.name}
+                          </p>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-card border border-border text-primary p-3 rounded-2xl shadow-xl max-w-[200px] text-right" dir="rtl">
+                        <p className="font-black text-xs mb-1">{badge.name}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                        {!isEarned && <p className="text-[8px] text-destructive mt-2 font-black italic">لم يتم إحراز هذا الوسام بعد 🔒</p>}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                })}
+              </div>
+            </TooltipProvider>
           </Card>
         </section>
       </div>

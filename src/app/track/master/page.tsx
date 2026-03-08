@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -6,7 +5,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock, Trophy, XCircle } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, AlertTriangle, Crown, Infinity, Clock, Trophy, XCircle, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -112,6 +111,13 @@ export default function MasterTrackPage() {
 
   const handleCompleteChallenge = async () => {
     if (!user || !currentChallenge || !userData) return;
+
+    // التحقق من القفل الزمني
+    if (currentChallenge.isTimeLocked && timeLeft > 0) {
+      toast({ variant: "destructive", title: "مهمة زمنية ⏳", description: "يجب إكمال الوقت المخصص لهذه المهمة بالكامل." });
+      return;
+    }
+
     playSound('success');
     
     localStorage.removeItem('master_timer_end');
@@ -140,7 +146,6 @@ export default function MasterTrackPage() {
     if (!user) return;
     playSound('click');
     
-    // عقوبة الانسحاب: خصم 75 نقطة
     try {
       const userRef = ref(database, `users/${user.uid}`);
       const snap = await get(userRef);
@@ -223,6 +228,8 @@ export default function MasterTrackPage() {
     const sec = s % 60;
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
+
+  const isButtonLocked = currentChallenge?.isTimeLocked && timerActive && timeLeft > 0;
 
   function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
     const [display, setDisplay] = useState("");
@@ -322,7 +329,10 @@ export default function MasterTrackPage() {
                 <CardTitle className="text-lg font-black leading-tight flex-1 text-right whitespace-normal">
                   {currentChallenge.title}
                 </CardTitle>
-                <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{currentChallenge.difficulty}</span>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{currentChallenge.difficulty}</span>
+                  {currentChallenge.isTimeLocked && <span className="bg-red-500/40 px-1.5 py-0.5 rounded-md text-[7px] font-black flex items-center gap-0.5"><Lock size={8}/> مقفلة</span>}
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
@@ -334,8 +344,15 @@ export default function MasterTrackPage() {
               </div>
 
               <div className="flex flex-col gap-2">
-                <Button onClick={handleCompleteChallenge} className="h-14 rounded-2xl bg-accent text-lg font-black shadow-lg">
-                  أنهيت المهمة 🔥
+                <Button 
+                  onClick={handleCompleteChallenge} 
+                  disabled={isButtonLocked}
+                  className={cn(
+                    "h-14 rounded-2xl text-lg font-black shadow-lg transition-all",
+                    isButtonLocked ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
+                  )}
+                >
+                  {isButtonLocked ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
                 </Button>
                 <Button onClick={handleCancelChallenge} variant="ghost" className="text-destructive font-black text-xs h-10 gap-2">
                   <XCircle size={16} /> إلغاء التحدي (خصم 75ن)

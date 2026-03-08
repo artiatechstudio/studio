@@ -1,17 +1,17 @@
-
 "use client"
 
 import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal, XCircle, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal, XCircle, AlertTriangle, Lock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, get, push, serverTimestamp } from 'firebase/database';
 import { playSound } from '@/lib/sounds';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 export default function StageDetailPage({ params }: { params: Promise<{ type: string, stageId: string }> }) {
   const resolvedParams = use(params);
@@ -112,7 +112,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     if (!user) return;
     playSound('click');
     
-    // عقوبة الانسحاب: خصم 75 نقطة
     try {
       const userRef = ref(database, `users/${user.uid}`);
       const snap = await get(userRef);
@@ -141,6 +140,13 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
   const handleComplete = useCallback(async () => {
     if (!user || !database || isUpdating || completed || onCooldown) return;
+    
+    // التحقق من القفل الزمني
+    if (challenge.isTimeLocked && timeLeft > 0) {
+      toast({ variant: "destructive", title: "مهمة زمنية ⏳", description: "يجب إكمال الوقت المخصص لهذه المهمة بالكامل." });
+      return;
+    }
+
     setIsUpdating(true);
     playSound('click');
     
@@ -175,7 +181,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
 
       const newBadges = [...(userData.badges || [])];
       
-      // منح الأوسمة بناءً على التقدم
       if (completedStages.length === 1 && !newBadges.includes("أول خطوة 🐾")) newBadges.push("أول خطوة 🐾");
       if (completedStages.length === 5 && !newBadges.includes("المنضبط الصغير 🐣")) newBadges.push("المنضبط الصغير 🐣");
       if (completedStages.length === 15 && !newBadges.includes("المكافح ⚔️")) newBadges.push("المكافح ⚔️");
@@ -222,13 +227,15 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     } finally {
       setIsUpdating(false);
     }
-  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus, challenge]);
+  }, [user, database, isUpdating, completed, progressData, trackKey, stageId, onCooldown, calculateBonus, challenge, timeLeft]);
 
   const formatTime = (s: number) => {
     const m = Math.floor(s / 60);
     const sec = s % 60;
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
+
+  const isButtonLocked = challenge.isTimeLocked && timerActive && timeLeft > 0;
 
   if (onCooldown) {
     return (
@@ -253,7 +260,10 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         </div>
 
         <header className="text-right space-y-1">
-          <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black inline-block uppercase tracking-wider">المستوى {stageId}</div>
+          <div className="flex items-center justify-end gap-2">
+            {challenge.isTimeLocked && <div className="px-2 py-0.5 bg-red-100 text-red-600 rounded-lg text-[8px] font-black flex items-center gap-1 border border-red-200 shadow-sm"><Lock size={10} /> التزام زمني كامل</div>}
+            <div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black inline-block uppercase tracking-wider">المستوى {stageId}</div>
+          </div>
           <h1 className="text-2xl font-black text-primary leading-tight">{challenge.title}</h1>
         </header>
 
@@ -279,8 +289,15 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                       <p className="text-6xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
                     </div>
                     <div className="flex flex-col gap-3">
-                      <Button onClick={handleComplete} disabled={isUpdating} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">
-                        أنهيت المهمة 🔥
+                      <Button 
+                        onClick={handleComplete} 
+                        disabled={isUpdating || isButtonLocked} 
+                        className={cn(
+                          "w-full h-16 rounded-2xl text-xl font-black shadow-xl transition-all",
+                          isButtonLocked ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
+                        )}
+                      >
+                        {isButtonLocked ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
                       </Button>
                       <Button onClick={handleCancelTimer} variant="ghost" className="text-destructive font-black gap-2">
                         <XCircle size={18} /> إلغاء التحدي (خصم 75ن)

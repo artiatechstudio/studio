@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { Mascot } from './mascot';
 import { useUser, useFirebase } from '@/firebase';
 import { ref, update } from 'firebase/database';
-import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Settings, ShieldAlert, Trash2, Smartphone, Download, Share2, HelpCircle, PhoneCall, Milestone } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Settings, ShieldAlert, Trash2, Smartphone, Download, Share2, HelpCircle, PhoneCall, Milestone, MousePointer2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 
@@ -79,19 +79,19 @@ const TOUR_STEPS = [
     color: "text-destructive"
   },
   {
-    title: "تطبيق ويب تقدمي (PWA) 📱",
-    content: "كارينجو هو تطبيق ويب متطور! يمكنك تثبيته على شاشتك الرئيسية ليعمل كأي تطبيق أصلي وبسرعة البرق.",
+    title: "سهولة الوصول للويب 📱",
+    content: "كارينجو هو تطبيق ويب متطور يعمل مباشرة عبر متصفح هاتفك. يمكنك إضافة اختصار له على شاشتك الرئيسية ليكون متاحاً بلمسة واحدة.",
     icon: Smartphone,
     color: "text-primary"
   },
   {
-    title: "التثبيت على Android 🤖",
-    content: "من متصفح Chrome، اضغط على النقاط الثلاث (⋮) في الأعلى، ثم اختر 'تثبيت التطبيق' (Install App) ليظهر في قائمة تطبيقاتك.",
+    title: "اختصار على أندرويد 🤖",
+    content: "من متصفح Chrome، اضغط على النقاط الثلاث (⋮) في الأعلى، ثم اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home screen).",
     icon: Download,
     color: "text-green-600"
   },
   {
-    title: "التثبيت على iPhone 🍎",
+    title: "اختصار على آيفون 🍎",
     content: "من متصفح Safari، اضغط على زر 'مشاركة' (Share) في الأسفل، ثم مرر واختر 'إضافة للشاشة الرئيسية' (Add to Home Screen).",
     icon: Share2,
     color: "text-primary"

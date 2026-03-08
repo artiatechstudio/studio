@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -45,8 +46,12 @@ export default function RootLayout({
           __html: `
             (function() {
               try {
-                const theme = localStorage.getItem('theme') || 'light';
-                if (theme === 'dark') {
+                // فرض الوضع النهاري كوضع افتراضي دائم عند التشغيل الأول
+                const savedTheme = localStorage.getItem('theme');
+                if (!savedTheme) {
+                  localStorage.setItem('theme', 'light');
+                  document.documentElement.classList.remove('dark');
+                } else if (savedTheme === 'dark') {
                   document.documentElement.classList.add('dark');
                 } else {
                   document.documentElement.classList.remove('dark');

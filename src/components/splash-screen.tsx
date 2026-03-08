@@ -3,19 +3,16 @@
 
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { playSound } from '@/lib/sounds';
 
 /**
  * مكون شاشة الترحيب (Splash Screen)
- * تم استخدام mounted state لمنع خطأ Hydration في الروابط الخارجية.
+ * تم إيقاف تشغيل الصوت التلقائي لمنع انهيار التطبيق في وضع PWA Standalone.
  */
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    // تشغيل الصوت الافتتاحي فوراً
-    playSound('startup');
     
     const timer = setTimeout(() => {
       onComplete();

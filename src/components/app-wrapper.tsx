@@ -6,7 +6,7 @@ import { SplashScreen } from './splash-screen';
 
 /**
  * مكون غلاف التطبيق (App Wrapper)
- * يضمن تشغيل شاشة الترحيب أولاً ويمنع خطأ Hydration عبر التأكد من Mount.
+ * يقوم بتسجيل Service Worker لضمان استقرار تطبيق PWA ومنع إغلاقه المفاجئ.
  */
 export function AppWrapper({ children }: { children: React.ReactNode }) {
   const [isReady, setIsReady] = useState(false);
@@ -14,6 +14,20 @@ export function AppWrapper({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     setMounted(true);
+
+    // تسجيل الـ Service Worker
+    if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(
+          (registration) => {
+            console.log('ServiceWorker registration successful with scope: ', registration.scope);
+          },
+          (err) => {
+            console.log('ServiceWorker registration failed: ', err);
+          }
+        );
+      });
+    }
   }, []);
 
   if (!mounted) return null;

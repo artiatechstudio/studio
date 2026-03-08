@@ -1,4 +1,3 @@
-
 export type TrackKey = 'Fitness' | 'Nutrition' | 'Behavior' | 'Study';
 
 export interface Challenge {
@@ -86,7 +85,7 @@ const nutritionChallenges: Challenge[] = [
 
 const behaviorChallenges: Challenge[] = [
   { title: "اليوم 1: وعي التنفس", description: "5 دقائق تنفس هادئ.", time: 5, difficulty: 'سهل', points: getPoints('سهل') },
-  { title: "اليوم 2: الامتتاح", description: "اكتب 5 أشياء ممتن لها.", time: 10, difficulty: 'سهل', points: getPoints('سهل') },
+  { title: "اليوم 2: الامتنان", description: "اكتب 5 أشياء ممتن لها.", time: 10, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 3: ديتوكس شاشات", description: "بدون هاتف قبل النوم بساعة.", time: 60, difficulty: 'متوسط', points: getPoints('متوسط') },
   { title: "اليوم 4: كلمة طيبة", description: "قدم مجاملة صادقة لشخص.", time: 2, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 5: ترتيب البيئة", description: "رتب ركناً واحداً في غرفتك.", time: 15, difficulty: 'سهل', points: getPoints('سهل') },

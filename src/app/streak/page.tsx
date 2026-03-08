@@ -166,7 +166,7 @@ export default function StreakPage() {
             await navigator.share({
               files: [file],
               title: 'إنجازي في كاري 🐱✨',
-              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو: https://www.artiatechstudio.com.ly/2026/03/careingo.html`
+              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو: https://app.artiatechstudio.com.ly`
             });
             
             // تحديث عداد المشاركة الشهري
@@ -268,7 +268,7 @@ export default function StreakPage() {
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1 text-right">
               <h1 className="text-3xl font-black">سجل الحماسة</h1>
-              <p className="text-xs font-bold opacity-80 flex items-center justify-end gap-1">تواصل، تحدى، تطور <TrendingUp size={14} /></p>
+              <p className="text-xs font-bold opacity-80 flex items-center justify-end gap-1">Careingo | تواصل، تحدى، تطور <TrendingUp size={14} /></p>
             </div>
             <div className="flex gap-3">
               <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl text-center border border-white/20">

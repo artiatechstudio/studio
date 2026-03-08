@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   title: 'Careingo | تواصل، تحدى، تطور',
   description: 'كارينجو هي منصتك التفاعلية للنمو الشخصي: تواصل مع المجتمع، تحدى نفسك في مسارات متنوعة، وتطور يومياً.',
   manifest: '/manifest.json',
+  metadataBase: new URL('https://app.artiatechstudio.com.ly'),
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',

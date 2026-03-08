@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, set, runTransaction, remove } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, set, remove, runTransaction } from 'firebase/database';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, ArrowLeft, Heart, Crown, Trash2 } from 'lucide-react';
@@ -125,6 +125,8 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
 
   const isLikedByMe = otherUserData?.likedBy?.[user?.uid || ''];
   const otherIsPremium = otherUserData?.isPremium === 1 || otherUserData?.name === 'admin';
+  const otherAvatar = otherUserData?.avatar;
+  const isImageAvatar = otherAvatar?.startsWith('data:image') || otherAvatar?.startsWith('http');
 
   return (
     <div className="min-h-screen bg-background md:pr-72 flex flex-col overflow-hidden" dir="rtl">
@@ -134,10 +136,10 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
         <div className="flex items-center gap-4">
           <Link href={`/user/${otherId}`} onClick={() => playSound('click')} className="shrink-0">
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border hover:scale-110 transition-transform shadow-sm overflow-hidden">
-              {otherUserData?.avatar?.startsWith('http') ? (
-                <img src={otherUserData.avatar} alt={otherUserData.name} className="w-full h-full object-cover" />
+              {isImageAvatar ? (
+                <img src={otherAvatar} alt={otherUserData.name} className="w-full h-full object-cover" />
               ) : (
-                <span>{otherUserData?.avatar || "🐱"}</span>
+                <span>{otherAvatar || "🐱"}</span>
               )}
             </div>
           </Link>

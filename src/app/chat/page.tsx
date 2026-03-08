@@ -152,16 +152,17 @@ export default function ChatListPage() {
 
 function UserChatListItem({ user, unreadCount }: { user: any, unreadCount: number }) {
   const isPremium = user.isPremium === 1 || user.name === 'admin';
-  const isAvatarUrl = user.avatar && user.avatar.startsWith('http');
+  const avatar = user.avatar;
+  const isImageAvatar = avatar?.startsWith('data:image') || avatar?.startsWith('http');
 
   return (
     <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
         <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm hover:scale-110 transition-transform overflow-hidden relative">
-          {isAvatarUrl ? (
-            <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+          {isImageAvatar ? (
+            <img src={avatar} alt={user.name} className="w-full h-full object-cover" />
           ) : (
-            <span>{user.avatar || "🐱"}</span>
+            <span>{avatar || "🐱"}</span>
           )}
         </div>
       </Link>

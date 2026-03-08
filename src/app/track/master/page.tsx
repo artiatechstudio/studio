@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp } from 'firebase/database';
+import { ref, update, push, serverTimestamp, get } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -81,7 +81,10 @@ export default function MasterTrackPage() {
 
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
-    if (pool.length === 0) return;
+    if (pool.length === 0) {
+      toast({ title: "لا يوجد تحديات حالياً بهذا التصنيف" });
+      return;
+    }
     
     if (!isPremium && masterCountToday >= 5) {
       toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لتحديات غير محدودة! 👑" });
@@ -133,28 +136,48 @@ export default function MasterTrackPage() {
     setTimerActive(false);
   };
 
-  const handleCancelChallenge = () => {
+  const handleCancelChallenge = async () => {
+    if (!user) return;
     playSound('click');
-    setStep('setup');
-    localStorage.removeItem('master_timer_end');
-    localStorage.removeItem('master_current_challenge');
-    setTimerActive(false);
-    toast({ title: "تم إلغاء التحدي" });
+    
+    // عقوبة الانسحاب: خصم 75 نقطة
+    try {
+      const userRef = ref(database, `users/${user.uid}`);
+      const snap = await get(userRef);
+      const data = snap.val();
+      const todayStr = new Date().toLocaleDateString('en-CA');
+
+      await update(userRef, {
+        points: Math.max(0, (data.points || 0) - 75),
+        [`dailyPoints/${todayStr}`]: Math.max(0, (data.dailyPoints?.[todayStr] || 0) - 75)
+      });
+
+      setStep('setup');
+      localStorage.removeItem('master_timer_end');
+      localStorage.removeItem('master_current_challenge');
+      setTimerActive(false);
+      
+      toast({ 
+        variant: "destructive", 
+        title: "تم الانسحاب 🛑", 
+        description: "تم خصم 75 نقطة من رصيدك لعقوبة إلغاء المهمة." 
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
+    // ... (نفس المنطق السابق لقائمة المهام)
     e.preventDefault();
     if (!todoInput.trim() || !user) return;
-
     if (!isPremium && todoCountToday >= 5) {
       toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لمهام لا نهائية! 👑" });
       return;
     }
-
     playSound('click');
     const now = Date.now();
     let expiryTime: number;
-
     if (todoMinutes && parseInt(todoMinutes) > 0) {
       expiryTime = now + (parseInt(todoMinutes) * 60 * 1000);
     } else {
@@ -162,7 +185,6 @@ export default function MasterTrackPage() {
       midnight.setHours(23, 59, 59, 999);
       expiryTime = midnight.getTime();
     }
-
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
     update(newTodoRef, {
       id: newTodoRef.key,
@@ -172,11 +194,9 @@ export default function MasterTrackPage() {
       expiry: expiryTime,
       hasCustomTimer: !!(todoMinutes && parseInt(todoMinutes) > 0)
     });
-
     update(ref(database, `users/${user.uid}`), {
       [`dailyTodoCount/${today}`]: todoCountToday + 1
     });
-
     setTodoInput('');
     setTodoMinutes('');
   };
@@ -185,33 +205,17 @@ export default function MasterTrackPage() {
     if (!user || completingId || !userData) return;
     playSound('click');
     setCompletingId(todo.id);
-    
     const now = Date.now();
     const isExpired = todo.expiry <= now;
     const pointsToAdd = isExpired ? 0 : 5;
-
-    const currentPoints = userData.points || 0;
-    const dailyPoints = userData.dailyPoints?.[today] || 0;
-
     const updates: any = {};
-    updates[`users/${user.uid}/points`] = currentPoints + pointsToAdd;
-    updates[`users/${user.uid}/dailyPoints/${today}`] = dailyPoints + pointsToAdd;
+    updates[`users/${user.uid}/points`] = (userData.points || 0) + pointsToAdd;
+    updates[`users/${user.uid}/dailyPoints/${today}`] = (userData.dailyPoints?.[today] || 0) + pointsToAdd;
     updates[`users/${user.uid}/todos/${todo.id}`] = null;
-
     setTimeout(async () => {
-      try {
-        await update(ref(database), updates);
-        if (pointsToAdd > 0) {
-          toast({ title: "أحسنت في الوقت! +5 نقاط 🌟" });
-          playSound('success');
-        } else {
-          toast({ title: "تم الإنجاز (متأخر) - 0 نقطة", variant: "default" });
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setCompletingId(null);
-      }
+      await update(ref(database), updates);
+      if (pointsToAdd > 0) { toast({ title: "أحسنت في الوقت! +5 نقاط 🌟" }); playSound('success'); }
+      setCompletingId(null);
     }, 800);
   };
 
@@ -224,33 +228,20 @@ export default function MasterTrackPage() {
   function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
     const [display, setDisplay] = useState("");
     const [isExpired, setIsExpired] = useState(false);
-
     useEffect(() => {
       const itv = setInterval(() => {
         const diff = expiry - Date.now();
-        if (diff <= 0) {
-          setDisplay("منتهي (0 نقطة)");
-          setIsExpired(true);
-        } else {
+        if (diff <= 0) { setDisplay("منتهي (0 نقطة)"); setIsExpired(true); } else {
           const h = Math.floor(diff / (1000 * 60 * 60));
           const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
           const s = Math.floor((diff % (1000 * 60)) / 1000);
-          if (!hasCustomTimer) {
-            setDisplay("حتى منتصف الليل");
-          } else {
-            setDisplay(`${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
-          }
+          setDisplay(!hasCustomTimer ? "حتى منتصف الليل" : `${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
           setIsExpired(false);
         }
       }, 1000);
       return () => clearInterval(itv);
     }, [expiry, hasCustomTimer]);
-
-    return (
-      <span className={cn("text-[8px] font-black flex items-center gap-1", isExpired ? "text-red-500" : "text-orange-500")}>
-        <Clock size={8}/> {display}
-      </span>
-    );
+    return ( <span className={cn("text-[8px] font-black flex items-center gap-1", isExpired ? "text-red-500" : "text-orange-500")}> <Clock size={8}/> {display} </span> );
   }
 
   return (
@@ -276,13 +267,6 @@ export default function MasterTrackPage() {
             </Button>
           </Link>
         </header>
-
-        {isPremium && (
-          <div className="mx-2 bg-yellow-50 border border-yellow-200 p-3 rounded-2xl flex items-center gap-3 shadow-sm">
-            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center text-yellow-600"><Trophy size={16}/></div>
-            <p className="text-[9px] font-black text-yellow-800">ميزة بريميوم: نقاطك في هذا المسار مضاعفة (2x) دائماً! 🔥</p>
-          </div>
-        )}
 
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden mx-2">
@@ -337,7 +321,7 @@ export default function MasterTrackPage() {
             <CardHeader className="bg-primary text-white p-5">
               <div className="flex items-center justify-between flex-row-reverse gap-4">
                 <CardTitle className="text-lg font-black leading-tight flex-1 text-right whitespace-normal">
-                  {currentChallenge.title.replace(/^اليوم\s+\d+:\s*/, '')}
+                  {currentChallenge.title}
                 </CardTitle>
                 <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black shrink-0">{currentChallenge.difficulty}</span>
               </div>
@@ -355,7 +339,7 @@ export default function MasterTrackPage() {
                   أنهيت المهمة 🔥
                 </Button>
                 <Button onClick={handleCancelChallenge} variant="ghost" className="text-destructive font-black text-xs h-10 gap-2">
-                  <XCircle size={16} /> إلغاء التحدي
+                  <XCircle size={16} /> إلغاء التحدي (خصم 75ن)
                 </Button>
               </div>
             </CardContent>
@@ -375,14 +359,10 @@ export default function MasterTrackPage() {
 
         <section className="space-y-4 pt-6 border-t border-border/50">
           <header className="flex items-center justify-between px-3">
-            <h2 className="text-lg font-black text-primary flex items-center gap-2">
-              <ListChecks size={20} /> قائمة مهامي
-            </h2>
-            <div className="flex flex-col items-end">
-              <div className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-lg border border-border/20 mb-1">
-                 <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
-                 {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{Math.max(0, 5 - todoCountToday)}/5</span>}
-              </div>
+            <h2 className="text-lg font-black text-primary flex items-center gap-2"> <ListChecks size={20} /> قائمة مهامي </h2>
+            <div className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-lg border border-border/20">
+               <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
+               {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{Math.max(0, 5 - todoCountToday)}/5</span>}
             </div>
           </header>
           
@@ -394,59 +374,23 @@ export default function MasterTrackPage() {
                   className="flex-1 min-h-[44px] p-2.5 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] focus:ring-2 focus:ring-primary/20 resize-none outline-none overflow-hidden"
                   value={todoInput}
                   onChange={(e) => setTodoInput(e.target.value)}
-                  onInput={(e) => {
-                    (e.target as any).style.height = 'auto';
-                    (e.target as any).style.height = (e.target as any).scrollHeight + 'px';
-                  }}
                 />
-                <Input 
-                  placeholder="د" 
-                  type="number"
-                  className="h-11 w-12 rounded-xl bg-secondary/50 border-none font-bold text-center text-[10px] focus-visible:ring-primary"
-                  value={todoMinutes}
-                  onChange={(e) => setTodoMinutes(e.target.value)}
-                />
-                <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0">
-                  <Plus size={20} />
-                </Button>
+                <Input placeholder="د" type="number" className="h-11 w-12 rounded-xl bg-secondary/50 border-none font-bold text-center text-[10px]" value={todoMinutes} onChange={(e) => setTodoMinutes(e.target.value)} />
+                <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0"> <Plus size={20} /> </Button>
               </div>
-              <p className="text-[7px] font-bold text-muted-foreground pr-2 italic">اترك حقل الوقت فارغاً للإنجاز حتى منتصف الليل 🌙</p>
             </form>
-
             <div className="space-y-2">
-              {todosData ? Object.values(todosData).sort((a:any, b:any) => (b.timestamp || 0) - (a.timestamp || 0)).map((todo: any) => (
-                <div 
-                  key={todo.id} 
-                  className={cn(
-                    "flex items-center justify-between p-3.5 bg-secondary/20 rounded-xl group transition-all duration-700",
-                    completingId === todo.id ? "opacity-0 scale-95 blur-sm" : "opacity-100"
-                  )}
-                >
+              {todosData ? Object.values(todosData).map((todo: any) => (
+                <div key={todo.id} className={cn("flex items-center justify-between p-3.5 bg-secondary/20 rounded-xl", completingId === todo.id && "opacity-0 scale-95 blur-sm transition-all duration-700")}>
                   <div className="flex items-center gap-3 overflow-hidden flex-1">
-                    <button 
-                      onClick={() => handleToggleTodo(todo)}
-                      disabled={!!completingId}
-                      className={cn(
-                        "w-7 h-7 rounded-lg flex items-center justify-center transition-all shrink-0",
-                        completingId === todo.id ? "bg-green-500 text-white" : "bg-white border-2 border-primary/20 text-transparent"
-                      )}
-                    >
-                      <CheckSquare size={16} />
-                    </button>
+                    <button onClick={() => handleToggleTodo(todo)} disabled={!!completingId} className="w-7 h-7 rounded-lg bg-white border-2 border-primary/20" > <CheckSquare size={16} className="text-transparent" /> </button>
                     <div className="flex flex-col text-right overflow-hidden">
-                      <span className="font-bold text-[11px] text-primary break-words leading-tight">
-                        {todo.title}
-                      </span>
+                      <span className="font-bold text-[11px] text-primary break-words leading-tight"> {todo.title} </span>
                       <TodoExpiryTimer expiry={todo.expiry} hasCustomTimer={todo.hasCustomTimer} />
                     </div>
                   </div>
                 </div>
-              )) : (
-                <div className="text-center py-8 opacity-20">
-                  <ListChecks size={32} className="mx-auto mb-2" />
-                  <p className="font-black text-[10px] italic">لا توجد مهام نشطة حالياً.</p>
-                </div>
-              )}
+              )) : ( <div className="text-center py-8 opacity-20"> <ListChecks size={32} className="mx-auto mb-2" /> <p className="font-black text-[10px] italic">لا توجد مهام نشطة حالياً.</p> </div> )}
             </div>
           </Card>
         </section>

@@ -5,7 +5,7 @@ import React, { use, useState, useEffect, useCallback, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Clock, Zap, Trophy, Timer, Medal, XCircle, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { STATIC_CHALLENGES, TrackKey } from '@/lib/challenges';
 import { useFirebase, useUser, useDatabase, useMemoFirebase } from '@/firebase';
@@ -108,13 +108,35 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
     playSound('click');
   };
 
-  const handleCancelTimer = () => {
+  const handleCancelTimer = async () => {
+    if (!user) return;
     playSound('click');
-    setTimerActive(false);
-    setTimeLeft(0);
-    const timerKey = `timer_end_${trackKey}_${stageId}`;
-    localStorage.removeItem(timerKey);
-    toast({ title: "تم إلغاء المهمة", description: "يمكنك البدء من جديد عندما تكون مستعداً." });
+    
+    // عقوبة الانسحاب: خصم 75 نقطة
+    try {
+      const userRef = ref(database, `users/${user.uid}`);
+      const snap = await get(userRef);
+      const userData = snap.val();
+      const todayStr = new Date().toLocaleDateString('en-CA');
+
+      await update(userRef, {
+        points: Math.max(0, (userData.points || 0) - 75),
+        [`dailyPoints/${todayStr}`]: Math.max(0, (userData.dailyPoints?.[todayStr] || 0) - 75)
+      });
+
+      setTimerActive(false);
+      setTimeLeft(0);
+      const timerKey = `timer_end_${trackKey}_${stageId}`;
+      localStorage.removeItem(timerKey);
+      
+      toast({ 
+        variant: "destructive", 
+        title: "تم الانسحاب 🛑", 
+        description: "تم خصم 75 نقطة من رصيدك لعقوبة إلغاء المهمة." 
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const handleComplete = useCallback(async () => {
@@ -261,7 +283,7 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
                         أنهيت المهمة 🔥
                       </Button>
                       <Button onClick={handleCancelTimer} variant="ghost" className="text-destructive font-black gap-2">
-                        <XCircle size={18} /> إلغاء التحدي
+                        <XCircle size={18} /> إلغاء التحدي (خصم 75ن)
                       </Button>
                     </div>
                   </div>

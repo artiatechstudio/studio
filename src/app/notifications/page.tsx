@@ -97,15 +97,11 @@ export default function NotificationsPage() {
             {notifications.map((n) => (
               <Card 
                 key={n.id} 
-                className={cn(
-                  "rounded-3xl border-none shadow-md overflow-hidden transition-all hover:scale-[1.01] cursor-pointer bg-white border-r-8 border-accent"
-                )}
+                className="rounded-3xl border-none shadow-md overflow-hidden transition-all bg-white border-r-8 border-accent"
                 onClick={() => handleDeleteOne(n.id)}
               >
                 <CardContent className="p-5 flex items-start gap-4">
-                  <div className={cn(
-                    "w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner bg-accent/10"
-                  )}>
+                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-accent/10">
                     {getIcon(n.type)}
                   </div>
                   <div className="flex-1 space-y-1 text-right">

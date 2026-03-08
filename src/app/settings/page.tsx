@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, remove } from 'firebase/database';
-import { ref as storageRef, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,7 +41,6 @@ export default function SettingsPage() {
   const [bio, setBio] = useState('');
   const [saving, setSaving] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
 
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -133,45 +132,44 @@ export default function SettingsPage() {
       return;
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 5 ميجابايت." });
+    if (file.size > 2 * 1024 * 1024) {
+      toast({ variant: "destructive", title: "حجم كبير جداً", description: "يرجى اختيار صورة أقل من 2 ميجابايت لضمان سرعة الرفع." });
       return;
     }
 
+    // 1. المعاينة الفورية المحلية
+    const localUrl = URL.createObjectURL(file);
+    const oldAvatar = avatar;
+    setAvatar(localUrl);
+    
     setIsUploading(true);
-    setUploadProgress(0);
     playSound('click');
     
-    const avatarRef = storageRef(storage, `avatars/${user.uid}/profile.jpg`);
-    const uploadTask = uploadBytesResumable(avatarRef, file);
-
-    uploadTask.on('state_changed', 
-      (snapshot) => {
-        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        setUploadProgress(Math.round(progress));
-      }, 
-      (error) => {
-        console.error("Upload error:", error);
-        toast({ variant: "destructive", title: "فشل الرفع", description: "حدث خطأ غير متوقع أثناء الرفع، تأكد من الاتصال وحاول مجدداً." });
-        setIsUploading(false);
-      }, 
-      async () => {
-        try {
-          const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
-          await update(ref(database, `users/${user.uid}`), {
-            avatar: downloadUrl
-          });
-          setAvatar(downloadUrl);
-          toast({ title: "تم الرفع بنجاح! 📸", description: "تم تحديث مظهرك الملكي بنجاح." });
-          playSound('success');
-        } catch (e) {
-          toast({ variant: "destructive", title: "خطأ في التحديث", description: "تم رفع الصورة ولكن فشل تحديث الملف، حاول الحفظ يدوياً." });
-        } finally {
-          setIsUploading(false);
-          setUploadProgress(0);
-        }
-      }
-    );
+    try {
+      const avatarPath = `avatars/${user.uid}/profile.jpg`;
+      const avatarRef = storageRef(storage, avatarPath);
+      
+      // 2. استخدام الرفع المباشر لضمان الاستقرار
+      await uploadBytes(avatarRef, file);
+      
+      // 3. جلب الرابط النهائي
+      const downloadUrl = await getDownloadURL(avatarRef);
+      
+      await update(ref(database, `users/${user.uid}`), {
+        avatar: downloadUrl
+      });
+      
+      setAvatar(downloadUrl);
+      toast({ title: "تم التحديث بنجاح! 📸", description: "تم تغيير مظهرك الملكي بنجاح." });
+      playSound('success');
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      setAvatar(oldAvatar); // العودة للصورة السابقة في حال الفشل
+      toast({ variant: "destructive", title: "فشل الرفع", description: "تأكد من تفعيل خدمة التخزين في لوحة التحكم واتصال الإنترنت." });
+    } finally {
+      setIsUploading(false);
+      URL.revokeObjectURL(localUrl); // تنظيف الرابط المؤقت
+    }
   };
 
   const handleUpdatePassword = async () => {
@@ -245,6 +243,7 @@ export default function SettingsPage() {
 
   const requestStatus = userData?.premiumRequest?.status;
   const isAvatarUrl = avatar && avatar.startsWith('http');
+  const isLocalPreview = avatar && avatar.startsWith('blob:');
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -277,14 +276,11 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* بطاقة البريميوم - تصميم مبسط بدون تشويش */}
         <Card className={cn(
-          "border-none shadow-xl rounded-[2.5rem] text-white overflow-hidden p-8 flex flex-col gap-6 relative mx-2 transition-all duration-500", 
-          userData?.isPremium === 1 ? "bg-gradient-to-br from-yellow-500 via-amber-600 to-yellow-700" : "bg-gradient-to-br from-slate-700 via-slate-800 to-slate-900"
+          "border-none shadow-2xl rounded-[3rem] text-white overflow-hidden p-8 flex flex-col gap-6 relative mx-2 transition-all duration-500", 
+          userData?.isPremium === 1 ? "bg-amber-600" : "bg-slate-800"
         )}>
-          <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-            <Crown size={200} className="absolute -top-10 -left-10 -rotate-12" />
-          </div>
-          
           <div className="relative z-10 flex flex-col gap-2 text-right">
             <div className="flex items-center justify-end gap-3">
               <h2 className="text-2xl font-black">عضوية Careingo المميزة</h2>
@@ -299,7 +295,7 @@ export default function SettingsPage() {
 
           <div className="grid grid-cols-2 gap-3 relative z-10">
             {[{ t: "حصانة الحماسة", i: ShieldCheck }, { t: "تحميل صورة بروفايل شخصية", i: ImageIcon }, { t: "بدون إعلانات", i: Sparkles }, { t: "توثيق ملكي", i: Crown }].map((m, i) => (
-              <div key={i} className="flex items-center gap-2 justify-end bg-white/10 backdrop-blur-sm p-3 rounded-2xl border border-white/20">
+              <div key={i} className="flex items-center gap-2 justify-end bg-black/20 p-3 rounded-2xl">
                 <span className="text-[10px] font-black">{m.t}</span>
                 <m.i size={16} className="text-yellow-300" />
               </div>
@@ -309,14 +305,14 @@ export default function SettingsPage() {
           {userData?.isPremium !== 1 && (
             <div className="relative z-10 pt-2 w-full">
               {requestStatus === 'pending' ? (
-                <div className="w-full h-14 rounded-2xl bg-white/20 backdrop-blur-md border-2 border-white/30 flex items-center justify-center gap-3 animate-pulse shadow-inner px-4">
+                <div className="w-full h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center gap-3 shadow-inner px-4">
                   <Clock size={20} className="text-yellow-300 shrink-0" />
                   <span className="text-xs md:text-sm font-black text-white text-right">طلبك تحت الإجراء حالياً... ⏳</span>
                 </div>
               ) : (
                 <Button 
                   onClick={() => { playSound('click'); setIsRequestOpen(true); }} 
-                  className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-white/90 text-lg font-black shadow-2xl transition-transform hover:scale-[1.02]"
+                  className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-lg font-black shadow-xl"
                 >
                   اطلب اشتراك بريميوم 👑
                 </Button>
@@ -365,17 +361,17 @@ export default function SettingsPage() {
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تعديل المعلومات الشخصية <UserIcon size={20} /></CardTitle></CardHeader>
           <CardContent className="p-6 space-y-8">
             <div className="flex flex-col items-center gap-6">
-               <div className="relative group">
+               <div className="relative">
                  <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 relative">
-                   {isAvatarUrl ? (
-                     <Image src={avatar} alt="Avatar" width={160} height={160} className="object-cover w-full h-full" unoptimized />
+                   { (isAvatarUrl || isLocalPreview) ? (
+                     <img src={avatar} alt="Avatar" className="object-cover w-full h-full" />
                    ) : (
                      <span className="text-7xl md:text-8xl">{avatar}</span>
                    )}
                    {isUploading && (
                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm z-20">
                        <Loader2 className="text-white animate-spin mb-2" size={32} />
-                       <span className="text-white font-black text-xs">{uploadProgress}%</span>
+                       <span className="text-white font-black text-[10px]">جاري الرفع...</span>
                      </div>
                    )}
                  </div>

@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -64,7 +65,7 @@ export default function SafetyResourcePage() {
               </div>
               <div className="bg-white/60 p-6 rounded-2xl border border-red-100">
                 <h5 className="text-red-700 font-black mb-2 flex items-center gap-2">3. آلام المفاصل الحادة: <ShieldCheck size={14}/></h5>
-                <p className="text-sm">سماع صوت "طقطقة" مصحوباً بألم حاد ومفاجئ في الركبة أو الكاحل يعني تمزقاً محتملاً. التوقف هو الخيار الوحيد.</p>
+                <p className="text-sm">سماع صوت "طققة" مصحوباً بألم حاد ومفاجئ في الركبة أو الكاحل يعني تمزقاً محتملاً. التوقف هو الخيار الوحيد.</p>
               </div>
               <div className="bg-white/60 p-6 rounded-2xl border border-red-100">
                 <h5 className="text-red-700 font-black mb-2 flex items-center gap-2">4. ضيق التنفس غير الطبيعي: <ShieldCheck size={14}/></h5>
@@ -119,7 +120,7 @@ export default function SafetyResourcePage() {
         </section>
 
         <footer className="pt-20 opacity-40 font-black text-primary text-xs text-center">
-          جميع الحقوق محفوظة © Artiatech Studio 2026
+          Careingo | تواصل، تحدى، تطور 2026
         </footer>
       </div>
     </div>

@@ -44,7 +44,7 @@ export default function InstructionsPage() {
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-8">
               <div className="space-y-4">
                 <h4 className="font-black text-primary text-lg flex items-center gap-2"><Flame className="text-orange-500" /> عداد الحماسة (Streak)</h4>
-                <p className="text-xs font-bold text-slate-700 leading-relaxed">يزداد عداد الحماسة بمقدار يوم واحد فور إنجازك لأول مهمة في اليوم الجديد. الاستمرارية هي مفتاح الحصول على الأوسمة النادرة في ملفك الشخصي. إذا غبت يوماً كاملاً دون "تجميد حماسة"، سيعود العداد للصفر وسيتم خصم نقاط غياب.</p>
+                <p className="text-xs font-bold text-slate-700 leading-relaxed">يزداد عداد الحماسة بمقدار يوم واحد فور إنجازك لأول مهمة في اليوم الجديد. الاستمرارية هي مفتاح الحصول على الأوسمة النادرة في ملفك الشخصي. إذا غبت يوماً كاملًا دون "تجميد حماسة"، سيعود العداد للصفر وسيتم خصم نقاط غياب.</p>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -121,7 +121,7 @@ export default function InstructionsPage() {
         </section>
 
         <footer className="pt-20 opacity-40 font-black text-primary text-[10px] md:text-xs text-center">
-          Careingo - نظام نمو متكامل - جميع الحقوق محفوظة © Artiatech Studio 2026
+          Careingo | تواصل، تحدى، تطور - جميع الحقوق محفوظة 2026
         </footer>
       </div>
     </div>

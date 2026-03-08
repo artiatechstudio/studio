@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -163,7 +164,7 @@ export default function FitnessResourcePage() {
         </section>
 
         <footer className="pt-20 opacity-40 font-black text-primary text-xs text-center">
-          جميع الحقوق محفوظة © Artiatech Studio 2026
+          Careingo | تواصل، تحدى، تطور 2026
         </footer>
       </div>
     </div>

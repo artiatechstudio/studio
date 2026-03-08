@@ -1,3 +1,4 @@
+
 "use client"
 
 import React from 'react';
@@ -146,7 +147,7 @@ export default function ResourcesPage() {
         </section>
 
         <footer className="pt-10 opacity-40 font-black text-primary text-[10px] text-center">
-          جميع الحقوق محفوظة © Artiatech Studio 2026
+          Careingo | تواصل، تحدى، تطور 2026
         </footer>
       </div>
     </div>

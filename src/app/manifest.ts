@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'Careingo',
     short_name: 'Careingo',
-    description: 'رفيقك اليومي للنمو وتطوير العادات الشخصية',
+    description: 'كارينجو | تواصل، تحدى، تطور',
     start_url: '/',
     display: 'standalone',
     background_color: '#ffffff',

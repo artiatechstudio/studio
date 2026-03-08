@@ -129,7 +129,7 @@ export default function RegisterPage() {
           </Link>
           <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-4xl">{avatar}</div>
           <CardTitle className="text-3xl font-black">انضم إلى مجتمع كاري</CardTitle>
-          <p className="opacity-80 font-medium mt-2">رحلة النمو تبدأ هنا</p>
+          <p className="opacity-80 font-medium mt-2">تواصل، تحدى، تطور</p>
         </CardHeader>
         <CardContent className="p-8 space-y-6 max-h-[70vh] overflow-y-auto">
           <form onSubmit={handleRegister} className="grid grid-cols-1 md:grid-cols-2 gap-6 text-right">

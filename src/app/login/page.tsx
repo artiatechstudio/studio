@@ -94,7 +94,7 @@ export default function LoginPage() {
             <Image src="/logo.png" alt="Careingo Logo" width={80} height={80} className="object-contain" />
           </div>
           <CardTitle className="text-4xl font-black relative z-10">Careingo</CardTitle>
-          <p className="opacity-80 font-bold mt-2 text-lg relative z-10">رفيقك اليومي للنمو</p>
+          <p className="opacity-80 font-bold mt-2 text-lg relative z-10">تواصل، تحدى، تطور</p>
         </CardHeader>
         <CardContent className="p-10 space-y-8">
           <form onSubmit={handleLogin} className="space-y-6 text-right">

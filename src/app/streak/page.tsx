@@ -133,7 +133,7 @@ export default function StreakPage() {
       ctx.font = 'bold 14px Arial';
       ctx.textAlign = 'center';
       ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-      ctx.fillText('CAREINGO | GROWTH ECOSYSTEM 2026', 200, 575);
+      ctx.fillText('CAREINGO | تواصل، تحدى، تطور', 200, 575);
 
       canvas.toBlob(async (blob) => {
         if (!blob) {
@@ -241,7 +241,7 @@ export default function StreakPage() {
           <div className="flex items-center justify-between relative z-10">
             <div className="space-y-1 text-right">
               <h1 className="text-3xl font-black">سجل الحماسة</h1>
-              <p className="text-xs font-bold opacity-80 flex items-center justify-end gap-1">رحلة نموك اليومية <TrendingUp size={14} /></p>
+              <p className="text-xs font-bold opacity-80 flex items-center justify-end gap-1">تواصل، تحدى، تطور <TrendingUp size={14} /></p>
             </div>
             <div className="flex gap-3">
               <div className="bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl text-center border border-white/20">
@@ -366,7 +366,7 @@ export default function StreakPage() {
         </div>
 
         <footer className="text-center opacity-30 font-black text-[10px] pt-8 uppercase tracking-widest">
-          Careingo GROWTH ECOSYSTEM 2026
+          Careingo | تواصل، تحدى، تطور 2026
         </footer>
       </div>
     </div>

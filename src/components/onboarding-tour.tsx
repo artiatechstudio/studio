@@ -98,7 +98,7 @@ const TOUR_STEPS = [
   },
   {
     title: "جاهز للانطلاق؟ 🚀",
-    content: "الآن عالم كارينجو بين يديك. ابدأ بأول مهمة لك اليوم واصنع نسخة أفضل من نفسك. كاري يثق بك!",
+    content: "الآن عالم كارينجو بين يديك. ابدأ بأول مهمة لك اليوم واصنع نسخة أفضل من نفسك. انضم إلينا عبر الرابط: https://www.artiatechstudio.com.ly/2026/03/careingo.html?m=1",
     icon: Sparkles,
     color: "text-primary"
   }

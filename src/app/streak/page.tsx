@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
@@ -165,7 +166,7 @@ export default function StreakPage() {
             await navigator.share({
               files: [file],
               title: 'إنجازي في كاري 🐱✨',
-              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو: https://app.artiatechstudio.com.ly`
+              text: `أنا في اليوم ${userData?.streak || 0} من رحلة النمو! انضم إليّ في كارينجو: https://www.artiatechstudio.com.ly/2026/03/careingo.html?m=1`
             });
             
             // تحديث عداد المشاركة الشهري

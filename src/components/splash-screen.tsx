@@ -22,8 +22,13 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
   const requestFull = useCallback(async () => {
     try {
-      if (document.documentElement.requestFullscreen) {
-        await document.documentElement.requestFullscreen();
+      const doc = document.documentElement as any;
+      const request = doc.requestFullscreen || 
+                      doc.mozRequestFullScreen || 
+                      doc.webkitRequestFullscreen || 
+                      doc.msRequestFullscreen;
+      if (request) {
+        await request.call(doc);
       }
     } catch (e) {
       console.warn("Fullscreen request failed", e);

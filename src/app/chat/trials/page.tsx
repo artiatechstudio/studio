@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, runTransaction, get, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel, ArrowLeft, Timer, ShieldCheck, Scale, Loader2, Trophy, Swords, XCircle } from 'lucide-react';
+import { Gavel, ArrowLeft, Timer, ShieldCheck, Scale, Loader2, Trophy, Swords, XCircle, Camera } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
@@ -97,7 +97,7 @@ export default function TrialsPage() {
         toast({ title: "تم تسجيل صوتك بالعدل! ⚖️" });
         playSound('success');
       } else {
-        toast({ variant: "destructive", title: "لقد شاركت مسبقاً" });
+        toast({ variant: "destructive", title: "لقد شاركت مسبقاً في هذا النزاع" });
       }
     } catch (e) {
       toast({ variant: "destructive", title: "فشل التصويت" });
@@ -112,7 +112,7 @@ export default function TrialsPage() {
     else if (v2 > v1) winnerId = trial.receiverId;
     
     await concludeTrialResult(database, trial, winnerId);
-    toast({ title: "تم حسم النزاع بنجاح" });
+    toast({ title: "تم حسم النزاع بناءً على أصوات الجمهور" });
   };
 
   return (
@@ -121,19 +121,19 @@ export default function TrialsPage() {
       <div className="app-container py-6 space-y-6">
         <header className="flex items-center justify-between bg-gradient-to-r from-red-600 to-orange-600 p-6 rounded-[2.5rem] shadow-xl text-white mx-2">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30"><Gavel size={32} /></div>
+            <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/30 shadow-inner"><Gavel size={32} /></div>
             <div className="text-right">
               <h1 className="text-2xl font-black">المحاكمة المجتمعية</h1>
-              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">صوتك يحسم النزاع بين الأساطير ⚖️</p>
+              <p className="text-[10px] font-bold opacity-80 uppercase tracking-widest">صوتك يحسم النزاع بين الأبطال ⚖️</p>
             </div>
           </div>
           <Link href="/chat"><Button variant="ghost" size="icon" className="rounded-full text-white hover:bg-white/10"><ArrowLeft className="rotate-180" /></Button></Link>
         </header>
 
-        <div className="bg-orange-50 border border-orange-100 p-4 rounded-[1.5rem] mx-2 flex items-start gap-3">
+        <div className="bg-orange-50 border border-orange-100 p-4 rounded-[1.5rem] mx-2 flex items-start gap-3 shadow-sm">
           <Scale className="text-orange-600 shrink-0" size={20} />
           <p className="text-[10px] font-bold text-orange-800 text-right leading-relaxed">
-            راجع صورة الإثبات المرفقة وقارنها باسم التحدي، ثم صوت لمن تراه صادقاً. العدل أساس الملك!
+            راجع صورة الإثبات المرفقة وقارنها باسم التحدي، ثم صوت لمن تراه صادقاً. العدل هو أساس مجتمع كارينجو!
           </p>
         </div>
 
@@ -151,28 +151,32 @@ export default function TrialsPage() {
               <CardContent className="p-6 space-y-6">
                 <div className="flex flex-col gap-4">
                   <p className="text-sm font-bold text-muted-foreground text-right leading-relaxed">
-                    يقول <span className="text-primary font-black">{trial.winnerName}</span> أنه انتصر في زمن قياسي، فهل تصدقه؟ 📸
+                    يقول البطل <span className="text-primary font-black">{trial.winnerName}</span> أنه انتصر في زمن قياسي، فهل تصدقه؟ 📸
                   </p>
-                  <div className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-inner border-4 border-secondary bg-black/5 flex items-center justify-center">
+                  {/* عرض الصورة بشكل كبير وواضح */}
+                  <div className="relative w-full aspect-square md:aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-secondary bg-black/5 flex items-center justify-center group">
                     {trial.proof ? (
-                      <img src={trial.proof} alt="Proof" className="w-full h-full object-contain" />
+                      <img src={trial.proof} alt="Proof" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
                     ) : (
-                      <div className="text-muted-foreground italic text-xs">لا يوجد دليل مصور</div>
+                      <div className="text-muted-foreground italic text-xs flex flex-col items-center gap-2">
+                        <Camera size={32} opacity={0.2} />
+                        لا يوجد دليل مصور
+                      </div>
                     )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Button onClick={() => handleVote(trial.id, trial.winnerId)} className="w-full h-14 rounded-2xl bg-primary font-black text-xs gap-2">صادق ✅</Button>
+                    <Button onClick={() => handleVote(trial.id, trial.winnerId)} className="w-full h-14 rounded-2xl bg-primary font-black text-xs gap-2 shadow-lg">صادق ✅</Button>
                     <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes?.[trial.winnerId] || 0} صوت</p>
                   </div>
                   <div className="space-y-2">
-                    <Button onClick={() => handleVote(trial.id, trial.winnerId === trial.senderId ? trial.receiverId : trial.senderId)} variant="outline" className="w-full h-14 rounded-2xl border-2 border-orange-500 text-orange-600 font-black text-xs gap-2">كاذب ❌</Button>
+                    <Button onClick={() => handleVote(trial.id, trial.winnerId === trial.senderId ? trial.receiverId : trial.senderId)} variant="outline" className="w-full h-14 rounded-2xl border-2 border-orange-500 text-orange-600 font-black text-xs gap-2 shadow-sm">كاذب ❌</Button>
                     <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes?.[trial.winnerId === trial.senderId ? trial.receiverId : trial.senderId] || 0} صوت</p>
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border flex items-center justify-between opacity-60">
-                  <Button onClick={() => handleConclude(trial)} variant="ghost" size="sm" className="text-[9px] font-black text-primary">حسم النزاع (إدارة)</Button>
+                  <Button onClick={() => handleConclude(trial)} variant="ghost" size="sm" className="text-[9px] font-black text-primary hover:bg-primary/5">حسم النزاع (بناءً على التصويت)</Button>
                   <p className="text-[9px] font-black">المعرف: #{trial.id.slice(-5)}</p>
                 </div>
               </CardContent>

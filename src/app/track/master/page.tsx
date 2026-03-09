@@ -17,7 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 /**
- * دالة معالجة النتيجة الموحدة
+ * دالة معالجة النتيجة الموحدة والشاملة
  */
 async function concludeChallenge(database: any, challenge: any, winnerId: string | 'tie' | 'none') {
   const todayStr = new Date().toLocaleDateString('en-CA');
@@ -33,7 +33,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     
     const updates: any = {};
     if (isTie) {
-      // لا تغيير
+      // لا تغيير في النقاط في حال التعادل
     } else if (isWinner) {
       updates.points = (data.points || 0) + stake;
       updates.challengesWon = (data.challengesWon || 0) + 1;
@@ -61,6 +61,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     await processUser(p1Id, false, true);
     await processUser(p2Id, false, true);
   } else if (winnerId === 'none') {
+    // كلاهما خاسر لانتهاء الوقت دون إثبات
     await processUser(p1Id, false, false);
     await processUser(p2Id, false, false);
   } else {
@@ -167,7 +168,7 @@ export default function MasterTrackPage() {
       <div className="app-container py-6 space-y-6">
         <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center"><Swords size={28} /></div>
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
             <div className="text-right"><h1 className="text-xl font-black text-primary leading-tight">الماستر</h1><p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60">تحديات الأساطير 👑</p></div>
           </div>
           <Link href="/"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
@@ -191,7 +192,7 @@ export default function MasterTrackPage() {
               <Label className="text-right block text-[10px] font-black opacity-60">1. اختر الفئة</Label>
               <div className="grid grid-cols-2 gap-2">
                 {['Fitness', 'Nutrition', 'Behavior', 'Study'].map(t => (
-                  <Button key={t} variant={selectedType === t ? 'default' : 'outline'} onClick={() => setSelectedType(t as TrackKey)} className="h-12 rounded-xl font-black text-xs">{t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'التغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}</Button>
+                  <Button key={t} variant={selectedType === t ? 'default' : 'outline'} onClick={() => setSelectedType(t as TrackKey)} className="h-12 rounded-xl font-black text-xs">{t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'تغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}</Button>
                 ))}
               </div>
               <Label className="text-right block text-[10px] font-black opacity-60">2. اختر الصعوبة</Label>
@@ -229,7 +230,7 @@ export default function MasterTrackPage() {
                 disabled={currentChallenge.isTimeLocked && timeLeft > 0}
                 className="w-full h-14 rounded-2xl bg-accent text-lg font-black shadow-lg"
               >
-                أنهيت المهمة 🔥
+                {(currentChallenge.isTimeLocked && timeLeft > 0) ? "انتظر إكمال الوقت..." : "أنهيت المهمة 🔥"}
               </Button>
             </CardContent>
           </Card>
@@ -248,7 +249,7 @@ export default function MasterTrackPage() {
             <div className="space-y-2">
               {todosData ? Object.values(todosData).map((todo: any) => (
                 <TodoItem key={todo.id} todo={todo} onComplete={handleCompleteTodo} />
-              )) : <p className="text-center py-4 opacity-30 text-[10px] font-black">لا توجد مهام</p>}
+              )) : <p className="text-center py-4 opacity-30 text-[10px] font-black">لا توجد مهام حالية</p>}
             </div>
           </Card>
         </section>
@@ -270,10 +271,10 @@ function TodoItem({ todo, onComplete }: { todo: any, onComplete: (t: any) => voi
   }, [todo.expiresAt]);
   const format = (s: number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
   return (
-    <div className={cn("flex items-center justify-between p-3 rounded-xl", expired ? "bg-red-50 opacity-60" : "bg-secondary/20")}>
+    <div className={cn("flex items-center justify-between p-3 rounded-xl transition-all", expired ? "bg-red-50 opacity-60" : "bg-secondary/20")}>
       <div className="flex items-center gap-3">
-        <span className={cn("text-[9px] font-mono px-2 py-0.5 rounded-lg text-white", expired ? "bg-red-400" : "bg-primary")}>{expired ? "انتهى" : format(remaining)}</span>
-        <button onClick={() => onComplete(todo)} className="w-6 h-6 rounded-lg bg-white border-2 border-primary/20 hover:border-primary" />
+        <span className={cn("text-[9px] font-mono px-2 py-0.5 rounded-lg text-white shadow-sm", expired ? "bg-red-400" : "bg-primary")}>{expired ? "انتهى" : format(remaining)}</span>
+        <button onClick={() => onComplete(todo)} className="w-6 h-6 rounded-lg bg-white border-2 border-primary/20 hover:border-primary shadow-sm" />
       </div>
       <span className={cn("font-bold text-[11px] text-right flex-1 mr-3", expired ? "text-red-900 line-through" : "text-primary")}>{todo.title}</span>
     </div>
@@ -339,26 +340,26 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
   };
 
   return (
-    <Card className="rounded-[2rem] border-2 border-primary/10 bg-card p-5">
+    <Card className="rounded-[2rem] border-2 border-primary/10 bg-card p-5 shadow-lg">
       <div className="flex items-center justify-between mb-3">
         <div className="text-right">
           <p className="text-xs font-black text-primary">{challenge.title}</p>
           <p className="text-[10px] font-bold text-muted-foreground">الرهان: {challenge.pointsStake}ن 💰</p>
         </div>
-        <div className="px-3 py-1 rounded-xl text-xs font-black bg-secondary text-primary flex items-center gap-2">
-          <Timer size={14} /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}
+        <div className="px-3 py-1 rounded-xl text-xs font-black bg-secondary text-primary flex items-center gap-2 border border-primary/10">
+          <Timer size={14} className="animate-pulse" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}
         </div>
       </div>
       <div className="space-y-2">
         {challenge.status === 'awaiting_recognition' ? (
-          <Link href="/chat/trials" className="block"><Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2"><Gavel size={14} /> انتقل للمحاكمة ⚖️</Button></Link>
+          <Link href="/chat/trials" className="block"><Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2 border-2 border-primary/20"><Gavel size={14} /> انتقل للمحاكمة ⚖️</Button></Link>
         ) : (
           <>
-            <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 rounded-xl bg-primary font-black text-xs gap-2">
+            <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 rounded-xl bg-primary font-black text-xs gap-2 shadow-md">
               {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={16} />} رفع الإثبات 📸
             </Button>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUploadProof} />
-            <Button onClick={handleWithdraw} variant="ghost" className="w-full h-10 text-destructive/60 font-bold text-[10px]">انسحاب 🏳️</Button>
+            <Button onClick={handleWithdraw} variant="ghost" className="w-full h-10 text-destructive/60 font-bold text-[10px] hover:bg-destructive/5">انسحاب 🏳️</Button>
           </>
         )}
       </div>

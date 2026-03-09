@@ -18,7 +18,7 @@ const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
   return 100;
 };
 
-// التحديات العادية للمسارات الـ 30 (مختصرة للأداء)
+// 30-Day Track Challenges
 export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   Fitness: Array.from({ length: 30 }, (_, i) => ({
     title: `اليوم ${i + 1}: مهمة اللياقة`,
@@ -53,9 +53,7 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   }))
 };
 
-// --- الـ 120 تحدي الإضافي لقسم الماستر ---
-export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [];
-
+// --- THE 120 EXCLUSIVE MASTER CHALLENGES ---
 const poolTitles: Record<TrackKey, string[]> = {
   Fitness: ["ضغط مكثف", "سكوات عميق", "بلانك حديدي", "كاردبو حارق", "تسلق جبال", "بربي الأساطير", "توازن الساموراي", "قوة الجذع", "انفجار الطاقة", "تمارين مركبة"],
   Nutrition: ["ديتوكس الماء", "منع السكر", "وجبة البروتين", "الأكل الصامت", "تحضير مسبق", "خضروات قوس قزح", "بدائل صحية", "صيام متقطع", "مضغ بطيء", "توازن العناصر"],
@@ -63,14 +61,15 @@ const poolTitles: Record<TrackKey, string[]> = {
   Study: ["تركيز بومودورو", "تلخيص ذكي", "خريطة ذهنية", "بحث معمق", "تعلم لغة", "كتابة إبداعية", "حل مشكلات", "تفكير نقدي", "مراجعة شاملة", "ابتكار فكرة"]
 };
 
+export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [];
 const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
 const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
 
 for (let i = 1; i <= 120; i++) {
-  const type = types[Math.floor(Math.random() * types.length)];
-  const diff = diffs[Math.floor(Math.random() * diffs.length)];
+  const type = types[i % 4];
+  const diff = diffs[Math.floor((i - 1) / 40)]; // Distribute across difficulties
   const time = diff === 'سهل' ? 10 : diff === 'متوسط' ? 30 : 60;
-  const titleBase = poolTitles[type][Math.floor(Math.random() * poolTitles[type].length)];
+  const titleBase = poolTitles[type][i % 10];
   
   ADDITIONAL_MASTER_CHALLENGES.push({
     id: `master-${i}`,
@@ -79,7 +78,7 @@ for (let i = 1; i <= 120; i++) {
     points: getPoints(diff),
     time,
     title: `تحدي الماستر ${i}: ${titleBase}`,
-    description: `هذه المهمة تتطلب تركيزاً كاملاً لمدة ${time} دقيقة في فئة الـ ${type === 'Fitness' ? 'لياقة' : type === 'Nutrition' ? 'تغذية' : type === 'Behavior' ? 'سلوك' : 'دراسة'}. هل أنت جاهز؟`,
+    description: `هذه المهمة تتطلب تركيزاً كاملاً لمدة ${time} دقيقة في فئة ${type === 'Fitness' ? 'اللياقة' : type === 'Nutrition' ? 'تغذية' : type === 'Behavior' ? 'سلوك' : 'دراسة'}. هل أنت جاهز يا بطل؟`,
     isTimeLocked: diff !== 'سهل'
   });
 }

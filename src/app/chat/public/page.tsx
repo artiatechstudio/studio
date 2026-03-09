@@ -4,7 +4,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, remove, get, update } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction, update, get } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,14 +27,14 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export default function PublicWallPage() {
+export default function PublicChatPage() {
   const { user } = useUser();
   const { database } = useFirebase();
   const [postText, setPostText] = useState('');
   const [isSending, setIsSending] = useState(false);
 
   const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
-  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(100)), [postsRef]);
+  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
   const { data: postsData, isLoading } = useDatabase(postsQuery);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
@@ -50,7 +50,6 @@ export default function PublicWallPage() {
     if (!postsData) return [];
     return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((p: any) => p.type !== 'dispute') // استبعاد النزاعات لتعرض في المحاكمة فقط
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
@@ -59,7 +58,7 @@ export default function PublicWallPage() {
     if (!postText.trim() || !user || isSending) return;
 
     if (!isPremium && remainingPosts <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بمنشورين فقط يومياً للأعضاء العاديين. 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بمنشورين في اليوم للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
       return;
     }
 
@@ -222,7 +221,7 @@ export default function PublicWallPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle className="text-2xl font-black text-primary text-right">حذف المنشور؟</AlertDialogTitle>
                         <AlertDialogDescription className="text-sm font-bold text-muted-foreground text-right mt-2">
-                          هل أنت متأكد من رغبتك في حذف هذا المنشور نهائياً؟ 🐱⚠️
+                          هل أنت متأكد من رغبتك في حذف هذا المنشور نهائياً من المجتمع؟ 🐱⚠️
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">

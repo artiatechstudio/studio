@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, Lock, Infinity, Gavel } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, Lock, Infinity, Gavel, Eye, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -291,10 +291,13 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
   const isActive = challenge.status === 'active';
   const isWinnerSet = !!challenge.winnerId;
   const isMineWinner = challenge.winnerId === currentUser?.uid;
-  
-  // خاصية جديدة لتتبع إذا كان المستخدم الحالي قد رفع دليلاً بالفعل في هذا التحدي
   const hasIUploaded = (challenge.senderId === currentUser?.uid && challenge.senderFinished) || 
                        (challenge.receiverId === currentUser?.uid && challenge.receiverFinished);
+
+  const isOpponentWaitingForMe = isWinnerSet && !isMineWinner && !hasIUploaded;
+  const amIWaitingForOpponent = isWinnerSet && isMineWinner && challenge.status === 'active';
+  const awaitingConfirmation = challenge.status === 'awaiting_confirmation';
+  const isOpponentActive = !isWinnerSet && challenge.status === 'active';
 
   useEffect(() => {
     if (!isActive || hasIUploaded) return;
@@ -304,7 +307,6 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       let limit = (challenge.duration || 15) * 60 * 1000;
       let start = challenge.acceptedAt;
       
-      // منطق "سقف الوقت التنافسي"
       if (isWinnerSet && !isMineWinner) {
         limit = challenge.winnerTime;
         start = currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime;
@@ -314,7 +316,6 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       const rem = Math.max(0, Math.floor((limit - elapsed) / 1000));
       setTimeLeft(rem);
       
-      // خصم من الطرفين إذا انتهى الوقت ولم يرفع أحد إثباتاً
       if (rem <= 0 && !isWinnerSet && !isProcessing) {
         concludeChallenge(database, challenge, 'none');
       }
@@ -341,28 +342,14 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       const timeUsed = Date.now() - (currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime);
       
       const updates: any = {};
-      // وسم الطرف الحالي بأنه انتهى لوقف المؤقت عنده
       if (currentUser.uid === challenge.senderId) updates.senderFinished = true;
       else updates.receiverFinished = true;
 
-      if (isWinnerSet && !isMineWinner && timeUsed < challenge.winnerTime) {
-        // إذا كان الثاني أسرع من الأول (حالة نادرة في Beat-the-Clock لكن ممكنة تقنياً)
-        updates.winnerId = currentUser.uid;
-        updates.winnerName = currentUser.displayName || 'بطل جديد';
-        updates.winnerTime = timeUsed;
-        updates.proof = base64;
-        updates.status = 'awaiting_recognition';
-      } else if (!isWinnerSet) {
-        // الأول الذي يرفع الإثبات
-        updates.winnerId = currentUser.uid;
-        updates.winnerName = currentUser.displayName || 'السبّاق';
-        updates.winnerTime = timeUsed;
-        updates.proof = base64;
-        updates.status = 'active';
-      } else {
-        // الثاني رفع الإثبات بعد الأول
-        updates.status = 'awaiting_recognition';
-      }
+      updates.winnerId = currentUser.uid;
+      updates.winnerName = currentUser.displayName || 'بطل جديد';
+      updates.winnerTime = timeUsed;
+      updates.proof = base64;
+      updates.status = 'awaiting_confirmation'; // ننتقل لمرحلة تأكيد الخصم
 
       await update(ref(database, `challenges/${challenge.id}`), updates);
       setIsProcessing(false);
@@ -370,42 +357,103 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
     };
   };
 
+  const handleAcceptOpponentProof = () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    concludeChallenge(database, challenge, challenge.winnerId);
+  };
+
+  const handleRejectOpponentProof = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    await update(ref(database, `challenges/${challenge.id}`), {
+      status: 'awaiting_recognition' // يرسل للمحاكمة
+    });
+    setIsProcessing(false);
+    toast({ title: "تم إرسال النزاع للمحاكمة ⚖️" });
+  };
+
   return (
-    <Card className="rounded-[2rem] border-2 border-primary/10 bg-card p-5 shadow-lg">
-      <div className="flex items-center justify-between mb-3">
+    <Card className="rounded-[2.5rem] border-2 border-primary/10 bg-card p-5 shadow-lg relative overflow-hidden">
+      {/* شريط الحالة العلوية */}
+      <div className="flex items-center justify-between mb-4">
         <div className="text-right">
           <p className="text-xs font-black text-primary">{challenge.title}</p>
-          <p className="text-[10px] font-bold text-muted-foreground">الرهان: {challenge.pointsStake}ن 💰</p>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="bg-orange-50 text-orange-600 text-[8px] font-black px-2 py-0.5 rounded-lg border border-orange-100">الرهان: {challenge.pointsStake}ن</span>
+            {isOpponentActive && <span className="bg-blue-50 text-blue-600 text-[8px] font-black px-2 py-0.5 rounded-lg border border-blue-100 animate-pulse">الخصم يتحدى حالياً 🏃‍♂️</span>}
+          </div>
         </div>
-        <div className="px-3 py-1 rounded-xl text-xs font-black bg-secondary text-primary flex items-center gap-2 border border-primary/10">
+        <div className={cn(
+          "px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-2 border shadow-sm",
+          hasIUploaded ? "bg-secondary text-muted-foreground border-border" : "bg-primary text-white border-primary/20"
+        )}>
           <Timer size={14} className={cn(!hasIUploaded && "animate-pulse")} /> 
-          {hasIUploaded ? "موقوف" : `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`}
+          {hasIUploaded ? "موقوف" : formatTime(timeLeft)}
         </div>
       </div>
-      
-      <div className="space-y-2">
-        {challenge.status === 'awaiting_recognition' ? (
-          <Link href="/chat/trials" className="block">
-            <Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2 border-2 border-primary/20 hover:bg-primary/5">
-              <Gavel size={14} /> انتقل للمحاكمة ⚖️
-            </Button>
-          </Link>
+
+      <div className="space-y-3">
+        {/* الحالة 1: بانتظار اعتراف الخصم أو ردي أنا */}
+        {awaitingConfirmation ? (
+          isMineWinner ? (
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl text-center space-y-2">
+              <Loader2 className="animate-spin text-blue-600 mx-auto" size={20} />
+              <p className="text-[10px] font-black text-blue-800">لقد رفعت إثباتك.. نحن بانتظار قرار الخصم ⌛</p>
+            </div>
+          ) : (
+            <div className="bg-orange-50 border-2 border-orange-200 p-4 rounded-3xl space-y-4">
+              <div className="flex items-center gap-3 flex-row-reverse">
+                <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center overflow-hidden border border-orange-200 shadow-sm shrink-0">
+                  <img src={challenge.proof} className="w-full h-full object-cover" alt="Proof" />
+                </div>
+                <div className="text-right flex-1">
+                  <p className="text-[10px] font-black text-orange-900">الخصم يزعم الانتصار! ⚔️</p>
+                  <p className="text-[8px] font-bold text-orange-700">هل تقبل بصحة هذا الإثبات؟</p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleAcceptOpponentProof} disabled={isProcessing} className="flex-1 h-10 rounded-xl bg-green-600 hover:bg-green-700 font-black text-[10px] gap-2 shadow-md"> <CheckCircle2 size={14}/> نعم، أقبل </Button>
+                <Button onClick={handleRejectOpponentProof} disabled={isProcessing} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black text-[10px] gap-2"> <XCircle size={14}/> لا، اعتراض! </Button>
+              </div>
+            </div>
+          )
+        ) : challenge.status === 'awaiting_recognition' ? (
+          <div className="space-y-2">
+            <div className="bg-red-50 text-red-700 p-3 rounded-2xl flex items-center justify-center font-black text-[10px] gap-2 border border-red-100">
+              <Gavel size={14} /> النزاع معروض في المحاكمة المجتمعية ⚖️
+            </div>
+            <Link href="/chat/trials" className="block">
+              <Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2 border-2 border-primary/20 hover:bg-primary/5"> اذهب للتصويت </Button>
+            </Link>
+          </div>
         ) : hasIUploaded ? (
           <div className="w-full h-12 rounded-xl bg-green-50 text-green-700 flex items-center justify-center font-black text-[10px] gap-2 border border-green-100">
             <CheckCircle size={14} /> تم رفع الإثبات.. بانتظار الخصم ⌛
           </div>
         ) : (
-          <>
-            <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 rounded-xl bg-primary font-black text-xs gap-2 shadow-md hover:bg-primary/90">
-              {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={16} />} رفع الإثبات 📸
+          <div className="space-y-2">
+            {isWinnerSet && !isMineWinner && (
+              <div className="bg-red-50 border border-red-100 p-3 rounded-xl mb-2 text-center">
+                <p className="text-[9px] font-black text-red-600 animate-bounce">الخصم حطم الرقم! يجب أن تنهي في أقل من {formatTime(timeLeft)} 🔥</p>
+              </div>
+            )}
+            <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary font-black text-xs gap-3 shadow-xl hover:bg-primary/90">
+              {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={20} />} رفع الإثبات 📸
             </Button>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUploadProof} />
             <Button onClick={handleWithdraw} variant="ghost" className="w-full h-10 text-destructive/60 font-bold text-[10px] hover:bg-destructive/5">
               انسحاب 🏳️ (خسارة فورية)
             </Button>
-          </>
+          </div>
         )}
       </div>
     </Card>
   );
+}
+
+function formatTime(s: number) {
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 }

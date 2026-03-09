@@ -13,7 +13,7 @@ import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 
 /**
- * دالة معالجة النتيجة الموحدة
+ * دالة معالجة النتيجة الموحدة (مستوردة منطقياً من صفحة الماستر)
  */
 async function concludeTrialResult(database: any, challenge: any, winnerId: string | 'tie') {
   const todayStr = new Date().toLocaleDateString('en-CA');

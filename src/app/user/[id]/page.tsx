@@ -4,15 +4,15 @@
 import React, { useMemo, use, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
-import { ref, runTransaction, push, serverTimestamp, set, get } from 'firebase/database';
-import { Card, CardContent } from '@/components/ui/card';
+import { ref, runTransaction, push, serverTimestamp, set, get, update } from 'firebase/database';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2, Ruler, Weight, Calendar as CalendarIcon, User as UserIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -41,7 +41,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const handleSendChallenge = async () => {
     if (!currentUser || !id || !myData) return;
     
-    // التحقق من حد التحديات الأسبوعي للمستخدم غير البريميوم
     const isPremium = myData.isPremium === 1 || myData.name === 'admin';
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).toLocaleDateString('en-CA');
@@ -80,7 +79,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         createdAt: serverTimestamp()
       });
 
-      // تحديث عداد التحديات المرسلة
       await update(ref(database, `users/${currentUser.uid}/weeklyChallengesSent`), {
         [startOfWeek]: weeklySent + 1
       });
@@ -106,7 +104,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
 
   const isImageAvatar = userData?.avatar && (userData.avatar.startsWith('http') || userData.avatar.startsWith('data:image'));
 
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
   if (!userData) return <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center"><h1 className="text-xl font-black">العضو غير موجود</h1></div>;
 
   return (
@@ -123,10 +121,24 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
               <h1 className="text-xl md:text-3xl font-black text-primary truncate max-w-[200px]">{userData.name}</h1>
               {(userData.isPremium === 1 || userData.name === 'admin') && <Crown size={16} className="text-yellow-500" fill="currentColor" />}
             </div>
+            
+            {userData.bio && <p className="text-xs font-bold text-muted-foreground italic line-clamp-1">{userData.bio}</p>}
+
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
               <div className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-orange-100 flex items-center gap-1"><Flame size={10} fill="currentColor" /> {userData.streak || 0}ي</div>
               <div className="bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-yellow-100 flex items-center gap-1"><Star size={10} fill="currentColor" /> {userData.points?.toLocaleString() || 0}ن</div>
+              
+              <div className="bg-primary/5 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-primary/10">
+                <CalendarIcon size={10} /> {userData.age || '--'} سنة
+              </div>
+              <div className="bg-accent/5 text-accent px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-accent/10">
+                <Ruler size={10} /> {userData.height || '--'} سم
+              </div>
+              <div className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-orange-100">
+                <Weight size={10} /> {userData.weight || '--'} كجم
+              </div>
             </div>
+
             <div className="flex justify-center md:justify-start gap-3 mt-3">
                <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-[10px] font-black border border-green-100">⚔️ فوز: {userData.challengesWon || 0}</div>
                <div className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black border border-red-100">❌ خسارة: {userData.challengesLost || 0}</div>
@@ -154,6 +166,57 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             </Dialog>
           )}
         </div>
+
+        <section className="space-y-4 px-2">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-lg font-black text-primary flex items-center gap-2">
+              <Medal className="text-accent" /> خزانة الأوسمة
+            </h2>
+            <span className="text-[9px] font-black text-muted-foreground bg-secondary px-2.5 py-1 rounded-full">
+              {ALL_ACHIEVEMENTS.filter(a => a.criteria(userData)).length} وسام
+            </span>
+          </div>
+          
+          <Card className="rounded-[2rem] bg-card p-5 border border-border shadow-md">
+            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
+              {ALL_ACHIEVEMENTS.map((badge) => {
+                const isEarned = badge.criteria(userData);
+                return (
+                  <Popover key={badge.id}>
+                    <PopoverTrigger asChild>
+                      <button 
+                        className="group relative flex flex-col items-center cursor-pointer outline-none rounded-xl p-1 transition-all"
+                        onClick={() => { if(isEarned) playSound('success'); else playSound('click'); }}
+                      >
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center text-xl transition-all duration-500 shadow-sm border",
+                          isEarned 
+                            ? "bg-white border-primary/20 scale-100" 
+                            : "bg-secondary/20 border-transparent opacity-20 grayscale scale-90"
+                        )}>
+                          {isEarned ? badge.icon : <Lock className="w-4 h-4 text-muted-foreground" />}
+                        </div>
+                        <p className={cn(
+                          "text-[6px] font-black text-center mt-1 truncate w-full",
+                          isEarned ? "text-primary opacity-100" : "text-muted-foreground opacity-40"
+                        )}>
+                          {badge.name}
+                        </p>
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="bg-card border-2 border-primary/20 text-primary p-4 rounded-2xl shadow-2xl max-w-[220px] text-right z-[100]" dir="rtl">
+                      <div className="space-y-1">
+                        <p className="font-black text-sm flex items-center justify-end gap-2">{badge.name} {isEarned && "✅"}</p>
+                        <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">{badge.description}</p>
+                        {!isEarned && <p className="text-[8px] text-destructive mt-2 font-black italic border-t border-border pt-1">لم يتم إحراز هذا الوسام بعد 🔒</p>}
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                );
+              })}
+            </div>
+          </Card>
+        </section>
       </div>
     </div>
   );

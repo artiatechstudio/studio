@@ -7,7 +7,7 @@ import { Button } from './ui/button';
 import { Mascot } from './mascot';
 import { useUser, useFirebase } from '@/firebase';
 import { ref, update } from 'firebase/database';
-import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Trash2, Smartphone, Download, Share2, HelpCircle, Milestone } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Sparkles, Trophy, MessageCircle, Crown, Trash2, Smartphone, Download, Share2, HelpCircle, Milestone, Gavel } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 

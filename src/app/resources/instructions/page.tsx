@@ -47,7 +47,7 @@ export default function InstructionsPage() {
                 <div className="grid grid-cols-1 gap-4">
                   <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
                     <p className="font-black text-primary text-sm flex items-center gap-2"> <CheckCircle2 size={16} className="text-green-500" /> الخطوة 1: الطلب والقبول</p>
-                    <p className="text-[11px] font-bold text-muted-foreground">عندما يوافق الخصم، ينتقل الطرفان فوراً إلى صفحة "الماستر" لبدء المواجهة.</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">عندما يوافق الخصم، ينتقل الطرفان فوراً إلى صفحة "**الماستر**" لبدء المواجهة.</p>
                   </div>
                   <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
                     <p className="font-black text-primary text-sm flex items-center gap-2"> <TimerIcon size={16} className="text-orange-500" /> الخطوة 2: صراع الزمن (Beat-the-Clock)</p>

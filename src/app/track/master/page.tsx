@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, Lock, Infinity } from 'lucide-react';
+import { ArrowLeft, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, Lock, Infinity, Gavel } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -15,7 +15,6 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp, get, remove, set } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 /**
  * دالة معالجة النتيجة الموحدة
@@ -30,10 +29,11 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     const uRef = ref(database, `users/${uid}`);
     const snap = await get(uRef);
     const data = snap.val();
+    if (!data) return;
     
     const updates: any = {};
     if (isTie) {
-      // لا تغيير في النقاط في التعادل
+      // لا تغيير
     } else if (isWinner) {
       updates.points = (data.points || 0) + stake;
       updates.challengesWon = (data.challengesWon || 0) + 1;
@@ -42,7 +42,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     } else {
       updates.points = Math.max(0, (data.points || 0) - stake);
       updates.challengesLost = (data.challengesLost || 0) + 1;
-      updates.lastChallengeLossDate = todayStr; // لدخول جدار العار
+      updates.lastChallengeLossDate = todayStr;
       updates[`dailyPoints/${todayStr}`] = Math.max(0, (data.dailyPoints?.[todayStr] || 0) - stake);
     }
 
@@ -61,7 +61,6 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     await processUser(p1Id, false, true);
     await processUser(p2Id, false, true);
   } else if (winnerId === 'none') {
-    // كلاهما خاسر (تايم أوت)
     await processUser(p1Id, false, false);
     await processUser(p2Id, false, false);
   } else {
@@ -204,6 +203,7 @@ export default function MasterTrackPage() {
             </div>
             <Button onClick={() => { 
               const pool = getMasterPool(selectedType, selectedDifficulty);
+              if (pool.length === 0) { toast({ title: "لا توجد تحديات حالياً لهذه الفئة" }); return; }
               const random = pool[Math.floor(Math.random() * pool.length)];
               setCurrentChallenge(random); setStep('active'); setTimeLeft(random.time * 60); setTimerActive(true); playSound('click');
             }} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">ابدأ تحدي الماستر 🔥</Button>
@@ -326,14 +326,12 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       const base64 = ev.target?.result as string;
       const timeUsed = Date.now() - (currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime);
       if (isWinnerSet && !isMineWinner && timeUsed < challenge.winnerTime) {
-        // حطمت الرقم القياسي!
         await update(ref(database, `challenges/${challenge.id}`), {
-          winnerId: currentUser.uid, winnerName: 'بطل جديد', winnerTime: timeUsed, proof: base64, status: 'awaiting_recognition'
+          winnerId: currentUser.uid, winnerName: currentUser.displayName || 'بطل جديد', winnerTime: timeUsed, proof: base64, status: 'awaiting_recognition'
         });
       } else if (!isWinnerSet) {
-        // أول من يرفع
         await update(ref(database, `challenges/${challenge.id}`), {
-          winnerId: currentUser.uid, winnerName: 'السبّاق', winnerTime: timeUsed, proof: base64, status: 'active'
+          winnerId: currentUser.uid, winnerName: currentUser.displayName || 'السبّاق', winnerTime: timeUsed, proof: base64, status: 'active'
         });
       }
       setIsProcessing(false);
@@ -353,7 +351,7 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       </div>
       <div className="space-y-2">
         {challenge.status === 'awaiting_recognition' ? (
-          <Link href="/chat/trials" className="block"><Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs">انتقل للمحاكمة ⚖️</Button></Link>
+          <Link href="/chat/trials" className="block"><Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2"><Gavel size={14} /> انتقل للمحاكمة ⚖️</Button></Link>
         ) : (
           <>
             <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 rounded-xl bg-primary font-black text-xs gap-2">

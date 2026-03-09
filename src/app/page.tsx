@@ -148,27 +148,27 @@ export default function Home() {
 
       ctx.fillStyle = 'white';
       ctx.textAlign = 'center';
-      ctx.font = 'black 40px Cairo';
+      ctx.font = '900 40px Cairo';
       ctx.fillText('كارينجو | CAREINGO', 200, 100);
 
-      ctx.font = 'bold 30px Cairo';
+      ctx.font = '700 30px Cairo';
       ctx.fillText(isWin ? 'انتصار بطل! 🏆' : isTie ? 'تعادل عادل! ⚖️' : 'كبوة محارب! ⚔️', 200, 180);
 
-      ctx.font = '20px Cairo';
+      ctx.font = '400 20px Cairo';
       ctx.fillText(`تحدي: ${res.title}`, 200, 240);
 
       ctx.fillStyle = 'rgba(255,255,255,0.1)';
       ctx.fillRect(50, 280, 300, 150);
       
       ctx.fillStyle = 'white';
-      ctx.font = 'bold 24px Cairo';
+      ctx.font = '700 24px Cairo';
       ctx.fillText(isWin ? `+${res.stake} نقطة` : isTie ? '0 نقطة' : `-${res.stake} نقطة`, 200, 350);
-      ctx.font = '14px Cairo';
+      ctx.font = '400 14px Cairo';
       ctx.fillText('النتيجة في رصيد النمو', 200, 380);
 
-      ctx.font = 'bold 16px Cairo';
+      ctx.font = '700 16px Cairo';
       ctx.fillText('تواصل، تحدى، تطور مع كارينجو', 200, 500);
-      ctx.font = '12px Cairo';
+      ctx.font = '400 12px Cairo';
       ctx.fillText('https://www.artiatechstudio.com.ly/2026/03/careingo.html', 200, 530);
 
       canvas.toBlob(async (blob) => {
@@ -276,7 +276,7 @@ export default function Home() {
                 <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
                 <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
                 <TrackCard type="Behavior" currentStage={userData?.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
-                <TrackCard type="Study" userData={userData} currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Study" currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
               </div>
               <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">
                 <Card className="p-5 rounded-[2rem] shadow-lg border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
@@ -293,7 +293,6 @@ export default function Home() {
 
         <div className="mx-2"><AdBanner label="إعلان ممول" /></div>
 
-        {/* ديالوج نتيجة التحدي */}
         <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>
           <DialogContent className="rounded-[2.5rem] p-8 text-center max-w-sm" dir="rtl">
             <DialogHeader>

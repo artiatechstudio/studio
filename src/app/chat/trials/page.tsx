@@ -1,27 +1,76 @@
 
 "use client"
 
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, runTransaction, get, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel, ArrowLeft, Timer, ShieldCheck, Scale, Loader2, Trophy } from 'lucide-react';
+import { Gavel, ArrowLeft, Timer, ShieldCheck, Scale, Loader2, Trophy, Swords, XCircle } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+
+/**
+ * دالة معالجة النتيجة الموحدة
+ */
+async function concludeTrialResult(database: any, challenge: any, winnerId: string | 'tie') {
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const stake = challenge.pointsStake || 50;
+  const p1Id = challenge.senderId;
+  const p2Id = challenge.receiverId;
+
+  const processUser = async (uid: string, isWinner: boolean, isTie: boolean) => {
+    const uRef = ref(database, `users/${uid}`);
+    const snap = await get(uRef);
+    const data = snap.val();
+    if (!data) return;
+    
+    const updates: any = {};
+    if (isTie) {
+      // لا تغيير
+    } else if (isWinner) {
+      updates.points = (data.points || 0) + stake;
+      updates.challengesWon = (data.challengesWon || 0) + 1;
+      updates.lastChallengeWinDate = todayStr;
+      updates[`dailyPoints/${todayStr}`] = (data.dailyPoints?.[todayStr] || 0) + stake;
+    } else {
+      updates.points = Math.max(0, (data.points || 0) - stake);
+      updates.challengesLost = (data.challengesLost || 0) + 1;
+      updates.lastChallengeLossDate = todayStr;
+      updates[`dailyPoints/${todayStr}`] = Math.max(0, (data.dailyPoints?.[todayStr] || 0) - stake);
+    }
+
+    updates.showChallengeResult = true;
+    updates.latestChallengeResult = {
+      title: challenge.title,
+      status: isTie ? 'tie' : isWinner ? 'win' : 'loss',
+      stake: stake,
+      timestamp: Date.now()
+    };
+
+    await update(uRef, updates);
+  };
+
+  if (winnerId === 'tie') {
+    await processUser(p1Id, false, true);
+    await processUser(p2Id, false, true);
+  } else {
+    const loserId = winnerId === p1Id ? p2Id : p1Id;
+    await processUser(winnerId, true, false);
+    await processUser(loserId, false, false);
+  }
+
+  await remove(ref(database, `challenges/${challenge.id}`));
+}
 
 export default function TrialsPage() {
   const { user } = useUser();
   const { database } = useFirebase();
 
-  const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
-  const { data: postsData, isLoading } = useDatabase(postsRef);
-
   const challengesRef = useMemoFirebase(() => ref(database, 'challenges'), [database]);
-  const { data: challengesData } = useDatabase(challengesRef);
+  const { data: challengesData, isLoading } = useDatabase(challengesRef);
 
   const trials = useMemo(() => {
     if (!challengesData) return [];
@@ -30,56 +79,6 @@ export default function TrialsPage() {
       .filter((c: any) => c.status === 'awaiting_recognition')
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }, [challengesData]);
-
-  const concludeTrial = async (challenge: any) => {
-    const votes = challenge.votes || {};
-    const v1 = votes[challenge.senderId] || 0;
-    const v2 = votes[challenge.receiverId] || 0;
-    
-    let winnerId: string | 'tie' = 'tie';
-    if (v1 > v2) winnerId = challenge.senderId;
-    else if (v2 > v1) winnerId = challenge.receiverId;
-
-    // استدعاء دالة النتيجة (محاكاة للدالة الموجودة في الماستر)
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const stake = challenge.pointsStake || 50;
-    
-    const processUser = async (uid: string, isWinner: boolean, isTie: boolean) => {
-      const uRef = ref(database, `users/${uid}`);
-      const snap = await get(uRef);
-      const data = snap.val();
-      const updates: any = {};
-      if (isTie) {
-        updates.showChallengeResult = true;
-        updates.latestChallengeResult = { title: challenge.title, status: 'tie', stake: 0, timestamp: Date.now() };
-      } else if (isWinner) {
-        updates.points = (data.points || 0) + stake;
-        updates.challengesWon = (data.challengesWon || 0) + 1;
-        updates.lastChallengeWinDate = todayStr;
-        updates[`dailyPoints/${todayStr}`] = (data.dailyPoints?.[todayStr] || 0) + stake;
-        updates.showChallengeResult = true;
-        updates.latestChallengeResult = { title: challenge.title, status: 'win', stake: stake, timestamp: Date.now() };
-      } else {
-        updates.points = Math.max(0, (data.points || 0) - stake);
-        updates.challengesLost = (data.challengesLost || 0) + 1;
-        updates.lastChallengeLossDate = todayStr;
-        updates[`dailyPoints/${todayStr}`] = Math.max(0, (data.dailyPoints?.[todayStr] || 0) - stake);
-        updates.showChallengeResult = true;
-        updates.latestChallengeResult = { title: challenge.title, status: 'loss', stake: stake, timestamp: Date.now() };
-      }
-      await update(uRef, updates);
-    };
-
-    if (winnerId === 'tie') {
-      await processUser(challenge.senderId, false, true);
-      await processUser(challenge.receiverId, false, true);
-    } else {
-      const loserId = winnerId === challenge.senderId ? challenge.receiverId : challenge.senderId;
-      await processUser(winnerId, true, false);
-      await processUser(loserId, false, false);
-    }
-    await remove(ref(database, `challenges/${challenge.id}`));
-  };
 
   const handleVote = async (challengeId: string, candidateId: string) => {
     if (!user) return;
@@ -105,6 +104,17 @@ export default function TrialsPage() {
     }
   };
 
+  const handleConclude = async (trial: any) => {
+    const v1 = trial.votes?.[trial.senderId] || 0;
+    const v2 = trial.votes?.[trial.receiverId] || 0;
+    let winnerId: string | 'tie' = 'tie';
+    if (v1 > v2) winnerId = trial.senderId;
+    else if (v2 > v1) winnerId = trial.receiverId;
+    
+    await concludeTrialResult(database, trial, winnerId);
+    toast({ title: "تم حسم النزاع بنجاح" });
+  };
+
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
@@ -123,7 +133,7 @@ export default function TrialsPage() {
         <div className="bg-orange-50 border border-orange-100 p-4 rounded-[1.5rem] mx-2 flex items-start gap-3">
           <Scale className="text-orange-600 shrink-0" size={20} />
           <p className="text-[10px] font-bold text-orange-800 text-right leading-relaxed">
-            راجع صورة الإثبات المرفقة وقارنها باسم التحدي، ثم صوت لمن تراه صادقاً.
+            راجع صورة الإثبات المرفقة وقارنها باسم التحدي، ثم صوت لمن تراه صادقاً. العدل أساس الملك!
           </p>
         </div>
 
@@ -141,10 +151,14 @@ export default function TrialsPage() {
               <CardContent className="p-6 space-y-6">
                 <div className="flex flex-col gap-4">
                   <p className="text-sm font-bold text-muted-foreground text-right leading-relaxed">
-                    يقول <span className="text-primary font-black">{trial.winnerName}</span> أنه انتصر، فهل تصدقه؟ 📸
+                    يقول <span className="text-primary font-black">{trial.winnerName}</span> أنه انتصر في زمن قياسي، فهل تصدقه؟ 📸
                   </p>
-                  <div className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-inner border-4 border-secondary bg-black/5">
-                    <img src={trial.proof} alt="Proof" className="w-full h-full object-contain" />
+                  <div className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-inner border-4 border-secondary bg-black/5 flex items-center justify-center">
+                    {trial.proof ? (
+                      <img src={trial.proof} alt="Proof" className="w-full h-full object-contain" />
+                    ) : (
+                      <div className="text-muted-foreground italic text-xs">لا يوجد دليل مصور</div>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -158,7 +172,7 @@ export default function TrialsPage() {
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border flex items-center justify-between opacity-60">
-                  <Button onClick={() => concludeTrial(trial)} variant="ghost" size="sm" className="text-[9px] font-black text-primary">حسم النزاع (إدارة)</Button>
+                  <Button onClick={() => handleConclude(trial)} variant="ghost" size="sm" className="text-[9px] font-black text-primary">حسم النزاع (إدارة)</Button>
                   <p className="text-[9px] font-black">المعرف: #{trial.id.slice(-5)}</p>
                 </div>
               </CardContent>

@@ -1,15 +1,18 @@
 
 "use client"
 
-import React, { useMemo, use } from 'react';
+import React, { useMemo, use, useState } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
-import { ref, runTransaction, push, serverTimestamp } from 'firebase/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ref, runTransaction, push, serverTimestamp, set } from 'firebase/database';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trophy, Flame, Heart, ArrowLeft, Star, HeartPulse, User as UserIcon, Crown, Medal, Lock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -22,6 +25,13 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const { user: currentUser } = useUser();
   const { database } = useFirebase();
   const router = useRouter();
+
+  // Challenge State
+  const [isChallengeOpen, setIsChallengeOpen] = useState(false);
+  const [challengeTitle, setChallengeTitle] = useState('');
+  const [challengeTime, setChallengeTime] = useState('15');
+  const [challengePoints, setChallengePoints] = useState('50');
+  const [isSendingChallenge, setIsSendingChallenge] = useState(false);
 
   const userRef = useMemoFirebase(() => ref(database, `users/${id}`), [database, id]);
   const { data: userData, isLoading } = useDatabase(userRef);
@@ -82,6 +92,60 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         return true;
       }
     });
+  };
+
+  const handleSendChallenge = async () => {
+    if (!currentUser || !id) return;
+    const points = parseInt(challengePoints);
+    if (!challengeTitle.trim()) {
+      toast({ variant: "destructive", title: "أدخل اسم التحدي" });
+      return;
+    }
+    if (points > 100 || points < 10) {
+      toast({ variant: "destructive", title: "النقاط يجب أن تكون بين 10 و 100" });
+      return;
+    }
+
+    setIsSendingChallenge(true);
+    playSound('click');
+
+    try {
+      const challengeRef = push(ref(database, 'challenges'));
+      const challengeId = challengeRef.key;
+
+      const challengeData = {
+        id: challengeId,
+        senderId: currentUser.uid,
+        senderName: allUsersData[currentUser.uid]?.name || 'بطل مجهول',
+        receiverId: id,
+        receiverName: userData.name,
+        title: challengeTitle.trim(),
+        duration: parseInt(challengeTime),
+        pointsStake: points,
+        status: 'pending',
+        createdAt: serverTimestamp()
+      };
+
+      await set(challengeRef, challengeData);
+
+      // إضافة إشعار للخصم
+      push(ref(database, `users/${id}/notifications`), {
+        type: 'challenge',
+        title: 'طلب تحدي جديد! ⚔️',
+        message: `يتحداك ${challengeData.senderName} في: ${challengeData.title} مقابل ${points}ن.`,
+        challengeId: challengeId,
+        isRead: false,
+        timestamp: serverTimestamp()
+      });
+
+      toast({ title: "تم إرسال التحدي بنجاح! ⚔️", description: "انتظر قبول الخصم للمبارزة." });
+      setIsChallengeOpen(false);
+      playSound('success');
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل إرسال التحدي" });
+    } finally {
+      setIsSendingChallenge(false);
+    }
   };
 
   if (isLoading) {
@@ -150,6 +214,16 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
               <div className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-orange-100 flex items-center gap-1"><Flame size={10} fill="currentColor" /> {userData.streak || 0}ي</div>
               <div className="bg-yellow-50 text-yellow-600 px-2.5 py-1 rounded-lg font-black text-[9px] border border-yellow-100 flex items-center gap-1"><Star size={10} fill="currentColor" /> {userData.points?.toLocaleString() || 0}ن</div>
             </div>
+            
+            {/* عرض إحصائيات التحديات */}
+            <div className="flex justify-center md:justify-start gap-3 mt-3">
+               <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-[10px] font-black border border-green-100">
+                 ⚔️ انتصارات: {userData.challengesWon || 0}
+               </div>
+               <div className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black border border-red-100">
+                 ❌ هزائم: {userData.challengesLost || 0}
+               </div>
+            </div>
           </div>
         </header>
 
@@ -197,10 +271,71 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           </Card>
         </section>
         
-        <div className="flex justify-center mt-6 px-2">
-          <Link href={`/chat/${id}`} onClick={() => playSound('click')} className="w-full max-w-sm">
-            <Button className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 text-sm font-black shadow-lg gap-2">دردشة مع {userData.name} 💬</Button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2">
+          <Link href={`/chat/${id}`} onClick={() => playSound('click')} className="w-full">
+            <Button className="w-full h-14 rounded-2xl bg-secondary text-primary hover:bg-secondary/80 text-sm font-black shadow-md gap-2">دردشة خاصة 💬</Button>
           </Link>
+
+          {currentUser?.uid !== id && (
+            <Dialog open={isChallengeOpen} onOpenChange={setIsChallengeOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={() => playSound('click')} className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-sm font-black shadow-lg gap-2">تحدي هذا البطل ⚔️</Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
+                <DialogHeader>
+                  <DialogTitle className="text-2xl font-black text-primary text-right">طلب مبارزة ثنائية ⚔️</DialogTitle>
+                  <DialogDescription className="text-right font-bold text-xs">اختر مهمة لتنفيذها مع الخصم في وقت واحد!</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-6 py-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black text-primary">اسم التحدي (مثلاً: 100 تمرين ضغط)</Label>
+                    <Input 
+                      placeholder="ما هو التحدي؟" 
+                      className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-right"
+                      value={challengeTitle}
+                      onChange={(e) => setChallengeTitle(e.target.value)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black text-primary">الوقت (بالدقائق)</Label>
+                      <Input 
+                        type="number" 
+                        className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-center"
+                        value={challengeTime}
+                        onChange={(e) => setChallengeTime(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-black text-primary">الرهان (الحد الأقصى 100ن)</Label>
+                      <Input 
+                        type="number" 
+                        max={100}
+                        className="h-12 rounded-xl bg-secondary/50 border-none font-bold text-center text-orange-600"
+                        value={challengePoints}
+                        onChange={(e) => setChallengePoints(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex items-start gap-3">
+                    <AlertTriangle className="text-orange-600 shrink-0" size={18} />
+                    <p className="text-[10px] font-bold text-orange-800 leading-relaxed">
+                      تنبيه: الخاسر في التحدي (من ينتهي وقته قبل الإنجاز) سيتم إدراج اسمه في "جدار العار" وسيتم خصم النقاط من رصيده تلقائياً.
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button 
+                    onClick={handleSendChallenge} 
+                    disabled={isSendingChallenge}
+                    className="w-full h-14 rounded-2xl font-black text-xl bg-primary shadow-lg"
+                  >
+                    {isSendingChallenge ? "جاري الإرسال..." : "إرسال التحدي الآن ⚔️"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </div>
     </div>

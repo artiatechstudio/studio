@@ -4,10 +4,10 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, remove } from 'firebase/database';
+import { ref, remove, update, serverTimestamp } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bell, Heart, Trophy, Zap, CheckCheck, Clock, Star } from 'lucide-react';
+import { Bell, Heart, Trophy, Zap, CheckCheck, Clock, Star, Swords, CheckCircle2, XCircle } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,26 +33,47 @@ export default function NotificationsPage() {
     playSound('click');
     try {
       await remove(notificationsRef);
-      toast({ title: "تم مسح كافة الإشعارات بنجاح" });
+      toast({ title: "تم مسح كافة الإشعارات" });
     } catch (e) {
-      toast({ variant: "destructive", title: "فشل مسح الإشعارات" });
+      toast({ variant: "destructive", title: "فشل المسح" });
+    }
+  };
+
+  const handleChallengeAction = async (notif: any, action: 'accept' | 'reject') => {
+    if (!user) return;
+    playSound('click');
+
+    try {
+      if (action === 'accept') {
+        await update(ref(database, `challenges/${notif.challengeId}`), {
+          status: 'active',
+          acceptedAt: serverTimestamp()
+        });
+        toast({ title: "تم قبول التحدي! ⚔️", description: "اذهب لصفحة Master لبدء التنفيذ." });
+        playSound('success');
+      } else {
+        await remove(ref(database, `challenges/${notif.challengeId}`));
+        toast({ title: "تم رفض التحدي" });
+      }
+      
+      // مسح الإشعار
+      await remove(ref(database, `users/${user.uid}/notifications/${notif.id}`));
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الإجراء" });
     }
   };
 
   const handleDeleteOne = async (notifId: string) => {
     if (!user) return;
     playSound('click');
-    try {
-      await remove(ref(database, `users/${user.uid}/notifications/${notifId}`));
-    } catch (e) {
-      console.error("Delete failed", e);
-    }
+    await remove(ref(database, `users/${user.uid}/notifications/${notifId}`));
   };
 
   const getIcon = (type: string) => {
     switch (type) {
       case 'like': return <Heart className="text-red-500" fill="currentColor" size={20} />;
       case 'achievement': return <Trophy className="text-yellow-500" size={20} />;
+      case 'challenge': return <Swords className="text-red-600" size={20} />;
       case 'bonus': return <Zap className="text-accent" size={20} />;
       case 'system': return <Bell className="text-primary" size={20} />;
       default: return <Bell size={20} />;
@@ -71,67 +92,52 @@ export default function NotificationsPage() {
             <h1 className="text-3xl font-black text-primary">الإشعارات</h1>
           </div>
           {notifications.length > 0 && (
-            <Button 
-              onClick={handleClearAll} 
-              variant="ghost" 
-              className="rounded-full gap-2 text-accent font-black hover:bg-accent/10 h-12 px-6"
-              title="مسح الكل"
-            >
-              <CheckCheck size={20} />
-              <span>مسح الكل</span>
+            <Button onClick={handleClearAll} variant="ghost" className="rounded-full gap-2 text-accent font-black h-12 px-6">
+              <CheckCheck size={20} /> <span>مسح الكل</span>
             </Button>
           )}
         </header>
 
         {isLoading ? (
-          <div className="flex justify-center p-20">
-            <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
+          <div className="flex justify-center p-20"> <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /> </div>
         ) : notifications.length === 0 ? (
-          <div className="text-center p-20 space-y-4 opacity-30">
-            <div className="text-8xl">📭</div>
-            <p className="font-black text-xl">لا يوجد إشعارات حالياً</p>
-          </div>
+          <div className="text-center p-20 opacity-30"> <div className="text-8xl">📭</div> <p className="font-black text-xl">لا يوجد إشعارات حالياً</p> </div>
         ) : (
           <div className="space-y-3 mx-2">
             {notifications.map((n) => (
-              <Card 
-                key={n.id} 
-                className="rounded-3xl border-none shadow-md overflow-hidden transition-all bg-white border-r-8 border-accent"
-                onClick={() => handleDeleteOne(n.id)}
-              >
-                <CardContent className="p-5 flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-accent/10">
-                    {getIcon(n.type)}
-                  </div>
-                  <div className="flex-1 space-y-1 text-right">
-                    <p className="font-black text-sm text-primary">
-                      {n.title}
-                    </p>
-                    <p className="text-xs font-bold text-muted-foreground leading-relaxed">
-                      {n.message}
-                    </p>
-                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-2 font-bold">
-                      <Clock size={10} />
-                      {n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+              <Card key={n.id} className={cn("rounded-3xl border-none shadow-md overflow-hidden transition-all bg-white border-r-8", n.type === 'challenge' ? "border-red-500" : "border-accent")}>
+                <CardContent className="p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-secondary/50">
+                      {getIcon(n.type)}
+                    </div>
+                    <div className="flex-1 space-y-1 text-right">
+                      <p className="font-black text-sm text-primary">{n.title}</p>
+                      <p className="text-xs font-bold text-muted-foreground leading-relaxed">{n.message}</p>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-2 font-bold">
+                        <Clock size={10} />
+                        {n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-[8px] font-black text-accent uppercase opacity-40 self-center">انقر للمسح</div>
+                  
+                  {n.type === 'challenge' && (
+                    <div className="flex gap-2 mt-4">
+                      <Button onClick={() => handleChallengeAction(n, 'accept')} className="flex-1 h-10 rounded-xl bg-green-600 hover:bg-green-700 font-black text-xs gap-2"> <CheckCircle2 size={14} /> قبول التحدي </Button>
+                      <Button onClick={() => handleChallengeAction(n, 'reject')} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black text-xs gap-2"> <XCircle size={14} /> رفض </Button>
+                    </div>
+                  )}
+
+                  {n.type !== 'challenge' && (
+                    <div className="flex justify-end mt-2">
+                      <Button onClick={() => handleDeleteOne(n.id)} variant="ghost" className="h-6 text-[8px] font-black text-accent uppercase opacity-40">مسح الإشعار</Button>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
-
-        <section className="bg-primary/5 p-6 rounded-[2.5rem] border border-primary/10 mx-2 space-y-4">
-          <div className="flex items-center gap-2 text-primary font-black text-xs">
-            < Star size={14} className="text-yellow-500" fill="currentColor" />
-            نظام الإشعارات الذكي
-          </div>
-          <p className="text-[10px] font-bold text-muted-foreground leading-relaxed">
-            في كارينجو، الإشعارات هي تنبيهات فورية لمتابعة إنجازاتك. بمجرد قراءتك للإشعار أو النقر عليه، يتم مسحه تلقائياً للحفاظ على صندوق وارد نظيف ومنظم دائماً! 🐱✨
-          </p>
-        </section>
       </div>
     </div>
   );

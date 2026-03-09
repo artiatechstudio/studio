@@ -5,12 +5,12 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, ArrowLeft, QrCode, Share2, Heart, Medal, Lock, Sparkles, Users, Crown } from 'lucide-react';
+import { Trophy, Settings as SettingsIcon, Ruler, Weight, Calendar as CalendarIcon, LogOut, QrCode, Medal, Lock, Crown, Swords } from 'lucide-react';
 import Link from 'next/link';
 import { signOut } from 'firebase/auth';
 import { useRouter } from 'next/navigation';
@@ -107,6 +107,7 @@ export default function ProfilePage() {
               </span>
             </div>
             <p className="text-muted-foreground font-black text-sm italic">الرتبة : {getRankName(userData.points)}</p>
+            
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
               <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-primary/10">
                 <CalendarIcon size={12} /> {userData.age || '--'} سنة
@@ -117,6 +118,15 @@ export default function ProfilePage() {
               <div className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-orange-100">
                 <Weight size={12} /> {userData.weight || '--'} كجم
               </div>
+            </div>
+
+            <div className="flex justify-center md:justify-start gap-3 mt-4">
+               <div className="bg-green-50 text-green-700 px-4 py-2 rounded-2xl text-xs font-black border border-green-100 flex items-center gap-2 shadow-sm">
+                 <Swords size={14} /> انتصارات: {userData.challengesWon || 0}
+               </div>
+               <div className="bg-red-50 text-red-700 px-4 py-2 rounded-2xl text-xs font-black border border-red-100 flex items-center gap-2 shadow-sm">
+                 <span>❌</span> هزائم: {userData.challengesLost || 0}
+               </div>
             </div>
           </div>
 

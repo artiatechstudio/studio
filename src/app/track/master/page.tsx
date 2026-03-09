@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, Crown, Infinity, Clock, XCircle, Lock, Trash2 } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, CheckSquare, Crown, Infinity, Clock, XCircle, Lock, Trash2, Swords, Timer } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -38,6 +38,17 @@ export default function MasterTrackPage() {
 
   const todosRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/todos`) : null, [user, database]);
   const { data: todosData } = useDatabase(todosRef);
+
+  // تحديات المبارزة النشطة
+  const challengesRef = useMemoFirebase(() => ref(database, 'challenges'), [database]);
+  const { data: allChallengesData } = useDatabase(challengesRef);
+
+  const activePvPChallenges = useMemo(() => {
+    if (!allChallengesData || !user) return [];
+    return Object.values(allChallengesData).filter((c: any) => 
+      (c.senderId === user.uid || c.receiverId === user.uid) && c.status === 'active'
+    );
+  }, [allChallengesData, user]);
 
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const today = new Date().toLocaleDateString('en-CA');
@@ -99,15 +110,56 @@ export default function MasterTrackPage() {
 
     await updateStreakAndPoints(finalPoints);
 
-    if (isLegend) {
-      toast({ title: isPremium ? "إنجاز ملكي! (نقاط 2x) 🎉" : "إنجاز أسطوري! 🎉", description: `حصلت على ${finalPoints} نقطة.` });
-    } else {
-      toast({ title: "تم تمديد الحماسة! 🔥", description: "أكمل المسارات الأساسية للحصول على نقاط الماستر." });
-    }
-
     setStep('done');
     setTimerActive(false);
   }, [user, currentChallenge, userData, isPremium, updateStreakAndPoints]);
+
+  const handleCompletePvP = async (challenge: any) => {
+    if (!user) return;
+    playSound('success');
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    
+    try {
+      // منح النقاط للفائز
+      await updateStreakAndPoints(challenge.pointsStake);
+      
+      // تحديث عداد الانتصارات
+      await update(ref(database, `users/${user.uid}`), {
+        challengesWon: (userData.challengesWon || 0) + 1
+      });
+
+      // إغلاق التحدي
+      await remove(ref(database, `challenges/${challenge.id}`));
+
+      toast({ title: `انتصار ساحق! +${challenge.pointsStake}ن ⚔️`, description: "تم تسجيل فوزك في البروفايل." });
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل إكمال التحدي" });
+    }
+  };
+
+  const handleFailPvP = async (challenge: any) => {
+    if (!user) return;
+    playSound('click');
+    const todayStr = new Date().toLocaleDateString('en-CA');
+
+    try {
+      // خصم النقاط كعقوبة
+      const currentPoints = userData.points || 0;
+      await update(ref(database, `users/${user.uid}`), {
+        points: Math.max(0, currentPoints - challenge.pointsStake),
+        [`dailyPoints/${todayStr}`]: Math.max(0, (userData.dailyPoints?.[todayStr] || 0) - challenge.pointsStake),
+        challengesLost: (userData.challengesLost || 0) + 1,
+        lastChallengeLossDate: todayStr
+      });
+
+      // إغلاق التحدي
+      await remove(ref(database, `challenges/${challenge.id}`));
+
+      toast({ variant: "destructive", title: "هزيمة التحدي! ❌", description: `خصم ${challenge.pointsStake} نقطة وإدراجك في جدار العار.` });
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     const savedEnd = localStorage.getItem('master_timer_end');
@@ -153,13 +205,10 @@ export default function MasterTrackPage() {
 
   const handleStart = () => {
     const pool = getMasterPool(selectedType, selectedDifficulty);
-    if (pool.length === 0) {
-      toast({ title: "لا يوجد تحديات حالياً بهذا التصنيف" });
-      return;
-    }
+    if (pool.length === 0) return;
     
     if (!isPremium && masterCountToday >= 5) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لتحديات غير محدودة! 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي (5 تحديات)" });
       return;
     }
 
@@ -186,48 +235,38 @@ export default function MasterTrackPage() {
   const handleCancelChallenge = async () => {
     if (!user) return;
     playSound('click');
-    try {
-      const uRef = ref(database, `users/${user.uid}`);
-      const snap = await get(uRef);
-      const data = snap.val();
-      const todayStr = new Date().toLocaleDateString('en-CA');
-      await update(uRef, {
-        points: Math.max(0, (data.points || 0) - 75),
-        [`dailyPoints/${todayStr}`]: Math.max(0, (data.dailyPoints?.[todayStr] || 0) - 75)
-      });
-      setStep('setup');
-      localStorage.removeItem('master_timer_end');
-      localStorage.removeItem('master_current_challenge');
-      setTimerActive(false);
-      toast({ variant: "destructive", title: "تم الانسحاب 🛑", description: "خصم 75 نقطة." });
-    } catch (e) { console.error(e); }
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    await update(ref(database, `users/${user.uid}`), {
+      points: Math.max(0, (userData.points || 0) - 75),
+      [`dailyPoints/${todayStr}`]: Math.max(0, (userData.dailyPoints?.[todayStr] || 0) - 75)
+    });
+    setStep('setup');
+    localStorage.removeItem('master_timer_end');
+    localStorage.removeItem('master_current_challenge');
+    setTimerActive(false);
+    toast({ variant: "destructive", title: "تم الانسحاب 🛑", description: "خصم 75 نقطة." });
   };
 
   const handleAddTodo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!todoInput.trim() || !user) return;
     if (!isPremium && todoCountToday >= 5) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "اشترك في بريميوم لمهام لا نهائية! 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي (5 مهام)" });
       return;
     }
     playSound('click');
     const now = Date.now();
-    let expiryTime: number;
-    if (todoMinutes && parseInt(todoMinutes) > 0) {
-      expiryTime = now + (parseInt(todoMinutes) * 60 * 1000);
-    } else {
-      const midnight = new Date();
-      midnight.setHours(23, 59, 59, 999);
-      expiryTime = midnight.getTime();
-    }
+    const midnight = new Date(); midnight.setHours(23, 59, 59, 999);
+    const expiryTime = todoMinutes ? now + (parseInt(todoMinutes) * 60 * 1000) : midnight.getTime();
+    
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
-    update(newTodoRef, {
+    set(newTodoRef, {
       id: newTodoRef.key,
       title: todoInput.trim(),
       completed: false,
       timestamp: now,
       expiry: expiryTime,
-      hasCustomTimer: !!(todoMinutes && parseInt(todoMinutes) > 0)
+      hasCustomTimer: !!todoMinutes
     });
     update(ref(database, `users/${user.uid}`), {
       [`dailyTodoCount/${today}`]: todoCountToday + 1
@@ -237,7 +276,7 @@ export default function MasterTrackPage() {
   };
 
   const handleToggleTodo = async (todo: any) => {
-    if (!user || completingId || !userData) return;
+    if (!user || completingId) return;
     playSound('click');
     setCompletingId(todo.id);
     
@@ -247,31 +286,10 @@ export default function MasterTrackPage() {
 
     setTimeout(async () => {
       await updateStreakAndPoints(pointsToAdd);
-      // استخدام remove بدلاً من update مع null لإصلاح الخطأ البرمجي
       await remove(ref(database, `users/${user.uid}/todos/${todo.id}`));
-      
-      if (pointsToAdd > 0) { 
-        toast({ title: "مهمة ناجحة! +5 نقاط وتمديد حماسة 🔥" }); 
-        playSound('success'); 
-      } else {
-        toast({ title: "تمديد حماسة فقط! 🔥", description: "المهمة انتهت زمنياً." });
-      }
+      toast({ title: pointsToAdd > 0 ? "مهمة ناجحة! +5ن 🔥" : "تمديد حماسة فقط (الوقت انتهى)!" });
       setCompletingId(null);
     }, 800);
-  };
-
-  const handleCancelTodo = async (todoId: string) => {
-    if (!user || !userData) return;
-    playSound('click');
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    try {
-      await update(ref(database, `users/${user.uid}`), {
-        points: Math.max(0, (userData.points || 0) - 30),
-        [`dailyPoints/${todayStr}`]: Math.max(0, (userData.dailyPoints?.[todayStr] || 0) - 30)
-      });
-      await remove(ref(database, `users/${user.uid}/todos/${todoId}`));
-      toast({ variant: "destructive", title: "تم إلغاء المهمة 🛑", description: "تم خصم 30 نقطة." });
-    } catch (e) { console.error(e); }
   };
 
   const formatTime = (s: number) => {
@@ -280,29 +298,10 @@ export default function MasterTrackPage() {
     return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  function TodoExpiryTimer({ expiry, hasCustomTimer }: { expiry: number, hasCustomTimer: boolean }) {
-    const [display, setDisplay] = useState("");
-    const [isExpired, setIsExpired] = useState(false);
-    useEffect(() => {
-      const itv = setInterval(() => {
-        const diff = expiry - Date.now();
-        if (diff <= 0) { setDisplay("منتهي (0 نقطة)"); setIsExpired(true); } else {
-          const h = Math.floor(diff / (1000 * 60 * 60));
-          const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-          const s = Math.floor((diff % (1000 * 60)) / 1000);
-          setDisplay(!hasCustomTimer ? "حتى منتصف الليل" : `${h > 0 ? h + 'س ' : ''}${m}د ${s}ث`);
-          setIsExpired(false);
-        }
-      }, 1000);
-      return () => clearInterval(itv);
-    }, [expiry, hasCustomTimer]);
-    return ( <span className={cn("text-[8px] font-black flex items-center gap-1", isExpired ? "text-red-500" : "text-orange-500")}> <Clock size={8}/> {display} </span> );
-  }
-
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40 overflow-x-hidden" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-6 px-2 sm:px-4">
+      <div className="app-container py-6 space-y-6">
         <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center">
@@ -310,102 +309,60 @@ export default function MasterTrackPage() {
             </div>
             <div className="text-right">
               <h1 className="text-xl font-black text-primary leading-tight">المسار العام</h1>
-              <div className="flex items-center gap-1">
-                <p className="text-[8px] font-bold text-muted-foreground uppercase">تحديات الأساطير والتدريب</p>
-                {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-              </div>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase">تحديات الأساطير والمبارزات</p>
             </div>
           </div>
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <ArrowLeft className="rotate-180" />
-            </Button>
-          </Link>
+          <Link href="/"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
         </header>
 
+        {/* قسم التحديات الثنائية النشطة */}
+        {activePvPChallenges.length > 0 && (
+          <section className="mx-2 space-y-3">
+            <h3 className="font-black text-primary text-sm flex items-center gap-2 px-2"> <Swords className="text-red-500" size={18} /> المبارزات النشطة ⚔️</h3>
+            <div className="grid grid-cols-1 gap-3">
+              {activePvPChallenges.map((pvp: any) => (
+                <PvPActiveCard key={pvp.id} challenge={pvp} onComplete={() => handleCompletePvP(pvp)} onFail={() => handleFailPvP(pvp)} />
+              ))}
+            </div>
+          </section>
+        )}
+
         {step === 'setup' && (
-          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 overflow-hidden mx-2">
+          <Card className="rounded-[2.5rem] p-6 md:p-8 shadow-xl border-none bg-card space-y-6 mx-2">
             <div className="flex items-center justify-between">
-               <h3 className="font-black text-primary text-sm">ابدأ تحدياً جديداً</h3>
-               <div className="flex items-center gap-1 bg-secondary px-3 py-1 rounded-full border border-border/50">
-                  <span className="text-[9px] font-black text-muted-foreground">المتبقي اليوم:</span>
-                  {isPremium ? <Infinity size={12} className="text-yellow-600" /> : <span className="text-xs font-black text-primary">{Math.max(0, 5 - masterCountToday)}/5</span>}
+               <h3 className="font-black text-primary text-sm">تحديات الأساطير (Master)</h3>
+               <div className="bg-secondary px-3 py-1 rounded-full text-[10px] font-black text-primary">
+                  المتبقي: {isPremium ? "∞" : `${Math.max(0, 5 - masterCountToday)}/5`}
                </div>
             </div>
-
-            <div className="space-y-3">
-              <h3 className="font-black text-primary text-xs opacity-60 text-right">1. نوع المهمة</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {(['Fitness', 'Nutrition', 'Behavior', 'Study'] as TrackKey[]).map(t => (
-                  <Button 
-                    key={t}
-                    variant={selectedType === t ? 'default' : 'outline'}
-                    onClick={() => { playSound('click'); setSelectedType(t); }}
-                    className={cn("h-12 rounded-xl font-black text-xs", selectedType === t ? "shadow-md scale-[1.02]" : "")}
-                  >
-                    {t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'تغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}
-                  </Button>
-                ))}
-              </div>
+            <div className="grid grid-cols-2 gap-2">
+              {['Fitness', 'Nutrition', 'Behavior', 'Study'].map(t => (
+                <Button key={t} variant={selectedType === t ? 'default' : 'outline'} onClick={() => setSelectedType(t as TrackKey)} className="h-12 rounded-xl font-black text-xs">
+                  {t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'تغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}
+                </Button>
+              ))}
             </div>
-
-            <div className="space-y-3">
-              <h3 className="font-black text-primary text-xs opacity-60 text-right">2. الصعوبة</h3>
-              <div className="flex gap-2">
-                {(['سهل', 'متوسط', 'صعب'] as const).map(d => (
-                  <Button 
-                    key={d}
-                    variant={selectedDifficulty === d ? 'default' : 'outline'}
-                    onClick={() => { playSound('click'); setSelectedDifficulty(d); }}
-                    className={cn("flex-1 h-12 rounded-xl font-black text-xs", selectedDifficulty === d ? "shadow-md scale-[1.02]" : "")}
-                  >
-                    {d}
-                  </Button>
-                ))}
-              </div>
+            <div className="flex gap-2">
+              {['سهل', 'متوسط', 'صعب'].map(d => (
+                <Button key={d} variant={selectedDifficulty === d ? 'default' : 'outline'} onClick={() => setSelectedDifficulty(d as any)} className="flex-1 h-12 rounded-xl font-black text-xs">{d}</Button>
+              ))}
             </div>
-
-            <Button onClick={handleStart} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">
-              ابدأ التحدي 🚀
-            </Button>
+            <Button onClick={handleStart} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">ابدأ التحدي 🚀</Button>
           </Card>
         )}
 
         {step === 'active' && currentChallenge && (
           <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl mx-2">
-            <CardHeader className="bg-primary text-white p-5">
-              <div className="flex items-center justify-between flex-row-reverse gap-4">
-                <CardTitle className="text-lg font-black leading-tight flex-1 text-right">
-                  {currentChallenge.title}
-                </CardTitle>
-                <div className="flex flex-col items-center gap-1">
-                  <span className="bg-white/20 px-2.5 py-0.5 rounded-full text-[10px] font-black">{currentChallenge.difficulty}</span>
-                  {currentChallenge.isTimeLocked && <span className="bg-red-500/40 px-1.5 py-0.5 rounded-md text-[7px] font-black flex items-center gap-0.5"><Lock size={8}/> مقفلة</span>}
-                </div>
-              </div>
-            </CardHeader>
+            <CardHeader className="bg-primary text-white p-5"><CardTitle className="text-lg font-black leading-tight text-right">{currentChallenge.title}</CardTitle></CardHeader>
             <CardContent className="p-6 space-y-6">
               <p className="text-base font-bold text-muted-foreground leading-relaxed text-right">{currentChallenge.description}</p>
-              
               <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
-                <p className="text-[9px] font-black text-primary uppercase">يعمل في الخلفية... 🐱📡</p>
+                <p className="text-[9px] font-black text-primary uppercase">العداد النشط... 📡</p>
                 <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
               </div>
-
               <div className="flex flex-col gap-2">
-                <Button 
-                  onClick={handleCompleteChallenge} 
-                  disabled={currentChallenge.isTimeLocked && timeLeft > 0}
-                  className={cn(
-                    "h-14 rounded-2xl text-lg font-black shadow-lg transition-all",
-                    (currentChallenge.isTimeLocked && timeLeft > 0) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
-                  )}
-                >
-                  {(currentChallenge.isTimeLocked && timeLeft > 0) ? `انتظر إكمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
-                </Button>
-                <Button onClick={handleCancelChallenge} variant="ghost" className="text-destructive font-black text-xs h-10 gap-2">
-                  <XCircle size={16} /> إلغاء التحدي (خصم 75ن)
-                </Button>
+                <Button onClick={handleCompleteChallenge} className="h-14 rounded-2xl text-lg font-black bg-accent text-white shadow-lg">أنهيت المهمة 🔥</Button>
+                <Button onClick={handleCancelChallenge} variant="ghost" className="text-destructive font-black text-xs gap-2"><XCircle size={16} /> انسحاب (-75ن)</Button>
               </div>
             </CardContent>
           </Card>
@@ -413,11 +370,8 @@ export default function MasterTrackPage() {
 
         {step === 'done' && (
           <Card className="rounded-[2.5rem] p-8 text-center bg-card shadow-2xl space-y-4 mx-2">
-            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle size={48} />
-            </div>
-            <h2 className="text-2xl font-black text-primary">عمل رائع!</h2>
-            <p className="text-xs font-bold text-muted-foreground">كل خطوة إضافية هي حجر أساس في بناء أسطورتك الشخصية.</p>
+            <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto"><CheckCircle size={48} /></div>
+            <h2 className="text-2xl font-black text-primary">تم الإنجاز!</h2>
             <Button onClick={() => setStep('setup')} className="w-full h-12 rounded-xl font-black">تحدي جديد 🐱</Button>
           </Card>
         )}
@@ -425,44 +379,75 @@ export default function MasterTrackPage() {
         <section className="space-y-4 pt-6 border-t border-border/50">
           <header className="flex items-center justify-between px-3">
             <h2 className="text-lg font-black text-primary flex items-center gap-2"> <ListChecks size={20} /> قائمة مهامي </h2>
-            <div className="flex items-center gap-1 bg-secondary/50 px-2 py-0.5 rounded-lg border border-border/20">
-               <span className="text-[8px] font-black text-muted-foreground">المتبقي اليوم:</span>
-               {isPremium ? <Infinity size={10} className="text-yellow-600" /> : <span className="text-[10px] font-black text-primary">{Math.max(0, 5 - todoCountToday)}/5</span>}
+            <div className="bg-secondary/50 px-2 py-0.5 rounded-lg border border-border/20 text-[10px] font-black">
+               المتبقي: {isPremium ? "∞" : `${Math.max(0, 5 - todoCountToday)}/5`}
             </div>
           </header>
-          
           <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5 mx-2">
-            <form onSubmit={handleAddTodo} className="flex flex-col gap-2">
-              <div className="flex gap-2">
-                <textarea 
-                  placeholder="أضف مهمة شخصية..." 
-                  className="flex-1 min-h-[44px] p-2.5 rounded-xl bg-secondary/50 border-none font-bold text-right text-[10px] focus:ring-2 focus:ring-primary/20 resize-none outline-none overflow-hidden"
-                  value={todoInput}
-                  onChange={(e) => setTodoInput(e.target.value)}
-                />
-                <Input placeholder="د" type="number" className="h-11 w-12 rounded-xl bg-secondary/50 border-none font-bold text-center text-[10px]" value={todoMinutes} onChange={(e) => setTodoMinutes(e.target.value)} />
-                <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0"> <Plus size={20} /> </Button>
-              </div>
+            <form onSubmit={handleAddTodo} className="flex gap-2">
+              <Input placeholder="أضف مهمة..." className="flex-1 h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs" value={todoInput} onChange={(e) => setTodoInput(e.target.value)} />
+              <Input placeholder="د" type="number" className="h-11 w-12 rounded-xl bg-secondary/50 border-none font-bold text-center text-xs" value={todoMinutes} onChange={(e) => setTodoMinutes(e.target.value)} />
+              <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0"> <Plus size={20} /> </Button>
             </form>
             <div className="space-y-2">
               {todosData ? Object.values(todosData).map((todo: any) => (
-                <div key={todo.id} className={cn("flex items-center justify-between p-3.5 bg-secondary/20 rounded-xl", completingId === todo.id && "opacity-0 scale-95 blur-sm transition-all duration-700")}>
-                  <div className="flex items-center gap-3 overflow-hidden flex-1">
-                    <button onClick={() => handleToggleTodo(todo)} disabled={!!completingId} className="w-7 h-7 rounded-lg bg-white border-2 border-primary/20" > <CheckSquare size={16} className="text-transparent" /> </button>
-                    <div className="flex flex-col text-right overflow-hidden flex-1">
-                      <span className="font-bold text-[11px] text-primary break-words leading-tight"> {todo.title} </span>
-                      <TodoExpiryTimer expiry={todo.expiry} hasCustomTimer={todo.hasCustomTimer} />
+                <div key={todo.id} className={cn("flex items-center justify-between p-3 bg-secondary/20 rounded-xl", completingId === todo.id && "opacity-0 transition-all duration-700")}>
+                  <div className="flex items-center gap-3 flex-1">
+                    <button onClick={() => handleToggleTodo(todo)} className="w-6 h-6 rounded-lg bg-white border-2 border-primary/20" />
+                    <div className="flex flex-col text-right flex-1">
+                      <span className="font-bold text-[11px] text-primary leading-tight">{todo.title}</span>
+                      <span className="text-[8px] font-black text-orange-500"> <Clock size={8} className="inline ml-1" /> {todo.hasCustomTimer ? "موقت خاص" : "حتى منتصف الليل"} </span>
                     </div>
-                    <Button onClick={() => handleCancelTodo(todo.id)} variant="ghost" size="icon" className="h-8 w-8 text-destructive/40 hover:text-destructive shrink-0">
-                      <Trash2 size={14} />
-                    </Button>
                   </div>
                 </div>
-              )) : ( <div className="text-center py-8 opacity-20"> <ListChecks size={32} className="mx-auto mb-2" /> <p className="font-black text-[10px] italic">لا توجد مهام نشطة حالياً.</p> </div> )}
+              )) : ( <p className="text-center py-4 opacity-30 text-[10px] font-black">لا توجد مهام حالياً</p> )}
             </div>
           </Card>
         </section>
       </div>
     </div>
+  );
+}
+
+function PvPActiveCard({ challenge, onComplete, onFail }: { challenge: any, onComplete: () => void, onFail: () => void }) {
+  const [timeLeft, setTimeLeft] = useState(0);
+
+  useEffect(() => {
+    const expires = (challenge.acceptedAt || 0) + (challenge.duration * 60 * 1000);
+    const updateTimer = () => {
+      const diff = Math.round((expires - Date.now()) / 1000);
+      if (diff <= 0) {
+        setTimeLeft(0);
+        onFail(); // الفشل التلقائي عند انتهاء الوقت
+      } else {
+        setTimeLeft(diff);
+      }
+    };
+    const itv = setInterval(updateTimer, 1000);
+    updateTimer();
+    return () => clearInterval(itv);
+  }, [challenge, onFail]);
+
+  const format = (s: number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
+
+  return (
+    <Card className="rounded-2xl border-2 border-red-100 bg-white overflow-hidden shadow-md">
+      <div className="p-4 flex items-center justify-between bg-red-50 border-b border-red-100">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-red-600 text-white rounded-lg flex items-center justify-center animate-pulse"> <Timer size={16} /> </div>
+          <p className="text-xs font-black text-red-900">{format(timeLeft)}</p>
+        </div>
+        <div className="text-right">
+          <p className="text-[10px] font-black text-red-600 uppercase">مبارزة ضد {challenge.senderId === challenge.id ? challenge.receiverName : challenge.senderName}</p>
+        </div>
+      </div>
+      <CardContent className="p-4 space-y-4">
+        <h4 className="font-black text-primary text-sm text-right">{challenge.title}</h4>
+        <div className="flex items-center justify-between">
+           <div className="bg-orange-100 text-orange-700 px-2 py-1 rounded-lg text-[10px] font-black">الرهان: {challenge.pointsStake}ن</div>
+           <Button onClick={onComplete} className="h-9 px-6 rounded-xl bg-green-600 hover:bg-green-700 font-black text-xs gap-2"> <CheckCircle size={14} /> أنجزت التحدي! </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

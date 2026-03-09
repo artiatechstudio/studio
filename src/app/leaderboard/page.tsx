@@ -3,19 +3,16 @@
 
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { Avatar } from "@/components/ui/avatar";
-import { Trophy, Medal, Flame, Star, TrendingUp, Heart, Skull, AlertCircle, Crown, Timer } from "lucide-react";
+import { Trophy, Medal, Flame, TrendingUp, Heart, Skull, AlertCircle, Crown, Timer, Swords } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
-import Image from 'next/image';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
   
-  // جلب أفضل 200 مستخدم بناءً على النقاط الكلية كمرحلة أولى لضمان الحصول على النشطين
   const leadersQuery = useMemoFirebase(() => {
     return query(ref(database, 'users'), orderByChild('points'), limitToLast(200));
   }, [database]);
@@ -28,22 +25,18 @@ export default function LeaderboardPage() {
     const today = new Date();
     const todayStr = today.toLocaleDateString('en-CA');
     
-    const yesterday = new Date();
-    yesterday.setDate(today.getDate() - 1);
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString('en-CA');
     
-    const dayBefore = new Date();
-    dayBefore.setDate(today.getDate() - 2);
+    const dayBefore = new Date(); dayBefore.setDate(today.getDate() - 2);
     const dayBeforeStr = dayBefore.toLocaleDateString('en-CA');
 
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(today.getDate() - 3);
+    const threeDaysAgo = new Date(); threeDaysAgo.setDate(today.getDate() - 3);
     const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
 
     const allUsers = Object.values(rawData)
       .filter((u: any) => u.name !== 'admin')
       .map((user: any) => {
-        // حساب متوسط نقاط آخر 3 أيام
         const p1 = user.dailyPoints?.[todayStr] || 0;
         const p2 = user.dailyPoints?.[yesterdayStr] || 0;
         const p3 = user.dailyPoints?.[dayBeforeStr] || 0;
@@ -65,16 +58,22 @@ export default function LeaderboardPage() {
         return { ...user, averagePoints, bmiColor, bmiValue, bmiStatus };
       });
 
-    // المتصدرون: ترتيب تنازلي حسب متوسط نقاط آخر 3 أيام
     const leaders = [...allUsers]
       .filter((user: any) => user.averagePoints > 0)
       .sort((a: any, b: any) => b.averagePoints - a.averagePoints)
       .slice(0, 100);
 
-    // جدار العار: من تم معاقبتهم في آخر 3 أيام فقط
+    // جدار العار: من تم معاقبتهم بسبب الغياب أو خسارة التحديات في آخر 3 أيام
     const losers = allUsers
-      .filter((user: any) => user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr)
-      .sort((a: any, b: any) => b.lastStreakPenaltyDate.localeCompare(a.lastStreakPenaltyDate))
+      .filter((user: any) => 
+        (user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr) ||
+        (user.lastChallengeLossDate && user.lastChallengeLossDate >= threeDaysAgoStr)
+      )
+      .sort((a: any, b: any) => {
+        const dateA = a.lastChallengeLossDate || a.lastStreakPenaltyDate || '';
+        const dateB = b.lastChallengeLossDate || b.lastStreakPenaltyDate || '';
+        return dateB.localeCompare(dateA);
+      })
       .slice(0, 20);
 
     return { leaders, losers };
@@ -119,11 +118,7 @@ export default function LeaderboardPage() {
                 const isImageAvatar = user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:image'));
                 const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
-                  <div 
-                    key={user.id} 
-                    className={`p-3 flex items-center justify-between hover:bg-secondary/5 transition-all ${index < 3 ? 'bg-primary/[0.02]' : ''}`}
-                  >
-                    {/* عرض المتوسط بوضوح */}
+                  <div key={user.id} className={cn("p-3 flex items-center justify-between hover:bg-secondary/5 transition-all", index < 3 ? 'bg-primary/[0.02]' : '')}>
                     <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
                       <div className="flex items-center gap-1 justify-center">
                         <TrendingUp size={10} className="text-accent" />
@@ -162,39 +157,39 @@ export default function LeaderboardPage() {
                           <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
                             {user.streak || 0}ي <Flame size={8} fill="currentColor" />
                           </span>
-                          <div className={cn("flex flex-col items-center bg-secondary/50 px-1.5 py-0.5 rounded-lg border border-border/20 min-w-[35px]", user.bmiColor)}>
-                             <span className="text-[8px] font-black leading-none">{user.bmiValue}</span>
-                             <span className="text-[6px] font-black uppercase opacity-80">{user.bmiStatus}</span>
-                          </div>
+                          <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600 border border-blue-100">
+                            {user.challengesWon || 0} <Swords size={8} />
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 );
               }) : (
-                <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون في الـ 3 أيام الأخيرة.</div>
+                <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون.</div>
               )}
             </div>
           </div>
 
-          {/* جدار العار - مخصص لآخر 3 أيام فقط */}
           <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
             <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
               <div className="flex items-center gap-2">
                 <Skull size={18} />
                 <h2 className="text-sm font-black uppercase tracking-widest">جدار العار 🛑</h2>
               </div>
-              <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام مؤخراً</p>
+              <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام أو خسروا مبارزات</p>
             </div>
             <div className="p-4 space-y-3">
               {stats.losers.length > 0 ? stats.losers.map((user: any) => {
+                const isChallengeLoser = user.lastChallengeLossDate && user.lastChallengeLossDate >= user.lastStreakPenaltyDate;
                 const isImageAvatar = user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:image'));
-                const isPremium = user.isPremium === 1 || user.name === 'admin';
                 return (
                   <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
-                    <div className="flex items-center gap-2 bg-red-50 px-3 py-1 rounded-lg border border-red-100">
-                      <AlertCircle size={12} className="text-red-600" />
-                      <span className="text-[10px] font-black text-red-600">عقوبة غياب</span>
+                    <div className="flex flex-col items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px]">
+                      <span className="text-[8px] font-black text-red-600 flex items-center gap-1">
+                        {isChallengeLoser ? <Swords size={8}/> : <AlertCircle size={8}/>}
+                        {isChallengeLoser ? "هزيمة مبارزة" : "عقوبة غياب"}
+                      </span>
                     </div>
                     
                     <div className="flex items-center gap-3 flex-row-reverse">
@@ -208,11 +203,8 @@ export default function LeaderboardPage() {
                         </div>
                       </Link>
                       <div className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <p className="font-black text-red-900 text-xs">{user.name}</p>
-                          {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-                        </div>
-                        <p className="text-[8px] font-bold text-red-400">انكسرت الحماسة في {user.lastStreakPenaltyDate}</p>
+                        <p className="font-black text-red-900 text-xs">{user.name}</p>
+                        <p className="text-[8px] font-bold text-red-400">سقط في {isChallengeLoser ? user.lastChallengeLossDate : user.lastStreakPenaltyDate}</p>
                       </div>
                     </div>
                   </div>
@@ -220,9 +212,6 @@ export default function LeaderboardPage() {
               }) : (
                 <div className="p-10 text-center text-red-500 font-black text-xs italic">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>
               )}
-            </div>
-            <div className="bg-red-100 p-2 text-center">
-              <p className="text-[7px] font-black text-red-600 uppercase italic">الالتزام هو الفارق الوحيد بين العظيم والراسب</p>
             </div>
           </div>
         </div>

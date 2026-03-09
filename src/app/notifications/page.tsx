@@ -31,12 +31,8 @@ export default function NotificationsPage() {
   const handleClearAll = async () => {
     if (!user || !notificationsRef) return;
     playSound('click');
-    try {
-      await remove(notificationsRef);
-      toast({ title: "تم مسح كافة الإشعارات" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل المسح" });
-    }
+    await remove(notificationsRef);
+    toast({ title: "تم مسح الإشعارات" });
   };
 
   const handleChallengeAction = async (notif: any, action: 'accept' | 'reject') => {
@@ -45,28 +41,23 @@ export default function NotificationsPage() {
 
     try {
       if (action === 'accept') {
+        const now = Date.now();
+        // عند القبول: يبدأ مؤقت المستلم فوراً
         await update(ref(database, `challenges/${notif.challengeId}`), {
           status: 'active',
+          receiverStartTime: now,
           acceptedAt: serverTimestamp()
         });
-        toast({ title: "تم قبول التحدي! ⚔️", description: "اذهب لصفحة Master لبدء التنفيذ." });
+        toast({ title: "تم قبول التحدي! ⚔️", description: "انطلق لصفحة Master لتنفيذ المهمة." });
         playSound('success');
       } else {
         await remove(ref(database, `challenges/${notif.challengeId}`));
         toast({ title: "تم رفض التحدي" });
       }
-      
-      // مسح الإشعار
       await remove(ref(database, `users/${user.uid}/notifications/${notif.id}`));
     } catch (e) {
       toast({ variant: "destructive", title: "فشل الإجراء" });
     }
-  };
-
-  const handleDeleteOne = async (notifId: string) => {
-    if (!user) return;
-    playSound('click');
-    await remove(ref(database, `users/${user.uid}/notifications/${notifId}`));
   };
 
   const getIcon = (type: string) => {
@@ -74,7 +65,6 @@ export default function NotificationsPage() {
       case 'like': return <Heart className="text-red-500" fill="currentColor" size={20} />;
       case 'achievement': return <Trophy className="text-yellow-500" size={20} />;
       case 'challenge': return <Swords className="text-red-600" size={20} />;
-      case 'bonus': return <Zap className="text-accent" size={20} />;
       case 'system': return <Bell className="text-primary" size={20} />;
       default: return <Bell size={20} />;
     }
@@ -86,51 +76,29 @@ export default function NotificationsPage() {
       <div className="app-container py-10 space-y-8">
         <header className="flex items-center justify-between bg-card p-6 rounded-[2.5rem] shadow-xl border border-border mx-2">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-accent/10 text-accent rounded-2xl flex items-center justify-center">
-              <Bell size={32} />
-            </div>
+            <div className="w-14 h-14 bg-accent/10 text-accent rounded-2xl flex items-center justify-center"><Bell size={32} /></div>
             <h1 className="text-3xl font-black text-primary">الإشعارات</h1>
           </div>
-          {notifications.length > 0 && (
-            <Button onClick={handleClearAll} variant="ghost" className="rounded-full gap-2 text-accent font-black h-12 px-6">
-              <CheckCheck size={20} /> <span>مسح الكل</span>
-            </Button>
-          )}
+          {notifications.length > 0 && <Button onClick={handleClearAll} variant="ghost" className="rounded-full gap-2 text-accent font-black h-12 px-6"><CheckCheck size={20} /> <span>مسح الكل</span></Button>}
         </header>
 
-        {isLoading ? (
-          <div className="flex justify-center p-20"> <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /> </div>
-        ) : notifications.length === 0 ? (
-          <div className="text-center p-20 opacity-30"> <div className="text-8xl">📭</div> <p className="font-black text-xl">لا يوجد إشعارات حالياً</p> </div>
-        ) : (
+        {isLoading ? <div className="flex justify-center p-20"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> : notifications.length === 0 ? <div className="text-center p-20 opacity-30"><div className="text-8xl">📭</div><p className="font-black text-xl">لا يوجد إشعارات</p></div> : (
           <div className="space-y-3 mx-2">
             {notifications.map((n) => (
-              <Card key={n.id} className={cn("rounded-3xl border-none shadow-md overflow-hidden transition-all bg-white border-r-8", n.type === 'challenge' ? "border-red-500" : "border-accent")}>
+              <Card key={n.id} className={cn("rounded-3xl border-none shadow-md overflow-hidden bg-white border-r-8", n.type === 'challenge' ? "border-red-500" : "border-accent")}>
                 <CardContent className="p-5">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-secondary/50">
-                      {getIcon(n.type)}
-                    </div>
+                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 bg-secondary/50">{getIcon(n.type)}</div>
                     <div className="flex-1 space-y-1 text-right">
                       <p className="font-black text-sm text-primary">{n.title}</p>
                       <p className="text-xs font-bold text-muted-foreground leading-relaxed">{n.message}</p>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-2 font-bold">
-                        <Clock size={10} />
-                        {n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
-                      </div>
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/60 mt-2 font-bold"><Clock size={10} /> {n.timestamp ? formatDistanceToNow(n.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}</div>
                     </div>
                   </div>
-                  
                   {n.type === 'challenge' && (
                     <div className="flex gap-2 mt-4">
                       <Button onClick={() => handleChallengeAction(n, 'accept')} className="flex-1 h-10 rounded-xl bg-green-600 hover:bg-green-700 font-black text-xs gap-2"> <CheckCircle2 size={14} /> قبول التحدي </Button>
                       <Button onClick={() => handleChallengeAction(n, 'reject')} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 hover:bg-red-50 font-black text-xs gap-2"> <XCircle size={14} /> رفض </Button>
-                    </div>
-                  )}
-
-                  {n.type !== 'challenge' && (
-                    <div className="flex justify-end mt-2">
-                      <Button onClick={() => handleDeleteOne(n.id)} variant="ghost" className="h-6 text-[8px] font-black text-accent uppercase opacity-40">مسح الإشعار</Button>
                     </div>
                   )}
                 </CardContent>

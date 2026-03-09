@@ -1,260 +1,132 @@
 
 "use client"
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction, update, get } from 'firebase/database';
+import { ref, update, push, serverTimestamp, runTransaction } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Globe, Send, Trash2, Heart, Clock, Crown, Sparkles, Infinity, User } from 'lucide-react';
+import { Globe, Scale, Swords, CheckCircle, XCircle, Clock, TrendingUp, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
-import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 
-export default function PublicChatPage() {
+export default function PublicCommunityPage() {
   const { user } = useUser();
   const { database } = useFirebase();
-  const [postText, setPostText] = useState('');
-  const [isSending, setIsSending] = useState(false);
 
   const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
-  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
-  const { data: postsData } = useDatabase(postsQuery);
+  const { data: postsData, isLoading } = useDatabase(postsRef);
 
-  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
-  const { data: userData } = useDatabase(userRef);
-
-  const isAdmin = userData?.name === 'admin';
-  const isPremium = userData?.isPremium === 1 || isAdmin;
-  const todayStr = new Date().toLocaleDateString('en-CA');
-  const dailyCount = userData?.dailyPostsCount?.[todayStr] || 0;
-  const remainingPosts = isPremium ? Infinity : Math.max(0, 2 - dailyCount);
-
-  const posts = useMemo(() => {
+  const disputes = useMemo(() => {
     if (!postsData) return [];
-    return Object.entries(postsData)
-      .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+    return Object.values(postsData)
+      .filter((p: any) => p.type === 'dispute')
+      .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
-  const handleSendPost = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!postText.trim() || !user || isSending) return;
-
-    if (!isPremium && remainingPosts <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بعضوين في اليوم للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
-      return;
-    }
-
-    setIsSending(true);
-    playSound('click');
-
-    const newPost = {
-      userId: user.uid,
-      userName: userData?.name || 'مستخدم مجهول',
-      userAvatar: userData?.avatar || '🐱',
-      isPremium: isPremium ? 1 : 0,
-      text: postText.trim(),
-      timestamp: serverTimestamp(),
-      likes: {}
-    };
-
-    try {
-      await push(postsRef, newPost);
-      if (!isPremium) {
-        await update(ref(database, `users/${user.uid}/dailyPostsCount`), {
-          [todayStr]: dailyCount + 1
-        });
-      }
-      setPostText('');
-      playSound('success');
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل النشر" });
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    playSound('click');
-    try {
-      await remove(ref(database, `publicPosts/${postId}`));
-      toast({ title: "تم حذف المنشور بنجاح" });
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل الحذف" });
-    }
-  };
-
-  const handleToggleLike = (postId: string) => {
+  const handleVote = async (postId: string, side: 'sender' | 'receiver') => {
     if (!user) return;
     playSound('click');
-    const likeRef = ref(database, `publicPosts/${postId}/likes/${user.uid}`);
+    const voteRef = ref(database, `publicPosts/${postId}/votedBy/${user.uid}`);
     
-    get(likeRef).then(snapshot => {
-      if (snapshot.exists()) {
-        remove(likeRef);
-      } else {
-        update(ref(database, `publicPosts/${postId}/likes`), {
-          [user.uid]: true
-        });
+    runTransaction(voteRef, (current) => {
+      if (current) {
+        toast({ title: "لقد صوتَّ بالفعل!" });
+        return;
       }
+      
+      const countRef = ref(database, `publicPosts/${postId}/votes/${side}`);
+      runTransaction(countRef, (count) => (count || 0) + 1);
+      toast({ title: "تم تسجيل تصويتك ✅" });
+      playSound('success');
+      return side;
     });
   };
 
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-6">
-        <header className="flex items-center gap-4 bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2 mt-2">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-            <Globe size={24} />
-          </div>
-          <div className="text-right">
-            <h1 className="text-2xl font-black text-primary">المجتمع العام</h1>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">شارك إنجازاتك مع العالم 🌍</p>
+      <div className="app-container py-6 space-y-8">
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-accent/10 text-accent rounded-2xl flex items-center justify-center"><Globe size={28} /></div>
+            <div className="text-right">
+              <h1 className="text-xl font-black text-primary">المجتمع العام</h1>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase">النزاعات والتحكيم الشعبي</p>
+            </div>
           </div>
         </header>
 
-        {/* صندوق النشر (بماذا تفكر) */}
-        <Card className="rounded-[2rem] shadow-xl border-none bg-card overflow-hidden mx-2">
-          <CardContent className="p-6 space-y-4">
-            <form onSubmit={handleSendPost} className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Link href="/profile">
-                  <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl overflow-hidden border border-border">
-                    {userData?.avatar?.startsWith('data:image') || userData?.avatar?.startsWith('http') ? (
-                      <img src={userData.avatar} className="w-full h-full object-cover" alt="Me" />
-                    ) : (
-                      <span>{userData?.avatar || "🐱"}</span>
-                    )}
-                  </div>
-                </Link>
-                <textarea 
-                  placeholder={`بماذا تفكر يا ${userData?.name?.split(' ')[0]}؟`}
-                  className="flex-1 min-h-[100px] p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm focus:ring-2 focus:ring-primary/20 resize-none outline-none"
-                  value={postText}
-                  onChange={(e) => setPostText(e.target.value)}
-                  maxLength={280}
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-muted-foreground uppercase">المتبقي اليوم</span>
-                    <div className="flex items-center gap-1 font-black text-primary">
-                      {isPremium ? <Infinity size={14} className="text-yellow-500" /> : <span>{remainingPosts} منشور</span>}
-                    </div>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-muted-foreground uppercase">الحروف</span>
-                    <span className={cn("text-[10px] font-black", postText.length > 250 ? "text-red-500" : "text-primary")}>
-                      {280 - postText.length}
-                    </span>
-                  </div>
-                </div>
-                <Button 
-                  type="submit" 
-                  disabled={!postText.trim() || isSending || (!isPremium && remainingPosts <= 0)}
-                  className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 shadow-lg font-black gap-2"
-                >
-                  {isSending ? "جاري النشر..." : "نشر الآن"} <Send size={16} className="rotate-180" />
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <section className="mx-2 space-y-6">
+          <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-start gap-3">
+            <Scale className="text-blue-600 shrink-0" size={20} />
+            <div className="text-right">
+              <p className="text-xs font-black text-blue-900 leading-tight">محكمة كارينجو الشعبية ⚖️</p>
+              <p className="text-[9px] font-bold text-blue-700 mt-1">صوتوا بالعدل! قراركم يحدد الفائز في التحديات المتنازع عليها. التصويت يستمر لـ 24 ساعة فقط.</p>
+            </div>
+          </div>
 
-        {/* جدار المنشورات */}
-        <div className="space-y-4 mx-2">
-          {posts.length === 0 ? (
-            <div className="text-center py-20 opacity-20 font-black text-xl">كن أول من ينشر في المجتمع! 🐱✨</div>
-          ) : posts.map((post) => (
-            <Card key={post.id} className="rounded-[2rem] shadow-md border border-border bg-card overflow-hidden">
-              <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
-                <div className="flex items-center gap-3">
-                  <Link href={`/user/${post.userId}`} onClick={() => playSound('click')}>
-                    <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm overflow-hidden hover:scale-105 transition-transform">
-                      {post.userAvatar?.startsWith('data:image') || post.userAvatar?.startsWith('http') ? (
-                        <img src={post.userAvatar} className="w-full h-full object-cover" alt={post.userName} />
-                      ) : (
-                        <span>{post.userAvatar || "🐱"}</span>
-                      )}
-                    </div>
-                  </Link>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1">
-                      <Link href={`/user/${post.userId}`} className="font-black text-primary text-sm hover:underline">
-                        {post.userName}
-                      </Link>
-                      {post.isPremium === 1 && <Crown size={12} className="text-yellow-500" fill="currentColor" />}
-                    </div>
-                    <div className="flex items-center gap-1 text-[8px] font-bold text-muted-foreground">
-                      <Clock size={8} /> {post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}
-                    </div>
-                  </div>
-                </div>
-
-                {(post.userId === user?.uid || isAdmin) && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="icon" className="rounded-full text-destructive/40 hover:text-destructive hover:bg-destructive/10">
-                        <Trash2 size={16} />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-2xl font-black text-primary text-right">حذف المنشور؟</AlertDialogTitle>
-                        <AlertDialogDescription className="text-sm font-bold text-muted-foreground text-right mt-2">
-                          هل أنت متأكد من رغبتك في حذف هذا المنشور نهائياً من المجتمع؟ 🐱⚠️
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
-                        <AlertDialogAction onClick={() => handleDeletePost(post.id)} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">نعم، احذف</AlertDialogAction>
-                        <AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
-              </CardHeader>
-              <CardContent className="p-5 pt-2 space-y-4">
-                <p className="text-sm font-bold text-primary/80 leading-relaxed text-right whitespace-pre-wrap">
-                  {post.text}
-                </p>
-                <div className="pt-3 border-t border-border/50 flex items-center gap-4">
-                  <button 
-                    onClick={() => handleToggleLike(post.id)}
-                    className={cn(
-                      "flex items-center gap-1.5 px-4 py-2 rounded-full transition-all",
-                      post.likes?.[user?.uid || ''] 
-                        ? "bg-red-50 text-red-600 font-black shadow-sm" 
-                        : "text-muted-foreground hover:bg-secondary font-bold"
-                    )}
-                  >
-                    <Heart size={18} fill={post.likes?.[user?.uid || ''] ? "currentColor" : "none"} />
-                    <span className="text-xs">{Object.keys(post.likes || {}).length}</span>
-                  </button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="flex justify-center p-10"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
+            ) : disputes.length === 0 ? (
+              <div className="text-center py-20 opacity-30 font-black text-lg">لا توجد نزاعات حالياً. السلام يعم المكان! 🕊️</div>
+            ) : disputes.map((dispute: any) => (
+              <DisputeCard key={dispute.id} dispute={dispute} onVote={handleVote} />
+            ))}
+          </div>
+        </section>
       </div>
     </div>
+  );
+}
+
+function DisputeCard({ dispute, onVote }: { dispute: any, onVote: any }) {
+  const timeLeft = Math.max(0, Math.round((dispute.expiresAt - Date.now()) / 1000));
+  const format = (s: number) => `${Math.floor(s/3600)}س ${(Math.floor(s/60)%60)}د`;
+
+  return (
+    <Card className="rounded-[2rem] border-2 border-red-100 bg-card overflow-hidden shadow-xl">
+      <CardHeader className="bg-red-50 p-4 border-b border-red-100">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-red-700 font-black">
+            <Clock size={14} className="animate-pulse" />
+            <span className="text-[10px]">{format(timeLeft)}</span>
+          </div>
+          <div className="text-[10px] font-black text-red-600 uppercase flex items-center gap-1">
+            <Swords size={12} /> نزاع على {dispute.points}ن
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="p-6 space-y-6">
+        <div className="text-right">
+          <h3 className="font-black text-primary text-base">تحدي: {dispute.title}</h3>
+          <p className="text-[10px] font-bold text-muted-foreground mt-1">بين <span className="text-primary">{dispute.challengerName}</span> و <span className="text-accent">{dispute.defenderName}</span></p>
+        </div>
+
+        <div className="relative group aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-inner bg-secondary/50">
+          <img src={dispute.proof} className="w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+             <Button variant="ghost" size="sm" className="text-white font-black bg-white/20 backdrop-blur-md rounded-xl"> <Eye size={14} className="ml-1" /> عرض الدليل كاملاً </Button>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          <p className="text-[9px] font-black text-center text-muted-foreground uppercase tracking-widest">هل الدليل صادق؟ صوت الآن!</p>
+          <div className="flex gap-3">
+            <Button onClick={() => onVote(dispute.id, 'sender')} className="flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black flex flex-col gap-0 shadow-lg">
+              <CheckCircle size={18} />
+              <span className="text-[10px]">نعم، فائز ({dispute.votes?.sender || 0})</span>
+            </Button>
+            <Button onClick={() => onVote(dispute.id, 'receiver')} variant="outline" className="flex-1 h-14 rounded-2xl border-red-200 text-red-600 hover:bg-red-50 font-black flex flex-col gap-0">
+              <XCircle size={18} />
+              <span className="text-[10px]">كاذب، لم ينجز ({dispute.votes?.receiver || 0})</span>
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

@@ -33,7 +33,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     
     const updates: any = {};
     if (isTie) {
-      // لا تغيير في النقاط في حال التعادل
+      // لا تغيير
     } else if (isWinner) {
       updates.points = (data.points || 0) + stake;
       updates.challengesWon = (data.challengesWon || 0) + 1;
@@ -46,7 +46,6 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
       updates[`dailyPoints/${todayStr}`] = Math.max(0, (data.dailyPoints?.[todayStr] || 0) - stake);
     }
 
-    // إشارة لعرض ديالوج النتيجة للطرفين فور فتح التطبيق
     updates.showChallengeResult = true;
     updates.latestChallengeResult = {
       title: challenge.title,
@@ -62,7 +61,6 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     await processUser(p1Id, false, true);
     await processUser(p2Id, false, true);
   } else if (winnerId === 'none') {
-    // كلاهما خاسر لانتهاء الوقت دون إثبات
     await processUser(p1Id, false, false);
     await processUser(p2Id, false, false);
   } else {
@@ -71,7 +69,6 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     await processUser(loserId, false, false);
   }
 
-  // حذف التحدي من القائمة الفعالة بعد معالجة النتيجة
   await remove(ref(database, `challenges/${challenge.id}`));
 }
 
@@ -171,7 +168,10 @@ export default function MasterTrackPage() {
         <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
-            <div className="text-right"><h1 className="text-xl font-black text-primary leading-tight">الماستر</h1><p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60">تحديات الأساطير 👑</p></div>
+            <div className="text-right">
+              <h1 className="text-xl font-black text-primary leading-tight">الماستر</h1>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60">تحديات الأساطير 👑</p>
+            </div>
           </div>
           <Link href="/"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
         </header>
@@ -291,9 +291,14 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
   const isActive = challenge.status === 'active';
   const isWinnerSet = !!challenge.winnerId;
   const isMineWinner = challenge.winnerId === currentUser?.uid;
+  
+  // خاصية جديدة لتتبع إذا كان المستخدم الحالي قد رفع دليلاً بالفعل في هذا التحدي
+  const hasIUploaded = (challenge.senderId === currentUser?.uid && challenge.senderFinished) || 
+                       (challenge.receiverId === currentUser?.uid && challenge.receiverFinished);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!isActive || hasIUploaded) return;
+    
     const timer = setInterval(() => {
       const now = Date.now();
       let limit = (challenge.duration || 15) * 60 * 1000;
@@ -315,7 +320,7 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [isActive, challenge, currentUser, isWinnerSet, isMineWinner, isProcessing, database]);
+  }, [isActive, challenge, currentUser, isWinnerSet, isMineWinner, isProcessing, database, hasIUploaded]);
 
   const handleWithdraw = () => {
     if (isProcessing) return;
@@ -328,22 +333,40 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
     const file = e.target.files?.[0];
     if (!file || isProcessing) return;
     setIsProcessing(true);
+    
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = async (ev) => {
       const base64 = ev.target?.result as string;
       const timeUsed = Date.now() - (currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime);
       
+      const updates: any = {};
+      // وسم الطرف الحالي بأنه انتهى لوقف المؤقت عنده
+      if (currentUser.uid === challenge.senderId) updates.senderFinished = true;
+      else updates.receiverFinished = true;
+
       if (isWinnerSet && !isMineWinner && timeUsed < challenge.winnerTime) {
-        await update(ref(database, `challenges/${challenge.id}`), {
-          winnerId: currentUser.uid, winnerName: currentUser.displayName || 'بطل جديد', winnerTime: timeUsed, proof: base64, status: 'awaiting_recognition'
-        });
+        // إذا كان الثاني أسرع من الأول (حالة نادرة في Beat-the-Clock لكن ممكنة تقنياً)
+        updates.winnerId = currentUser.uid;
+        updates.winnerName = currentUser.displayName || 'بطل جديد';
+        updates.winnerTime = timeUsed;
+        updates.proof = base64;
+        updates.status = 'awaiting_recognition';
       } else if (!isWinnerSet) {
-        await update(ref(database, `challenges/${challenge.id}`), {
-          winnerId: currentUser.uid, winnerName: currentUser.displayName || 'السبّاق', winnerTime: timeUsed, proof: base64, status: 'active'
-        });
+        // الأول الذي يرفع الإثبات
+        updates.winnerId = currentUser.uid;
+        updates.winnerName = currentUser.displayName || 'السبّاق';
+        updates.winnerTime = timeUsed;
+        updates.proof = base64;
+        updates.status = 'active';
+      } else {
+        // الثاني رفع الإثبات بعد الأول
+        updates.status = 'awaiting_recognition';
       }
+
+      await update(ref(database, `challenges/${challenge.id}`), updates);
       setIsProcessing(false);
+      playSound('success');
     };
   };
 
@@ -355,19 +378,31 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
           <p className="text-[10px] font-bold text-muted-foreground">الرهان: {challenge.pointsStake}ن 💰</p>
         </div>
         <div className="px-3 py-1 rounded-xl text-xs font-black bg-secondary text-primary flex items-center gap-2 border border-primary/10">
-          <Timer size={14} className="animate-pulse" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}
+          <Timer size={14} className={cn(!hasIUploaded && "animate-pulse")} /> 
+          {hasIUploaded ? "موقوف" : `${Math.floor(timeLeft/60)}:${(timeLeft%60).toString().padStart(2,'0')}`}
         </div>
       </div>
+      
       <div className="space-y-2">
         {challenge.status === 'awaiting_recognition' ? (
-          <Link href="/chat/trials" className="block"><Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2 border-2 border-primary/20"><Gavel size={14} /> انتقل للمحاكمة ⚖️</Button></Link>
+          <Link href="/chat/trials" className="block">
+            <Button variant="outline" className="w-full h-12 rounded-xl font-black text-xs gap-2 border-2 border-primary/20 hover:bg-primary/5">
+              <Gavel size={14} /> انتقل للمحاكمة ⚖️
+            </Button>
+          </Link>
+        ) : hasIUploaded ? (
+          <div className="w-full h-12 rounded-xl bg-green-50 text-green-700 flex items-center justify-center font-black text-[10px] gap-2 border border-green-100">
+            <CheckCircle size={14} /> تم رفع الإثبات.. بانتظار الخصم ⌛
+          </div>
         ) : (
           <>
-            <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 rounded-xl bg-primary font-black text-xs gap-2 shadow-md">
+            <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-12 rounded-xl bg-primary font-black text-xs gap-2 shadow-md hover:bg-primary/90">
               {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={16} />} رفع الإثبات 📸
             </Button>
             <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUploadProof} />
-            <Button onClick={handleWithdraw} variant="ghost" className="w-full h-10 text-destructive/60 font-bold text-[10px] hover:bg-destructive/5">انسحاب 🏳️</Button>
+            <Button onClick={handleWithdraw} variant="ghost" className="w-full h-10 text-destructive/60 font-bold text-[10px] hover:bg-destructive/5">
+              انسحاب 🏳️ (خسارة فورية)
+            </Button>
           </>
         )}
       </div>

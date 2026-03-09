@@ -303,14 +303,14 @@ export default function Home() {
                 {res?.status === 'win' ? 'انتصرت في المبارزة! 🏆' : res?.status === 'tie' ? 'تعادل سيد الأحكام! ⚖️' : 'خسرت التحدي.. ⚔️'}
               </DialogTitle>
               <DialogDescription className="text-sm font-bold text-muted-foreground mt-2 leading-relaxed">
-                تحدي: {res?.title}
+                تحدي: {res?.title || "غير معروف"}
               </DialogDescription>
             </DialogHeader>
             <div className="py-6 space-y-4">
               <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center">
                 <span className="text-[10px] font-black text-muted-foreground uppercase">النقاط</span>
                 <span className={cn("text-lg font-black", res?.status === 'win' ? "text-green-600" : "text-red-600")}>
-                  {res?.status === 'win' ? `+${res.stake}` : res?.status === 'tie' ? '0' : `-${res.stake}`}ن
+                  {res ? (res.status === 'win' ? `+${res.stake}` : res.status === 'tie' ? '0' : `-${res.stake}`) : '0'}ن
                 </span>
               </div>
               <p className="text-[10px] font-bold text-muted-foreground">

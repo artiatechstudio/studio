@@ -17,7 +17,7 @@ import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 /**
- * دالة معالجة النتيجة الموحدة والشاملة
+ * دالة معالجة النتيجة الموحدة والشاملة لكافة حالات انتهاء التحدي
  */
 async function concludeChallenge(database: any, challenge: any, winnerId: string | 'tie' | 'none') {
   const todayStr = new Date().toLocaleDateString('en-CA');
@@ -46,6 +46,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
       updates[`dailyPoints/${todayStr}`] = Math.max(0, (data.dailyPoints?.[todayStr] || 0) - stake);
     }
 
+    // إشارة لعرض ديالوج النتيجة للطرفين فور فتح التطبيق
     updates.showChallengeResult = true;
     updates.latestChallengeResult = {
       title: challenge.title,
@@ -70,6 +71,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
     await processUser(loserId, false, false);
   }
 
+  // حذف التحدي من القائمة الفعالة بعد معالجة النتيجة
   await remove(ref(database, `challenges/${challenge.id}`));
 }
 
@@ -296,13 +298,18 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       const now = Date.now();
       let limit = (challenge.duration || 15) * 60 * 1000;
       let start = challenge.acceptedAt;
+      
+      // منطق "سقف الوقت التنافسي"
       if (isWinnerSet && !isMineWinner) {
         limit = challenge.winnerTime;
         start = currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime;
       }
+      
       const elapsed = now - start;
       const rem = Math.max(0, Math.floor((limit - elapsed) / 1000));
       setTimeLeft(rem);
+      
+      // خصم من الطرفين إذا انتهى الوقت ولم يرفع أحد إثباتاً
       if (rem <= 0 && !isWinnerSet && !isProcessing) {
         concludeChallenge(database, challenge, 'none');
       }
@@ -326,6 +333,7 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
     reader.onload = async (ev) => {
       const base64 = ev.target?.result as string;
       const timeUsed = Date.now() - (currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime);
+      
       if (isWinnerSet && !isMineWinner && timeUsed < challenge.winnerTime) {
         await update(ref(database, `challenges/${challenge.id}`), {
           winnerId: currentUser.uid, winnerName: currentUser.displayName || 'بطل جديد', winnerTime: timeUsed, proof: base64, status: 'awaiting_recognition'

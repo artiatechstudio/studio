@@ -59,7 +59,7 @@ export default function InstructionsPage() {
                   </div>
                   <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
                     <p className="font-black text-primary text-sm flex items-center gap-2"> <Eye size={16} className="text-purple-500" /> الخطوة 4: الاعتراف أو النزاع</p>
-                    <p className="text-[11px] font-bold text-muted-foreground">إذا اعترف الخصم بالهزيمة، تُوزع النقاط. إذا رفض الدليل، يتحول الأمر لـ "نزاع عام" يُنشر في المجتمع ليصوت الجمهور على النتيجة خلال 24 ساعة.</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">إذا اعترف الخصم بالهزيمة، تُوزع النقاط. إذا رفض الدليل، يتحول الأمر لـ "نزاع عام" يُنشر في المجتمع (المحاكمة) ليصوت الجمهور على النتيجة خلال 24 ساعة.</p>
                   </div>
                 </div>
               </div>
@@ -139,6 +139,18 @@ export default function InstructionsPage() {
                   </div>
                 ))}
               </div>
+            </Card>
+          </div>
+
+          {/* الشاشة الماستر */}
+          <div className="space-y-6">
+            <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
+              <Sparkles className="text-accent" /> <h2>5. الشاشة الماستر (Master Mode)</h2>
+            </div>
+            <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
+              <p className="text-sm font-bold text-slate-700 leading-relaxed">
+                هذا الوضع مخصص لتجاوز الحدود. يمكنك اختيار تحديات عشوائية من فئات مختلفة ومستويات صعوبة متنوعة. تذكر: بعض التحديات محمية زمنياً ولا يمكن إنهاؤها قبل اكتمال المؤقت لضمان الانضباط التام.
+              </p>
             </Card>
           </div>
         </section>

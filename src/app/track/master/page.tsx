@@ -23,6 +23,7 @@ export default function MasterTrackPage() {
   
   const [step, setStep] = useState<'setup' | 'active' | 'done'>('setup');
   const [selectedType, setSelectedType] = useState<TrackKey>('Fitness');
+  const [selectedDifficulty, setSelectedDifficulty] = useState<'سهل' | 'متوسط' | 'صعب'>('سهل');
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
   
   const [timerActive, setTimerActive] = useState(false);
@@ -57,12 +58,30 @@ export default function MasterTrackPage() {
     const concluded = activePvPChallenges.find(c => c.status === 'concluded' && !c.resultShownTo?.[user?.uid || '']);
     if (concluded && !resultDialog.open && user) {
       setResultDialog({ open: true, data: concluded });
-      // وسم النتيجة بأنها عُرضت لهذا المستخدم لكي لا تظهر مجدداً
       update(ref(database, `challenges/${concluded.id}/resultShownTo`), {
         [user.uid]: true
       });
     }
   }, [activePvPChallenges, resultDialog.open, user, database]);
+
+  // محرك المؤقت للشاشة الماستر
+  useEffect(() => {
+    if (timerActive && timeLeft > 0) {
+      timerRef.current = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(timerRef.current!);
+            setTimerActive(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [timerActive, timeLeft]);
 
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const today = new Date().toLocaleDateString('en-CA');
@@ -81,10 +100,11 @@ export default function MasterTrackPage() {
       points: (userData.points || 0) + pointsToAdd,
       [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsToAdd,
       lastActiveDate: todayStr,
-      streak: newStreak
+      streak: newStreak,
+      [`dailyMasterCount/${todayStr}`]: masterCountToday + 1
     };
     await update(ref(database, `users/${user.uid}`), updates);
-  }, [user, userData, database]);
+  }, [user, userData, database, masterCountToday]);
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -136,10 +156,6 @@ export default function MasterTrackPage() {
     }
 
     if (action === 'recognize') {
-      // الفائز الفعلي هو من خُزن كـ WinnerId في حقول التحدي (الأقل وقتاً)
-      // ولكن في حال الاعتراف المباشر، الفائز هو الطرف الآخر
-      const isOpponentWinner = (isSender && challenge.receiverProof) || (!isSender && challenge.senderProof);
-      
       const winnerId = isSender ? challenge.receiverId : challenge.senderId;
       const loserId = user.uid;
       const points = challenge.pointsStake;
@@ -194,7 +210,7 @@ export default function MasterTrackPage() {
       });
 
       await update(ref(database, `challenges/${challenge.id}`), { status: 'disputed' });
-      toast({ title: "تم رفع النزاع للمجتمع! 🌍" });
+      toast({ title: "تم رفع النزاع للمحاكمة! 🌍" });
     }
   };
 
@@ -273,7 +289,7 @@ export default function MasterTrackPage() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
             <div className="text-right">
-              <h1 className="text-xl font-black text-primary leading-tight">المسار العام</h1>
+              <h1 className="text-xl font-black text-primary leading-tight">الشاشة الماستر</h1>
               <p className="text-[8px] font-bold text-muted-foreground uppercase">تحديات الأساطير والمهام الشخصية</p>
             </div>
           </div>
@@ -301,17 +317,29 @@ export default function MasterTrackPage() {
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card space-y-6 mx-2">
             <div className="flex items-center justify-between">
-               <h3 className="font-black text-primary text-sm">تحديات الأساطير (120 مهمة إضافية) 👑</h3>
-               <div className="bg-secondary px-3 py-1 rounded-full text-[10px] font-black text-primary">المتبقي: {isPremium ? "∞" : `${Math.max(0, 5 - masterCountToday)}/5`}</div>
+               <h3 className="font-black text-primary text-sm">تحديات الأساطير 👑</h3>
+               <div className="bg-secondary px-3 py-1 rounded-full text-[10px] font-black text-primary">اليوم: {isPremium ? "∞" : `${Math.max(0, 5 - masterCountToday)}/5`}</div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              {['Fitness', 'Nutrition', 'Behavior', 'Study'].map(t => (
-                <Button key={t} variant={selectedType === t ? 'default' : 'outline'} onClick={() => setSelectedType(t as TrackKey)} className="h-12 rounded-xl font-black text-xs">{t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'التغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}</Button>
-              ))}
+            
+            <div className="space-y-4">
+              <Label className="text-right block text-[10px] font-black opacity-60">1. اختر الفئة</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {['Fitness', 'Nutrition', 'Behavior', 'Study'].map(t => (
+                  <Button key={t} variant={selectedType === t ? 'default' : 'outline'} onClick={() => setSelectedType(t as TrackKey)} className="h-12 rounded-xl font-black text-xs">{t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'التغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}</Button>
+                ))}
+              </div>
+
+              <Label className="text-right block text-[10px] font-black opacity-60">2. اختر الصعوبة</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {['سهل', 'متوسط', 'صعب'].map(d => (
+                  <Button key={d} variant={selectedDifficulty === d ? 'secondary' : 'ghost'} onClick={() => setSelectedDifficulty(d as any)} className="h-10 rounded-xl font-black text-xs border border-border">{d}</Button>
+                ))}
+              </div>
             </div>
+
             <Button onClick={() => { 
-              const pool = getMasterPool(selectedType, 'سهل');
-              if (pool.length === 0) { toast({ title: "لا توجد تحديات متوفرة حالياً" }); return; }
+              const pool = getMasterPool(selectedType, selectedDifficulty);
+              if (pool.length === 0) { toast({ title: "لا توجد تحديات متوفرة لهذه الفئة حالياً" }); return; }
               const random = pool[Math.floor(Math.random() * pool.length)];
               setCurrentChallenge(random);
               setStep('active');
@@ -324,13 +352,31 @@ export default function MasterTrackPage() {
 
         {step === 'active' && currentChallenge && (
           <Card className="rounded-[2.5rem] overflow-hidden bg-card border border-border text-right shadow-2xl mx-2">
-            <CardHeader className="bg-primary text-white p-5"><CardTitle className="text-lg font-black leading-tight text-right">{currentChallenge.title}</CardTitle></CardHeader>
+            <CardHeader className="bg-primary text-white p-5">
+              <div className="flex items-center justify-between flex-row-reverse">
+                <CardTitle className="text-lg font-black leading-tight text-right">{currentChallenge.title}</CardTitle>
+                {currentChallenge.isTimeLocked && <div className="px-2 py-0.5 bg-red-500 text-white rounded-lg text-[8px] font-black flex items-center gap-1 shadow-sm"><Lock size={10} /> التزام كامل</div>}
+              </div>
+            </CardHeader>
             <CardContent className="p-6 space-y-6">
               <p className="text-base font-bold text-muted-foreground leading-relaxed text-right">{currentChallenge.description}</p>
               <div className="bg-secondary/30 p-6 rounded-[2rem] text-center space-y-1">
                 <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
+                <p className="text-[10px] font-black text-primary/40 uppercase tracking-widest">الوقت المتبقي</p>
               </div>
-              <Button onClick={() => { setStep('done'); updateStreakAndPoints(currentChallenge.points); setTimerActive(false); playSound('success'); }} className="w-full h-14 rounded-2xl text-lg font-black bg-accent text-white shadow-lg">أنهيت المهمة 🔥</Button>
+              <div className="flex flex-col gap-2">
+                <Button 
+                  onClick={() => { setStep('done'); updateStreakAndPoints(currentChallenge.points); setTimerActive(false); playSound('success'); }} 
+                  disabled={currentChallenge.isTimeLocked && timeLeft > 0}
+                  className={cn(
+                    "w-full h-14 rounded-2xl text-lg font-black shadow-lg transition-all",
+                    (currentChallenge.isTimeLocked && timeLeft > 0) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
+                  )}
+                >
+                  {(currentChallenge.isTimeLocked && timeLeft > 0) ? `انتظر اكتمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
+                </Button>
+                <Button onClick={() => { setStep('setup'); setTimerActive(false); setTimeLeft(0); }} variant="ghost" className="text-destructive font-black text-xs">انسحاب (لا توجد عقوبة هنا)</Button>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -348,7 +394,6 @@ export default function MasterTrackPage() {
                 </div>
                 <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0"> <Plus size={20} /> </Button>
               </div>
-              <p className="text-[8px] font-bold text-muted-foreground text-center">أنجز المهمة خلال الوقت المحدد لتربح 5 نقاط!</p>
             </form>
             <div className="space-y-2">
               {todosData ? Object.values(todosData).map((todo: any) => (
@@ -380,10 +425,6 @@ export default function MasterTrackPage() {
               <p className="text-xs font-black text-red-800">الخاسر المكافح ❌</p>
               <p className="text-lg font-black text-red-600">{resultDialog.data?.loserId === resultDialog.data?.senderId ? resultDialog.data?.senderName : resultDialog.data?.receiverName}</p>
               <p className="text-[10px] font-bold text-red-700">خصم منه {resultDialog.data?.pointsStake} نقطة</p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-muted-foreground">
-              <div className="bg-secondary p-2 rounded-xl">وقت {resultDialog.data?.senderName}: {formatTime(resultDialog.data?.senderTimeTaken || 0)}</div>
-              <div className="bg-secondary p-2 rounded-xl">وقت {resultDialog.data?.receiverName}: {formatTime(resultDialog.data?.receiverTimeTaken || 0)}</div>
             </div>
           </div>
           <Button onClick={() => setResultDialog({ open: false, data: null })} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-lg">فهمت 🐱✅</Button>
@@ -433,61 +474,41 @@ function TodoItem({ todo, onComplete }: { todo: any, onComplete: (t: any) => voi
 
 function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }: { challenge: any, currentUser: any, onAction: any, fileInputRef: any, onUpload: any }) {
   const isSender = challenge.senderId === currentUser.uid;
-  
   const myProof = isSender ? challenge.senderProof : challenge.receiverProof;
   const myTimeTaken = isSender ? challenge.senderTimeTaken : challenge.receiverTimeTaken;
-  
   const opponentProof = isSender ? challenge.receiverProof : challenge.senderProof;
   const opponentTimeTaken = isSender ? challenge.receiverTimeTaken : challenge.senderTimeTaken;
 
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSyncing, setIsSenderWaiting] = useState(isSender && !challenge.senderStartTime);
-
   const { database } = useFirebase();
 
-  // تفعيل مؤقت المرسل عند فتح التطبيق
   useEffect(() => {
     if (isSyncing && challenge.status === 'active') {
-      update(ref(database, `challenges/${challenge.id}`), {
-        senderStartTime: Date.now()
-      });
+      update(ref(database, `challenges/${challenge.id}`), { senderStartTime: Date.now() });
       setIsSenderWaiting(false);
     }
   }, [challenge, isSyncing, database]);
 
-  // منطق المؤقت التنافسي (Beat-the-Clock)
   useEffect(() => {
     const startTime = isSender ? challenge.senderStartTime : challenge.receiverStartTime;
     if (!startTime || myProof || challenge.status === 'concluded') return;
 
-    // إذا كان الخصم قد انتهى بالفعل، فإن وقتي المتبقي هو (زمن الخصم - ما استهلكته أنا)
-    // أو ببساطة: يجب أن أنتهي قبل أن يتجاوز زمني زمن الخصم
     const baseDurationMins = challenge.duration;
     let limitSeconds = baseDurationMins * 60;
-
-    // إذا الخصم خلص، السقف الجديد هو زمن الخصم
-    if (opponentProof && opponentTimeTaken) {
-      limitSeconds = opponentTimeTaken;
-    }
+    if (opponentProof && opponentTimeTaken) { limitSeconds = opponentTimeTaken; }
 
     const expiresAt = startTime + (limitSeconds * 1000);
-
     const itv = setInterval(() => {
       const diff = Math.round((expiresAt - Date.now()) / 1000);
       setTimeLeft(diff > 0 ? diff : 0);
-      
-      // إذا انتهى الوقت ولم أرفع إثبات، أعتبر خاسراً تلقائياً (اختياري: يمكن إضافة كود هنا)
     }, 1000);
-
     return () => clearInterval(itv);
   }, [challenge, isSender, myProof, opponentProof, opponentTimeTaken]);
 
   const format = (s: number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
-
   if (challenge.status === 'concluded') return null;
 
-  // تحديد من "صاحب الدور" في الرفض والقبول
-  // إذا الطرفين خلصوا، الفائز هو الأسرع، والخاسر هو اللي يرفض/يقبل
   const isOpponentFaster = opponentProof && (!myProof || (myTimeTaken && opponentTimeTaken && opponentTimeTaken < myTimeTaken));
   const showOpponentProofToMe = opponentProof && (isOpponentFaster || challenge.status === 'awaiting_recognition');
 
@@ -496,9 +517,7 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
       <div className={cn("p-4 text-white flex items-center justify-between", myProof ? "bg-green-600" : "bg-primary")}>
         <div className="flex items-center gap-2">
           {myProof ? <CheckCircle size={16} /> : <Clock size={16} className="animate-pulse" />}
-          <span className="text-sm font-black font-mono">
-            {myProof ? `زمنك: ${format(myTimeTaken || 0)}` : `المتبقي: ${format(timeLeft)}`}
-          </span>
+          <span className="text-sm font-black font-mono">{myProof ? `زمنك: ${format(myTimeTaken || 0)}` : `المتبقي: ${format(timeLeft)}`}</span>
         </div>
         <p className="text-[10px] font-black uppercase">ضد {isSender ? challenge.receiverName : challenge.senderName}</p>
       </div>
@@ -508,9 +527,7 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
           <h4 className="font-black text-primary text-lg leading-tight">{challenge.title}</h4>
           <div className="flex items-center justify-between mt-2 flex-row-reverse">
             <p className="text-[10px] font-bold text-muted-foreground">الرهان: <span className="text-orange-600">{challenge.pointsStake} نقطة</span></p>
-            {opponentProof && (
-              <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-lg text-[9px] font-black">رقم الخصم: {format(opponentTimeTaken)} 🔥</span>
-            )}
+            {opponentProof && <span className="bg-orange-100 text-orange-700 px-2 py-0.5 rounded-lg text-[9px] font-black">رقم الخصم: {format(opponentTimeTaken)} 🔥</span>}
           </div>
         </div>
 
@@ -519,13 +536,13 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
         ) : isSyncing ? (
           <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center space-y-2">
             <Loader2 className="animate-spin text-orange-600 mx-auto" />
-            <p className="text-xs font-black text-orange-800">بانتظار مزامنة مؤقتك مع الخصم...</p>
+            <p className="text-xs font-black text-orange-800">بانتظار مزامنة مؤقتك...</p>
           </div>
         ) : !myProof ? (
           <div className="space-y-3">
             {opponentProof && (
               <div className="bg-blue-50 p-3 rounded-xl border border-blue-100 text-right">
-                <p className="text-[10px] font-black text-blue-800 flex items-center justify-end gap-2"> <Sparkles size={12}/> الخصم حطم الرقم! يجب أن تنهي في أقل من {format(opponentTimeTaken)}</p>
+                <p className="text-[10px] font-black text-blue-800 flex items-center justify-end gap-2"> <Sparkles size={12}/> الخصم حطم الرقم! تفوق عليه في أقل من {format(opponentTimeTaken)}</p>
               </div>
             )}
             <div className="bg-secondary/30 p-4 rounded-2xl text-center border-dashed border-2 border-primary/20">
@@ -534,9 +551,7 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
               </Button>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={onUpload} />
             </div>
-            <Button onClick={() => onAction(challenge, 'withdraw')} variant="ghost" className="w-full text-destructive font-black text-[10px] gap-2">
-              <LogOut size={14} className="rotate-180" /> انسحاب من التحدي
-            </Button>
+            <Button onClick={() => onAction(challenge, 'withdraw')} variant="ghost" className="w-full text-destructive font-black text-[10px] gap-2"> <LogOut size={14} className="rotate-180" /> انسحاب من التحدي </Button>
           </div>
         ) : (
           <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
@@ -558,7 +573,7 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
             </div>
             <div className="flex gap-2">
               <Button onClick={() => onAction(challenge, 'recognize')} className="flex-1 h-10 rounded-xl bg-green-600 font-black text-[10px]">اعترف بالهزيمة ✅</Button>
-              <Button onClick={() => onAction(challenge, 'dispute')} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-black text-[10px]">كذب (نزاع عام) ❌</Button>
+              <Button onClick={() => onAction(challenge, 'dispute')} variant="outline" className="flex-1 h-10 rounded-xl border-red-200 text-red-600 font-black text-[10px]">كذب (المحاكمة) ❌</Button>
             </div>
           </div>
         )}

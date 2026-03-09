@@ -8,7 +8,7 @@ import { ref } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, MessageCircle, ArrowLeft, Clock, Sparkles, Users, Globe, Crown } from 'lucide-react';
+import { Search, MessageCircle, ArrowLeft, Clock, Sparkles, Users, Globe, Crown, Gavel } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import Link from 'next/link';
 
@@ -22,6 +22,14 @@ export default function ChatListPage() {
 
   const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
   const { data: chatsData } = useDatabase(chatsRef);
+
+  const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
+  const { data: postsData } = useDatabase(postsRef);
+
+  const disputeCount = useMemo(() => {
+    if (!postsData) return 0;
+    return Object.values(postsData).filter((p: any) => p.type === 'dispute').length;
+  }, [postsData]);
 
   const recentChatUsers = useMemo(() => {
     if (!usersData || !chatsData || !user) return [];
@@ -71,38 +79,43 @@ export default function ChatListPage() {
           <h1 className="text-2xl font-black text-primary">الدردشة والمجتمع</h1>
         </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mx-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mx-2">
           <Link href="/chat/ai" onClick={() => playSound('click')} className="block">
             <div className="flex items-center justify-between p-5 rounded-[1.5rem] bg-gradient-to-r from-primary to-accent text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30">
-                  🐱
-                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30"> 🐱 </div>
                 <div className="text-right">
-                  <p className="font-black text-base">كارينجو الذكي</p>
-                  <p className="text-[8px] font-bold opacity-80 flex items-center gap-1">
-                    <Sparkles size={8} /> مساعدك الشخصي
-                  </p>
+                  <p className="font-black text-sm">كارينجو الذكي</p>
+                  <p className="text-[8px] font-bold opacity-80">مساعدك الشخصي</p>
                 </div>
               </div>
-              <ArrowLeft className="rotate-180 opacity-50" size={16} />
             </div>
           </Link>
 
           <Link href="/chat/public" onClick={() => playSound('click')} className="block">
             <div className="flex items-center justify-between p-5 rounded-[1.5rem] bg-gradient-to-r from-accent to-pink-500 text-white shadow-lg hover:scale-[1.02] transition-transform h-full">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30">
-                  🌍
-                </div>
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30"> 🌍 </div>
                 <div className="text-right">
-                  <p className="font-black text-base">المجتمع العام</p>
-                  <p className="text-[8px] font-bold opacity-80 flex items-center gap-1">
-                    <Globe size={8} /> انشر إلهامك للجميع
-                  </p>
+                  <p className="font-black text-sm">التواصل العام</p>
+                  <p className="text-[8px] font-bold opacity-80">انشر إلهامك</p>
                 </div>
               </div>
-              <ArrowLeft className="rotate-180 opacity-50" size={16} />
+            </div>
+          </Link>
+
+          <Link href="/chat/trials" onClick={() => playSound('click')} className="block">
+            <div className="flex items-center justify-between p-5 rounded-[1.5rem] bg-gradient-to-r from-red-500 to-orange-600 text-white shadow-lg hover:scale-[1.02] transition-transform h-full relative overflow-hidden">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-2xl shadow-inner border border-white/30"> <Gavel size={24} /> </div>
+                <div className="text-right">
+                  <p className="font-black text-sm">المحاكمة</p>
+                  <p className="text-[8px] font-bold opacity-80">احكم بين الأبطال</p>
+                </div>
+              </div>
+              {disputeCount > 0 && (
+                <span className="absolute top-2 left-2 bg-white text-red-600 text-[10px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-md animate-bounce">{disputeCount}</span>
+              )}
             </div>
           </Link>
         </div>
@@ -115,7 +128,7 @@ export default function ChatListPage() {
             <div className="relative">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
               <Input 
-                placeholder="ابحث باسم المستخدم لبدء محادثة..." 
+                placeholder="ابحث باسم المستخدم..." 
                 className="h-12 pr-10 rounded-xl bg-secondary/50 border-none font-bold text-right text-sm"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}

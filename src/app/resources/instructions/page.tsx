@@ -142,10 +142,10 @@ export default function InstructionsPage() {
             </Card>
           </div>
 
-          {/* الشاشة الماستر */}
+          {/* الماستر */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Sparkles className="text-accent" /> <h2>5. الشاشة الماستر (Master Mode)</h2>
+              <Sparkles className="text-accent" /> <h2>5. الماستر (Master Mode)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border border-border bg-card space-y-4">
               <p className="text-sm font-bold text-slate-700 leading-relaxed">

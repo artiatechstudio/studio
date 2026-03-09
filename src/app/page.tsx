@@ -254,7 +254,7 @@ export default function Home() {
                     <Sparkles size={24} />
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-black text-primary leading-tight">الشاشة الماستر</p>
+                    <p className="text-lg font-black text-primary leading-tight">الماستر</p>
                     <p className="text-[10px] font-bold text-primary/60">تحديات الأساطير والتدريب الحر 🔥</p>
                   </div>
                 </Card>

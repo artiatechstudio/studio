@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, remove, update, serverTimestamp } from 'firebase/database';
+import { ref, remove, update, serverTimestamp, push } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Heart, Trophy, Zap, CheckCheck, Clock, Star, Swords, CheckCircle2, XCircle } from 'lucide-react';
@@ -13,10 +13,12 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function NotificationsPage() {
   const { user } = useUser();
   const { database } = useFirebase();
+  const router = useRouter();
 
   const notificationsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/notifications`) : null, [database, user]);
   const { data: notificationsData, isLoading } = useDatabase(notificationsRef);
@@ -32,7 +34,7 @@ export default function NotificationsPage() {
     if (!user || !notificationsRef) return;
     playSound('click');
     await remove(notificationsRef);
-    toast({ title: "تم مسح الإشعارات" });
+    toast({ title: "تم مسح كافة الإشعارات" });
   };
 
   const handleChallengeAction = async (notif: any, action: 'accept' | 'reject') => {
@@ -42,14 +44,27 @@ export default function NotificationsPage() {
     try {
       if (action === 'accept') {
         const now = Date.now();
-        // عند القبول: يبدأ مؤقت المستلم فوراً
-        await update(ref(database, `challenges/${notif.challengeId}`), {
+        const challengeRef = ref(database, `challenges/${notif.challengeId}`);
+        
+        await update(challengeRef, {
           status: 'active',
+          acceptedAt: now,
           receiverStartTime: now,
-          acceptedAt: serverTimestamp()
+          senderStartTime: now // سيتم تعديله عند أول فتح للمرسل
         });
-        toast({ title: "تم قبول التحدي! ⚔️", description: "انطلق لصفحة Master لتنفيذ المهمة." });
+
+        // إرسال رسالة للطرف الآخر
+        push(ref(database, `users/${notif.senderId}/notifications`), {
+          type: 'system',
+          title: 'بدأ التحدي! ⚔️',
+          message: `وافق الخصم على التحدي. انطلق لشاشة الماستر فوراً لبدء التدريب وتحطيم الزمن!`,
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+
+        toast({ title: "تم قبول التحدي! ⚔️", description: "انتقل لشاشة الماستر لبدء المنافسة." });
         playSound('success');
+        router.push('/track/master');
       } else {
         await remove(ref(database, `challenges/${notif.challengeId}`));
         toast({ title: "تم رفض التحدي" });
@@ -82,7 +97,7 @@ export default function NotificationsPage() {
           {notifications.length > 0 && <Button onClick={handleClearAll} variant="ghost" className="rounded-full gap-2 text-accent font-black h-12 px-6"><CheckCheck size={20} /> <span>مسح الكل</span></Button>}
         </header>
 
-        {isLoading ? <div className="flex justify-center p-20"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> : notifications.length === 0 ? <div className="text-center p-20 opacity-30"><div className="text-8xl">📭</div><p className="font-black text-xl">لا يوجد إشعارات</p></div> : (
+        {isLoading ? <div className="flex justify-center p-20"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div> : notifications.length === 0 ? <div className="text-center p-20 opacity-30"><div className="text-8xl">📭</div><p className="font-black text-xl">لا يوجد إشعارات جديدة</p></div> : (
           <div className="space-y-3 mx-2">
             {notifications.map((n) => (
               <Card key={n.id} className={cn("rounded-3xl border-none shadow-md overflow-hidden bg-white border-r-8", n.type === 'challenge' ? "border-red-500" : "border-accent")}>

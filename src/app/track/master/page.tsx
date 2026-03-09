@@ -7,15 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, LogOut, Lock } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, Lock, Infinity } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, get, remove, set } from 'firebase/database';
+import { ref, update, push, serverTimestamp, get, remove, set, runTransaction } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 
 export default function MasterTrackPage() {
   const { user } = useUser();
@@ -31,10 +30,8 @@ export default function MasterTrackPage() {
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [todoInput, setTodoInput] = useState('');
+  const [todoInput, setPostTodoInput] = useState('');
   const [todoMinutes, setTodoMinutes] = useState('10');
-
-  const [resultDialog, setResultDialog] = useState<{ open: boolean, data: any | null }>({ open: false, data: null });
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
@@ -56,16 +53,6 @@ export default function MasterTrackPage() {
   }, [allChallengesData, user]);
 
   useEffect(() => {
-    const concluded = activePvPChallenges.find(c => c.status === 'concluded' && !c.resultShownTo?.[user?.uid || '']);
-    if (concluded && !resultDialog.open && user) {
-      setResultDialog({ open: true, data: concluded });
-      update(ref(database, `challenges/${concluded.id}/resultShownTo`), {
-        [user.uid]: true
-      });
-    }
-  }, [activePvPChallenges, resultDialog.open, user, database]);
-
-  useEffect(() => {
     if (timerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => {
@@ -84,31 +71,19 @@ export default function MasterTrackPage() {
   }, [timerActive, timeLeft]);
 
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
-  const today = new Date().toLocaleDateString('en-CA');
-  const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
-
-  const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
-    if (!user || !userData) return;
-    const todayStr = new Date().toLocaleDateString('en-CA');
-    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-    let newStreak = userData.streak || 0;
-    if (userData.lastActiveDate !== todayStr) {
-      newStreak = userData.lastActiveDate === yesterdayStr ? newStreak + 1 : 1;
-    }
-    const updates: any = {
-      points: (userData.points || 0) + pointsToAdd,
-      [`dailyPoints/${todayStr}`]: (userData.dailyPoints?.[todayStr] || 0) + pointsToAdd,
-      lastActiveDate: todayStr,
-      streak: newStreak,
-      [`dailyMasterCount/${todayStr}`]: masterCountToday + 1
-    };
-    await update(ref(database, `users/${user.uid}`), updates);
-  }, [user, userData, database, masterCountToday]);
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const masterCountToday = userData?.dailyMasterCount?.[todayStr] || 0;
+  const todoCountToday = userData?.dailyTodosCount?.[todayStr] || 0;
 
   const handleAddTodo = (e: React.FormEvent) => {
     e.preventDefault();
     if (!todoInput.trim() || !user) return;
+
+    if (!isPremium && todoCountToday >= 5) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بـ 5 مهام يومية فقط للأعضاء العاديين. 👑" });
+      return;
+    }
+
     playSound('click');
     const mins = parseInt(todoMinutes) || 10;
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
@@ -119,7 +94,12 @@ export default function MasterTrackPage() {
       createdAt: Date.now(),
       expiresAt: Date.now() + (mins * 60 * 1000)
     });
-    setTodoInput('');
+
+    update(ref(database, `users/${user.uid}`), {
+      [`dailyTodosCount/${todayStr}`]: todoCountToday + 1
+    });
+
+    setPostTodoInput('');
   };
 
   const handleCompleteTodo = (todo: any) => {
@@ -129,7 +109,11 @@ export default function MasterTrackPage() {
     if (isExpired) {
       toast({ variant: "destructive", title: "انتهى الوقت!", description: "لم تحصل على نقاط لأن المهمة تجاوزت وقتها." });
     } else {
-      updateStreakAndPoints(5);
+      const uRef = ref(database, `users/${user?.uid}`);
+      update(uRef, {
+        points: (userData?.points || 0) + 5,
+        [`dailyPoints/${todayStr}`]: (userData?.dailyPoints?.[todayStr] || 0) + 5
+      });
       toast({ title: "مهمة ناجحة! +5ن 🔥" });
       playSound('success');
     }
@@ -151,7 +135,7 @@ export default function MasterTrackPage() {
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
             <div className="text-right">
               <h1 className="text-xl font-black text-primary leading-tight">الماستر</h1>
-              <p className="text-[8px] font-bold text-muted-foreground uppercase">تحديات الأساطير والمهام الشخصية</p>
+              <p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60">تحديات الأساطير 👑</p>
             </div>
           </div>
           <Link href="/"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
@@ -159,17 +143,10 @@ export default function MasterTrackPage() {
 
         {activePvPChallenges.length > 0 && (
           <section className="mx-2 space-y-3">
-            <h3 className="font-black text-primary text-sm flex items-center gap-2 px-2"> <ShieldCheck className="text-accent" size={18} /> ساحة المواجهة المباشرة ⚔️</h3>
+            <h3 className="font-black text-primary text-sm flex items-center gap-2 px-2"> <ShieldCheck className="text-accent" size={18} /> ساحة المواجهة ⚔️</h3>
             <div className="grid grid-cols-1 gap-4">
               {activePvPChallenges.map((pvp: any) => (
-                <BattleCard 
-                  key={pvp.id} 
-                  challenge={pvp} 
-                  currentUser={user} 
-                  onAction={() => {}} // يتم التعامل معه داخل المكون
-                  fileInputRef={fileInputRef}
-                  onUpload={() => {}}
-                />
+                <BattleCard key={pvp.id} challenge={pvp} currentUser={user} database={database} />
               ))}
             </div>
           </section>
@@ -178,7 +155,7 @@ export default function MasterTrackPage() {
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card space-y-6 mx-2">
             <div className="flex items-center justify-between">
-               <h3 className="font-black text-primary text-sm">تحديات الأساطير 👑</h3>
+               <h3 className="font-black text-primary text-sm">تحدي الماستر العشوائي 🚀</h3>
                <div className="bg-secondary px-3 py-1 rounded-full text-[10px] font-black text-primary">اليوم: {isPremium ? "∞" : `${Math.max(0, 5 - masterCountToday)}/5`}</div>
             </div>
             
@@ -200,14 +177,14 @@ export default function MasterTrackPage() {
 
             <Button onClick={() => { 
               const pool = getMasterPool(selectedType, selectedDifficulty);
-              if (pool.length === 0) { toast({ title: "لا توجد تحديات متوفرة لهذه الفئة حالياً" }); return; }
+              if (pool.length === 0) { toast({ title: "لا توجد تحديات متوفرة حالياً" }); return; }
               const random = pool[Math.floor(Math.random() * pool.length)];
               setCurrentChallenge(random);
               setStep('active');
               setTimeLeft(random.time * 60);
               setTimerActive(true);
               playSound('click');
-            }} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">تحدي عشوائي للأساطير 🚀</Button>
+            }} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">ابدأ تحدي الماستر 🔥</Button>
           </Card>
         )}
 
@@ -225,31 +202,51 @@ export default function MasterTrackPage() {
                 <p className="text-5xl font-black text-primary font-mono tabular-nums">{formatTime(timeLeft)}</p>
                 <p className="text-[10px] font-black text-primary/40 uppercase tracking-widest">الوقت المتبقي</p>
               </div>
-              <div className="flex flex-col gap-2">
-                <Button 
-                  onClick={() => { setStep('done'); updateStreakAndPoints(currentChallenge.points); setTimerActive(false); playSound('success'); }} 
-                  disabled={currentChallenge.isTimeLocked && timeLeft > 0}
-                  className={cn(
-                    "w-full h-14 rounded-2xl text-lg font-black shadow-lg transition-all",
-                    (currentChallenge.isTimeLocked && timeLeft > 0) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
-                  )}
-                >
-                  {(currentChallenge.isTimeLocked && timeLeft > 0) ? `انتظر اكتمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
-                </Button>
-                <Button onClick={() => { setStep('setup'); setTimerActive(false); setTimeLeft(0); }} variant="ghost" className="text-destructive font-black text-xs">انسحاب (لا توجد عقوبة هنا)</Button>
-              </div>
+              <Button 
+                onClick={() => {
+                  const today = new Date().toLocaleDateString('en-CA');
+                  update(ref(database, `users/${user?.uid}`), {
+                    points: (userData?.points || 0) + currentChallenge.points,
+                    [`dailyPoints/${today}`]: (userData?.dailyPoints?.[today] || 0) + currentChallenge.points,
+                    [`dailyMasterCount/${today}`]: masterCountToday + 1
+                  });
+                  setStep('done');
+                  setTimerActive(false);
+                  playSound('success');
+                  toast({ title: "أحسنت يا بطل! + " + currentChallenge.points });
+                }} 
+                disabled={currentChallenge.isTimeLocked && timeLeft > 0}
+                className={cn(
+                  "w-full h-14 rounded-2xl text-lg font-black shadow-lg transition-all",
+                  (currentChallenge.isTimeLocked && timeLeft > 0) ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-accent text-white"
+                )}
+              >
+                {(currentChallenge.isTimeLocked && timeLeft > 0) ? `انتظر اكتمال الوقت... (${Math.ceil(timeLeft / 60)}د)` : "أنهيت المهمة 🔥"}
+              </Button>
             </CardContent>
           </Card>
+        )}
+
+        {step === 'done' && (
+          <div className="mx-2 bg-green-50 p-8 rounded-[2.5rem] text-center border border-green-100 shadow-inner">
+            <CheckCircle size={64} className="text-green-500 mx-auto mb-4" />
+            <h3 className="text-2xl font-black text-green-700">تم الإنجاز!</h3>
+            <p className="text-sm font-bold text-green-600 mt-2">لقد أثبت أنك من أساطير كارينجو.</p>
+            <Button onClick={() => setStep('setup')} className="mt-6 rounded-xl font-black">العودة للماستر</Button>
+          </div>
         )}
 
         <section className="space-y-4 pt-6 border-t border-border/50">
           <header className="flex items-center justify-between px-3">
             <h2 className="text-lg font-black text-primary flex items-center gap-2"> <ListChecks size={20} /> مهامي الموقوتة (+5ن) </h2>
+            <div className="text-[9px] font-black text-muted-foreground uppercase bg-secondary px-2 py-0.5 rounded-full">
+              {isPremium ? <Infinity size={10} className="inline mr-1" /> : `${5 - todoCountToday}/5 متبقي`}
+            </div>
           </header>
           <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5 mx-2">
             <form onSubmit={handleAddTodo} className="space-y-3">
               <div className="flex gap-2">
-                <Input placeholder="اسم المهمة..." className="flex-1 h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs" value={todoInput} onChange={(e) => setTodoInput(e.target.value)} />
+                <Input placeholder="اسم المهمة..." className="flex-1 h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs" value={todoInput} onChange={(e) => setPostTodoInput(e.target.value)} />
                 <div className="w-20">
                   <Input type="number" placeholder="د" className="h-11 rounded-xl bg-secondary/50 border-none font-bold text-center text-xs" value={todoMinutes} onChange={(e) => setTodoMinutes(e.target.value)} />
                 </div>
@@ -259,7 +256,7 @@ export default function MasterTrackPage() {
             <div className="space-y-2">
               {todosData ? Object.values(todosData).map((todo: any) => (
                 <TodoItem key={todo.id} todo={todo} onComplete={handleCompleteTodo} />
-              )) : <p className="text-center py-4 opacity-30 text-[10px] font-black">لا توجد مهام حالية</p>}
+              )) : <p className="text-center py-4 opacity-30 text-[10px] font-black italic">لا توجد مهام حالية</p>}
             </div>
           </Card>
         </section>
@@ -306,16 +303,116 @@ function TodoItem({ todo, onComplete }: { todo: any, onComplete: (t: any) => voi
   );
 }
 
-// مكون BattleCard يحتاج للتعديل لضمان عدم وجود أخطاء Object as React Child
-function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }: { challenge: any, currentUser: any, onAction: any, fileInputRef: any, onUpload: any }) {
-  // تم تبسيط المكون لضمان الاستقرار، سيتم استخدامه في صفحة الماستر
+function BattleCard({ challenge, currentUser, database }: { challenge: any, currentUser: any, database: any }) {
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isActive = challenge.status === 'active';
+  const isWinnerSet = !!challenge.winnerId;
+  const isMineWinner = challenge.winnerId === currentUser?.uid;
+  const amITheSlowOne = isWinnerSet && !isMineWinner;
+
+  useEffect(() => {
+    if (!isActive) return;
+
+    const timer = setInterval(() => {
+      const now = Date.now();
+      let limit = (challenge.duration || 15) * 60 * 1000;
+      let start = challenge.acceptedAt || challenge.createdAt;
+
+      // إذا كان هناك فائز، يصبح زمنه هو السقف الجديد للآخر
+      if (isWinnerSet && !isMineWinner) {
+        limit = challenge.winnerTime;
+        start = currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime;
+      }
+
+      const elapsed = now - start;
+      const rem = Math.max(0, Math.floor((limit - elapsed) / 1000));
+      setTimeLeft(rem);
+
+      if (rem <= 0 && !isWinnerSet) {
+        // انتهاء الوقت تلقائياً دون إنجاز
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isActive, challenge, currentUser, isWinnerSet, isMineWinner]);
+
+  const handleUploadProof = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !currentUser) return;
+    setIsFinishing(true);
+    playSound('click');
+
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = async (ev) => {
+        const base64 = ev.target?.result as string;
+        const timeUsed = Date.now() - (currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime);
+
+        const updates: any = {};
+        if (!challenge.winnerId || timeUsed < challenge.winnerTime) {
+          updates.winnerId = currentUser.uid;
+          updates.winnerName = currentUser.displayName || 'بطل';
+          updates.winnerTime = timeUsed;
+          updates.proof = base64;
+          updates.status = 'awaiting_recognition';
+        }
+
+        await update(ref(database, `challenges/${challenge.id}`), updates);
+        toast({ title: "تم رفع الإثبات! 📸", description: "في انتظار اعتراف الخصم أو التحكيم." });
+        playSound('success');
+      };
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الرفع" });
+    } finally {
+      setIsFinishing(false);
+    }
+  };
+
+  const format = (s: number) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2, '0')}`;
+
   return (
-    <Card className="rounded-3xl border-2 border-primary/10 bg-card overflow-hidden shadow-md p-4">
-      <p className="text-xs font-black text-primary">تحدي: {challenge.title}</p>
-      <p className="text-[10px] font-bold text-muted-foreground mt-1">رهان: {challenge.pointsStake}ن</p>
-      <Link href="/chat/trials">
-        <Button size="sm" className="w-full mt-3 h-8 rounded-xl bg-primary text-[10px] font-black">انتقل لساحة المحاكمة ⚖️</Button>
-      </Link>
+    <Card className="rounded-[2rem] border-2 border-primary/10 bg-card overflow-hidden shadow-lg p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div className="text-right">
+          <p className="text-xs font-black text-primary leading-tight">{challenge.title}</p>
+          <p className="text-[10px] font-bold text-muted-foreground mt-1">مقابل: {challenge.pointsStake}ن 💰</p>
+        </div>
+        {isActive && (
+          <div className={cn("px-3 py-1 rounded-xl text-xs font-black flex items-center gap-2", timeLeft < 60 ? "bg-red-100 text-red-600 animate-pulse" : "bg-secondary text-primary")}>
+            <Timer size={14} /> {format(timeLeft)}
+          </div>
+        )}
+      </div>
+
+      {isActive ? (
+        <div className="space-y-3">
+          {amITheSlowOne && (
+            <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-start gap-2">
+              <AlertTriangle className="text-orange-600 shrink-0" size={14} />
+              <p className="text-[9px] font-bold text-orange-800 leading-tight">حطم الخصم رقماً قياسياً! يجب عليك إنهاء المهمة في أقل من {format(Math.floor(challenge.winnerTime/1000))} للفوز.</p>
+            </div>
+          )}
+          <Button 
+            onClick={() => fileInputRef.current?.click()} 
+            disabled={isFinishing || (isWinnerSet && timeLeft <= 0)}
+            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black text-xs gap-2"
+          >
+            {isFinishing ? <Loader2 className="animate-spin" /> : <Camera size={16} />}
+            رفع الإثبات لإيقاف الزمن 📸
+          </Button>
+          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUploadProof} />
+        </div>
+      ) : (
+        <Link href="/chat/trials">
+          <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-primary/40 text-primary font-black text-xs gap-2">
+            انتقل للمحاكمة / النتائج ⚖️
+          </Button>
+        </Link>
+      )}
     </Card>
   );
 }

@@ -44,14 +44,12 @@ export default function PublicChatPage() {
   const isPremium = userData?.isPremium === 1 || isAdmin;
   const todayStr = new Date().toLocaleDateString('en-CA');
   const dailyCount = userData?.dailyPostsCount?.[todayStr] || 0;
-  const remainingPosts = isPremium ? 9999 : Math.max(0, 2 - dailyCount);
+  const remainingPosts = isPremium ? Infinity : Math.max(0, 2 - dailyCount);
 
   const posts = useMemo(() => {
     if (!postsData) return [];
     return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      // فلتر لعرض المنشورات العادية فقط (تجنب عرض النزاعات هنا)
-      .filter((p: any) => p.type !== 'dispute')
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
@@ -60,7 +58,7 @@ export default function PublicChatPage() {
     if (!postText.trim() || !user || isSending) return;
 
     if (!isPremium && remainingPosts <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بمنشورين في اليوم للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح ببوستين فقط يومياً للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
       return;
     }
 
@@ -133,7 +131,6 @@ export default function PublicChatPage() {
           </div>
         </header>
 
-        {/* صندوق النشر */}
         <Card className="rounded-[2rem] shadow-xl border-none bg-card overflow-hidden mx-2">
           <CardContent className="p-6 space-y-4">
             <form onSubmit={handleSendPost} className="space-y-4">
@@ -148,7 +145,7 @@ export default function PublicChatPage() {
                   </div>
                 </Link>
                 <textarea 
-                  placeholder={`بماذا تفكر يا ${userData?.name?.split(' ')[0] || 'بطل'}؟`}
+                  placeholder={`بماذا تفكر يا ${userData?.name?.split(' ')[0]}؟`}
                   className="flex-1 min-h-[100px] p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm focus:ring-2 focus:ring-primary/20 resize-none outline-none"
                   value={postText}
                   onChange={(e) => setPostText(e.target.value)}
@@ -182,7 +179,6 @@ export default function PublicChatPage() {
           </CardContent>
         </Card>
 
-        {/* جدار المنشورات */}
         <div className="space-y-4 mx-2">
           {isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>

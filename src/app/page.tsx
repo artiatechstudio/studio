@@ -83,7 +83,7 @@ export default function Home() {
       ctx.font = '700 30px Cairo'; ctx.fillText(isWin ? 'انتصار بطل! 🏆' : isTie ? 'تعادل عادل! ⚖️' : 'كبوة محارب! ⚔️', 200, 180);
       ctx.font = '400 20px Cairo'; ctx.fillText(`تحدي: ${res.title}`, 200, 240);
       ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(50, 280, 300, 150);
-      ctx.fillStyle = 'white'; ctx.font = '700 24px Cairo'; ctx.fillText(isWin ? `+${res.stake || 0} نقطة` : isTie ? '0 نقطة' : `-${res.stake || 0} نقطة`, 200, 350);
+      ctx.fillStyle = 'white'; ctx.font = '700 24px Cairo'; ctx.fillText(isWin ? `+${res?.stake || 0} نقطة` : isTie ? '0 نقطة' : `-${res?.stake || 0} نقطة`, 200, 350);
       ctx.font = '700 16px Cairo'; ctx.fillText('تواصل، تحدى، تطور مع كارينجو', 200, 500);
       canvas.toBlob(async (blob) => {
         if (!blob) return;

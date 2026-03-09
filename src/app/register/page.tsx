@@ -74,7 +74,7 @@ export default function RegisterPage() {
 
       await sendEmailVerification(user);
 
-      // منطق "المستخدم صفر" للآدمن
+      // منطق "المستخدم صفر" للآدمن عند تصفير قاعدة البيانات
       const isAdminUser = normalizedName === 'admin';
       const membershipRank = isAdminUser ? 0 : allUsers.length || 1;
 

@@ -18,7 +18,7 @@ const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
   return 100;
 };
 
-// --- تحديات المسارات الـ 30 الأصلية ---
+// --- تحديات المسارات الـ 30 الأصلية لكل مسار ---
 const fitnessChallenges: Challenge[] = [
   { title: "اليوم 1: البداية الصغيرة", description: "قم بـ 10 تمارين سكوات و 5 تمارين ضغط.", time: 5, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 2: تمدد الصباح", description: "ثبات بلانك لمدة 30 ثانية و دقيقتين تمدد.", time: 5, difficulty: 'سهل', points: getPoints('سهل'), isTimeLocked: true },
@@ -158,11 +158,10 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   Study: studyChallenges,
 };
 
-// الـ 120 تحدي الإضافية والمميزة لقسم الماستر (حصرياً)
+// الـ 120 تحدي الإضافية للمسار العام (حصرياً)
 export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [];
 
-const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
-const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
+// توليد 120 تحدي ماستر فريد برمجياً مع أسماء مستلهمة
 const masterBaseTitles: Record<TrackKey, string[]> = {
   Fitness: ["ضغط الأساطير", "ماراثون السكوات", "بلانك الجليد", "انفجار الكارديو", "توازن الساموراي", "قوة الجذع", "تسلق القمة", "بربي المحاربين", "لياقة النينجا", "تحدي الجاذبية"],
   Nutrition: ["ديتوكس الماء", "منع السكر المطلق", "وجبة العمالقة", "صيام الماستر", "هندسة الألياف", "قوس قزح الصحي", "بدائل الطبيعة", "الأكل الصامت", "مضغ الأبطال", "توازن الكيمياء"],

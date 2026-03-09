@@ -18,7 +18,11 @@ export default function LeaderboardPage() {
   const stats = useMemo(() => {
     if (!rawData) return { leaders: [], losers: [] };
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const allUsers = Object.values(rawData).filter((u: any) => u.name !== 'admin').map((user: any) => ({...user}));
+    
+    // ضمان وجود المعرفات عبر استخدام Object.entries
+    const allUsers = Object.entries(rawData)
+      .map(([id, val]: [string, any]) => ({ ...val, id }))
+      .filter((u: any) => u.name !== 'admin');
 
     const leaders = [...allUsers]
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
@@ -57,7 +61,7 @@ export default function LeaderboardPage() {
             </div>
             <div className="divide-y divide-border">
               {stats.leaders.map((user: any, index: number) => (
-                <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
+                <div key={user.id || `leader-${index}`} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
                   <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
                     <p className="font-black text-primary text-sm">{(user.points || 0).toLocaleString()}</p>
                     <p className="text-[7px] font-black text-muted-foreground uppercase text-center">إجمالي النقاط</p>
@@ -90,8 +94,8 @@ export default function LeaderboardPage() {
               <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام أو خسروا مبارزات</p>
             </div>
             <div className="p-4 space-y-3">
-              {stats.losers.length > 0 ? stats.losers.map((user: any) => (
-                <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100">
+              {stats.losers.length > 0 ? stats.losers.map((user: any, idx: number) => (
+                <div key={user.id || `loser-${idx}`} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100">
                   <div className="flex flex-col items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px]">
                     <span className="text-[8px] font-black text-red-600 flex items-center gap-1">
                       {user.lastChallengeLossDate ? <Swords size={8}/> : <AlertCircle size={8}/>}

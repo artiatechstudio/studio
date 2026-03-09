@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2, Ruler, Weight, Calendar as CalendarIcon, User as UserIcon } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2, Calendar as CalendarIcon, User as UserIcon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -114,7 +114,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border relative overflow-hidden mx-2">
           <div className="absolute top-3 left-3"><Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full"><ArrowLeft size={16} className="rotate-180" /></Button></div>
           <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-secondary shadow-lg bg-white rounded-full overflow-hidden flex items-center justify-center shrink-0">
-            {isImageAvatar ? <img src={userData.avatar} className="w-full h-full object-cover" /> : <span className="text-5xl">{userData.avatar || "🐱"}</span>}
+            {isImageAvatar ? <img src={userData.avatar} className="w-full h-full object-cover" alt={userData.name} /> : <span className="text-5xl">{userData.avatar || "🐱"}</span>}
           </div>
           <div className="flex-1 text-center md:text-right space-y-2">
             <div className="flex flex-col md:flex-row items-center justify-center md:justify-start gap-2">
@@ -131,11 +131,8 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
               <div className="bg-primary/5 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-primary/10">
                 <CalendarIcon size={10} /> {userData.age || '--'} سنة
               </div>
-              <div className="bg-accent/5 text-accent px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-accent/10">
-                <Ruler size={10} /> {userData.height || '--'} سم
-              </div>
-              <div className="bg-orange-50 text-orange-600 px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-orange-100">
-                <Weight size={10} /> {userData.weight || '--'} كجم
+              <div className="bg-secondary/50 text-primary px-2.5 py-1 rounded-lg font-black text-[9px] flex items-center gap-1 border border-border">
+                <UserIcon size={10} /> {userData.gender === 'male' ? 'ذكر' : 'أنثى'}
               </div>
             </div>
 

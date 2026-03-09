@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Star, Timer as TimerIcon, Flame, Milestone, Crown, Sparkles, Globe, MessageSquare, Snowflake, Swords, AlertCircle, Scale } from 'lucide-react';
+import { ArrowLeft, Star, Timer as TimerIcon, Flame, Milestone, Crown, Sparkles, Globe, MessageSquare, Snowflake, Swords, AlertCircle, Scale, Camera, Eye, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';
@@ -36,25 +36,30 @@ export default function InstructionsPage() {
         </header>
 
         <section className="space-y-12">
-          {/* التحديات الثنائية - قسم جديد */}
+          {/* نظام التحديات المطور */}
           <div className="space-y-6">
             <div className="flex items-center justify-start gap-3 text-2xl font-black text-primary">
-              <Swords className="text-red-500" /> <h2>1. نظام التحديات الثنائية (PvP)</h2>
+              <Swords className="text-red-500" /> <h2>1. نظام التحديات الثنائية المطور (PvP)</h2>
             </div>
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-2 border-primary/10 bg-primary/5 space-y-6">
               <div className="space-y-4">
-                <h4 className="font-black text-primary text-lg flex items-center gap-2">قوانين المبارزة ⚔️</h4>
-                <p className="text-xs font-bold text-slate-700 leading-relaxed">
-                  يمكنك تحدي أي بطل في المجتمع عبر بروفايله العام. التحدي يتطلب تحديد (عنوان المهمة، الوقت، والرهان بالنقاط).
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-2xl border border-border">
-                    <p className="font-black text-xs text-primary mb-1">حد النقاط 💰</p>
-                    <p className="text-[10px] font-bold text-muted-foreground">الحد الأقصى للرهان في التحدي الواحد هو **100 نقطة** فقط لضمان المنافسة العادلة.</p>
+                <h4 className="font-black text-primary text-lg flex items-center gap-2">كيف تعمل المبارزة؟ ⚔️</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
+                    <p className="font-black text-primary text-sm flex items-center gap-2"> <CheckCircle2 size={16} className="text-green-500" /> الخطوة 1: الطلب والقفل</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">يختار المستخدم خصماً من بروفايله العام، ويحدد المهمة والوقت والرهان (بحد أقصى 100ن). يتم حجز نقاط الرهان مؤقتاً.</p>
                   </div>
-                  <div className="bg-white p-4 rounded-2xl border border-border">
-                    <p className="font-black text-xs text-red-600 mb-1">عقوبة الخسارة 🛑</p>
-                    <p className="text-[10px] font-bold text-muted-foreground">الخاسر هو من ينتهي وقته قبل ضغط زر الإنجاز، ويتم خصم النقاط من رصيده فوراً.</p>
+                  <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
+                    <p className="font-black text-primary text-sm flex items-center gap-2"> <TimerIcon size={16} className="text-orange-500" /> الخطوة 2: المؤقتات المنفصلة</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">عندما يوافق الخصم، يبدأ مؤقته فوراً. أما المرسل، فيبدأ مؤقته بمجرد فتحه للتطبيق بعد الموافقة. الفائز هو من ينهي المهمة في "زمن أقل" وبدقة أعلى.</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
+                    <p className="font-black text-primary text-sm flex items-center gap-2"> <Camera size={16} className="text-blue-500" /> الخطوة 3: إثبات الإنجاز</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">يجب على من ينهي المهمة رفع "صورة دليل" فورية. تُعرض هذه الصورة للخصم للمراجعة.</p>
+                  </div>
+                  <div className="bg-white p-5 rounded-2xl border border-border space-y-2">
+                    <p className="font-black text-primary text-sm flex items-center gap-2"> <Eye size={16} className="text-purple-500" /> الخطوة 4: الاعتراف أو النزاع</p>
+                    <p className="text-[11px] font-bold text-muted-foreground">إذا اعترف الخصم بالهزيمة، تُوزع النقاط. إذا رفض الدليل، يتحول الأمر لـ "نزاع عام" يُنشر في المجتمع ليصوت الجمهور على النتيجة خلال 24 ساعة.</p>
                   </div>
                 </div>
               </div>
@@ -120,6 +125,7 @@ export default function InstructionsPage() {
             <Card className="p-6 md:p-8 rounded-[2.5rem] shadow-xl border-yellow-100 bg-yellow-50/20 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
                 {[
+                  { t: "تحديات غير محدودة ⚔️", d: "أرسل تحديات لأي بطل في المجتمع دون قيود (المجاني: 2 أسبوعياً).", i: Swords },
                   { t: "تجميد الحماسة (Streak Freeze)", d: "تحصل على 2 تجميد شهرياً يحميك من فقدان سجل التزامك.", i: Snowflake },
                   { t: "نشر غير محدود", d: "انشر محتواك في المجتمع العام دون قيود المنشورين اليوميين.", i: Globe },
                   { t: "تجربة نقية", d: "تصفح التطبيق بسرعة فائقة وبدون أي إعلانات.", i: Sparkles }

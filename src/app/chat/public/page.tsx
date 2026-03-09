@@ -4,127 +4,236 @@
 import React, { useState, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, runTransaction } from 'firebase/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ref, push, serverTimestamp, set, runTransaction, remove } from 'firebase/database';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, Scale, Swords, CheckCircle, XCircle, Clock, TrendingUp, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Globe, Send, MessageSquare, Heart, Clock, User, Crown, Swords, Vote, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
-export default function PublicCommunityPage() {
+export default function PublicWallPage() {
   const { user } = useUser();
   const { database } = useFirebase();
+  const [postText, setPostText] = useState('');
+  const [isPosting, setIsPosting] = useState(false);
 
   const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
   const { data: postsData, isLoading } = useDatabase(postsRef);
 
-  const disputes = useMemo(() => {
-    if (!postsData) return [];
-    return Object.values(postsData)
-      .filter((p: any) => p.type === 'dispute')
-      .sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
-  }, [postsData]);
+  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
+  const { data: userData } = useDatabase(userRef);
 
-  const handleVote = async (postId: string, side: 'sender' | 'receiver') => {
-    if (!user) return;
+  const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
+  const today = new Date().toLocaleDateString('en-CA');
+  const dailyPostCount = userData?.dailyPostCount?.[today] || 0;
+
+  const handlePost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!postText.trim() || !user || isPosting) return;
+
+    if (!isPremium && dailyPostCount >= 2) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي 🛑", description: "يمكن للمستخدمين العاديين نشر منشورين فقط يومياً." });
+      return;
+    }
+
+    setIsPosting(true);
     playSound('click');
-    const voteRef = ref(database, `publicPosts/${postId}/votedBy/${user.uid}`);
-    
-    runTransaction(voteRef, (current) => {
-      if (current) {
-        toast({ title: "لقد صوتَّ بالفعل!" });
-        return;
-      }
+
+    try {
+      const newPostRef = push(ref(database, 'publicPosts'));
+      await set(newPostRef, {
+        id: newPostRef.key,
+        userId: user.uid,
+        userName: userData.name,
+        userAvatar: userData.avatar || "🐱",
+        text: postText.trim(),
+        likes: {},
+        timestamp: serverTimestamp(),
+        type: 'standard'
+      });
+
+      await runTransaction(ref(database, `users/${user.uid}/dailyPostCount/${today}`), (count) => (count || 0) + 1);
       
-      const countRef = ref(database, `publicPosts/${postId}/votes/${side}`);
-      runTransaction(countRef, (count) => (count || 0) + 1);
-      toast({ title: "تم تسجيل تصويتك ✅" });
+      setPostText('');
+      toast({ title: "تم النشر بنجاح! 🌍" });
       playSound('success');
-      return side;
-    });
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل النشر" });
+    } finally {
+      setIsPosting(false);
+    }
   };
+
+  const posts = useMemo(() => {
+    if (!postsData) return [];
+    return Object.values(postsData).sort((a: any, b: any) => (b.timestamp || 0) - (a.timestamp || 0));
+  }, [postsData]);
 
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
-      <div className="app-container py-6 space-y-8">
-        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-accent/10 text-accent rounded-2xl flex items-center justify-center"><Globe size={28} /></div>
-            <div className="text-right">
-              <h1 className="text-xl font-black text-primary">المجتمع العام</h1>
-              <p className="text-[8px] font-bold text-muted-foreground uppercase">النزاعات والتحكيم الشعبي</p>
-            </div>
+      <div className="app-container py-6 space-y-6">
+        <header className="flex items-center gap-4 bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2">
+          <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center shadow-inner">
+            <Globe size={24} />
+          </div>
+          <div className="text-right">
+            <h1 className="text-xl font-black text-primary leading-tight">المجتمع العام</h1>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">شارك إلهامك مع الجميع 🌍</p>
           </div>
         </header>
 
-        <section className="mx-2 space-y-6">
-          <div className="bg-blue-50 border border-blue-100 p-4 rounded-2xl flex items-start gap-3">
-            <Scale className="text-blue-600 shrink-0" size={20} />
-            <div className="text-right">
-              <p className="text-xs font-black text-blue-900 leading-tight">محكمة كارينجو الشعبية ⚖️</p>
-              <p className="text-[9px] font-bold text-blue-700 mt-1">صوتوا بالعدل! قراركم يحدد الفائز في التحديات المتنازع عليها. التصويت يستمر لـ 24 ساعة فقط.</p>
+        <Card className="rounded-[2.5rem] shadow-xl border-none bg-card overflow-hidden mx-2">
+          <form onSubmit={handlePost} className="p-6 space-y-4">
+            <Textarea 
+              placeholder="بماذا تفكر اليوم؟ شاركنا رحلة نموك..." 
+              className="min-h-[100px] rounded-2xl bg-secondary/30 border-none font-bold text-right p-4 focus-visible:ring-primary"
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+            />
+            <div className="flex items-center justify-between">
+              <p className="text-[9px] font-black text-muted-foreground">
+                {isPremium ? "نشر غير محدود 👑" : `المتبقي اليوم: ${Math.max(0, 2 - dailyPostCount)}`}
+              </p>
+              <Button type="submit" disabled={isPosting || !postText.trim()} className="rounded-xl px-8 font-black gap-2">
+                {isPosting ? "جاري النشر..." : <><Send size={16} className="rotate-180" /> انشر</>}
+              </Button>
             </div>
-          </div>
+          </form>
+        </Card>
 
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="flex justify-center p-10"><div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" /></div>
-            ) : disputes.length === 0 ? (
-              <div className="text-center py-20 opacity-30 font-black text-lg">لا توجد نزاعات حالياً. السلام يعم المكان! 🕊️</div>
-            ) : disputes.map((dispute: any) => (
-              <DisputeCard key={dispute.id} dispute={dispute} onVote={handleVote} />
-            ))}
-          </div>
-        </section>
+        <div className="space-y-4 mx-2">
+          {isLoading ? (
+            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
+          ) : posts.length === 0 ? (
+            <div className="text-center py-20 opacity-30 font-black text-xl">كن أول من ينشر هنا! 🐱🌟</div>
+          ) : posts.map((post: any) => (
+            post.type === 'dispute' ? (
+              <DisputePost key={post.id} post={post} currentUser={user} database={database} />
+            ) : (
+              <StandardPost key={post.id} post={post} currentUser={user} database={database} />
+            )
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
-function DisputeCard({ dispute, onVote }: { dispute: any, onVote: any }) {
-  const timeLeft = Math.max(0, Math.round((dispute.expiresAt - Date.now()) / 1000));
-  const format = (s: number) => `${Math.floor(s/3600)}س ${(Math.floor(s/60)%60)}د`;
+function StandardPost({ post, currentUser, database }: { post: any, currentUser: any, database: any }) {
+  const likesCount = post.likes ? Object.keys(post.likes).length : 0;
+  const isLiked = currentUser && post.likes?.[currentUser.uid];
+
+  const handleLike = () => {
+    if (!currentUser) return;
+    playSound('click');
+    const likeRef = ref(database, `publicPosts/${post.id}/likes/${currentUser.uid}`);
+    if (isLiked) {
+      remove(likeRef);
+    } else {
+      set(likeRef, true);
+      playSound('success');
+    }
+  };
 
   return (
-    <Card className="rounded-[2rem] border-2 border-red-100 bg-card overflow-hidden shadow-xl">
-      <CardHeader className="bg-red-50 p-4 border-b border-red-100">
+    <Card className="rounded-[2rem] border border-border shadow-md bg-card overflow-hidden">
+      <CardContent className="p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-red-700 font-black">
-            <Clock size={14} className="animate-pulse" />
-            <span className="text-[10px]">{format(timeLeft)}</span>
-          </div>
-          <div className="text-[10px] font-black text-red-600 uppercase flex items-center gap-1">
-            <Swords size={12} /> نزاع على {dispute.points}ن
-          </div>
+          <Link href={`/user/${post.userId}`} className="flex items-center gap-3 flex-row-reverse">
+            <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl overflow-hidden border border-border">
+              {post.userAvatar?.startsWith('data:') ? <img src={post.userAvatar} className="w-full h-full object-cover" /> : post.userAvatar}
+            </div>
+            <div className="text-right">
+              <p className="font-black text-primary text-xs leading-none">{post.userName}</p>
+              <p className="text-[8px] font-bold text-muted-foreground mt-1">{post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}</p>
+            </div>
+          </Link>
         </div>
-      </CardHeader>
-      <CardContent className="p-6 space-y-6">
-        <div className="text-right">
-          <h3 className="font-black text-primary text-base">تحدي: {dispute.title}</h3>
-          <p className="text-[10px] font-bold text-muted-foreground mt-1">بين <span className="text-primary">{dispute.challengerName}</span> و <span className="text-accent">{dispute.defenderName}</span></p>
+        <p className="text-sm font-bold text-slate-700 leading-relaxed text-right">{post.text}</p>
+        <div className="flex items-center gap-4 pt-2 border-t border-border/50">
+          <button onClick={handleLike} className={cn("flex items-center gap-1.5 transition-colors", isLiked ? "text-red-500" : "text-muted-foreground")}>
+            <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
+            <span className="text-xs font-black">{likesCount}</span>
+          </button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function DisputePost({ post, currentUser, database }: { post: any, currentUser: any, database: any }) {
+  const votesA = post.votes?.[post.challengerId] || 0;
+  const votesB = post.votes?.[post.defenderId] || 0;
+  const hasVoted = currentUser && post.voters?.[currentUser.uid];
+
+  const handleVote = (targetId: string) => {
+    if (!currentUser || hasVoted) return;
+    playSound('click');
+    const postRef = ref(database, `publicPosts/${post.id}`);
+    runTransaction(postRef, (p) => {
+      if (p) {
+        if (!p.voters) p.voters = {};
+        p.voters[currentUser.uid] = true;
+        if (!p.votes) p.votes = {};
+        p.votes[targetId] = (p.votes[targetId] || 0) + 1;
+      }
+      return p;
+    });
+    toast({ title: "شكراً لتصويتك! ⚖️" });
+  };
+
+  return (
+    <Card className="rounded-[2.5rem] border-2 border-red-100 shadow-xl bg-red-50/20 overflow-hidden relative">
+      <div className="absolute top-0 right-0 left-0 bg-red-600 text-white p-3 flex items-center justify-between px-6">
+        <div className="flex items-center gap-2">
+          <ShieldCheck size={18} />
+          <h3 className="text-xs font-black uppercase tracking-widest">محاكمة مجتمعية ⚖️</h3>
+        </div>
+        <AlertTriangle size={16} className="animate-pulse" />
+      </div>
+      
+      <CardContent className="p-6 pt-16 space-y-6">
+        <div className="text-center space-y-2">
+          <h4 className="text-lg font-black text-red-900 leading-tight">{post.title}</h4>
+          <p className="text-[10px] font-bold text-red-700/70">هل يستحق {post.defenderName} الفوز؟ راجع الدليل وصوت.</p>
         </div>
 
-        <div className="relative group aspect-video rounded-2xl overflow-hidden border-4 border-white shadow-inner bg-secondary/50">
-          <img src={dispute.proof} className="w-full h-full object-cover" />
-          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-             <Button variant="ghost" size="sm" className="text-white font-black bg-white/20 backdrop-blur-md rounded-xl"> <Eye size={14} className="ml-1" /> عرض الدليل كاملاً </Button>
+        <div className="w-full aspect-video rounded-3xl overflow-hidden shadow-inner border-4 border-white bg-black/5 flex items-center justify-center">
+          <img src={post.proof} className="w-full h-full object-contain" alt="دليل النزاع" />
+        </div>
+
+        <div className="grid grid-cols-2 gap-4 pt-4">
+          <div className="space-y-2">
+            <Button 
+              onClick={() => handleVote(post.defenderId)} 
+              disabled={hasVoted}
+              className={cn("w-full h-14 rounded-2xl font-black gap-2 shadow-lg", hasVoted ? "bg-slate-200" : "bg-green-600")}
+            >
+              يستحق الفوز ✅
+            </Button>
+            <p className="text-center font-black text-green-700 text-xs">{votesB} صوت</p>
+          </div>
+          <div className="space-y-2">
+            <Button 
+              onClick={() => handleVote(post.challengerId)} 
+              disabled={hasVoted}
+              className={cn("w-full h-14 rounded-2xl font-black gap-2 shadow-lg", hasVoted ? "bg-slate-200" : "bg-red-600")}
+            >
+              الدليل غير كافٍ ❌
+            </Button>
+            <p className="text-center font-black text-red-700 text-xs">{votesA} صوت</p>
           </div>
         </div>
 
-        <div className="space-y-3">
-          <p className="text-[9px] font-black text-center text-muted-foreground uppercase tracking-widest">هل الدليل صادق؟ صوت الآن!</p>
-          <div className="flex gap-3">
-            <Button onClick={() => onVote(dispute.id, 'sender')} className="flex-1 h-14 rounded-2xl bg-green-600 hover:bg-green-700 font-black flex flex-col gap-0 shadow-lg">
-              <CheckCircle size={18} />
-              <span className="text-[10px]">نعم، فائز ({dispute.votes?.sender || 0})</span>
-            </Button>
-            <Button onClick={() => onVote(dispute.id, 'receiver')} variant="outline" className="flex-1 h-14 rounded-2xl border-red-200 text-red-600 hover:bg-red-50 font-black flex flex-col gap-0">
-              <XCircle size={18} />
-              <span className="text-[10px]">كاذب، لم ينجز ({dispute.votes?.receiver || 0})</span>
-            </Button>
-          </div>
+        <div className="bg-white/60 p-4 rounded-2xl border border-red-100 flex items-center justify-center gap-2">
+          <Clock size={14} className="text-red-600" />
+          <p className="text-[10px] font-bold text-red-900/60">تنتهي المحاكمة خلال 24 ساعة من تاريخ النشر</p>
         </div>
       </CardContent>
     </Card>

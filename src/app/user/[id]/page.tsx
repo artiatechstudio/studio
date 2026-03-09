@@ -1,10 +1,10 @@
 
 "use client"
 
-import React, { useMemo, use, useState } from 'react';
+import React, { useMemo, use, useState, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
-import { ref, runTransaction, push, serverTimestamp, set } from 'firebase/database';
+import { ref, runTransaction, push, serverTimestamp, set, get } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar } from '@/components/ui/avatar';
@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -35,11 +35,27 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const userRef = useMemoFirebase(() => ref(database, `users/${id}`), [database, id]);
   const { data: userData, isLoading } = useDatabase(userRef);
 
-  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
-  const { data: allUsersData } = useDatabase(allUsersRef);
+  const myRef = useMemoFirebase(() => currentUser ? ref(database, `users/${currentUser.uid}`) : null, [database, currentUser]);
+  const { data: myData } = useDatabase(myRef);
 
   const handleSendChallenge = async () => {
-    if (!currentUser || !id) return;
+    if (!currentUser || !id || !myData) return;
+    
+    // التحقق من حد التحديات الأسبوعي للمستخدم غير البريميوم
+    const isPremium = myData.isPremium === 1 || myData.name === 'admin';
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).toLocaleDateString('en-CA');
+    const weeklySent = myData.weeklyChallengesSent?.[startOfWeek] || 0;
+
+    if (!isPremium && weeklySent >= 2) {
+      toast({ 
+        variant: "destructive", 
+        title: "وصلت للحد الأسبوعي 🛑", 
+        description: "يمكنك إرسال تحديين فقط أسبوعياً. اشترك في بريميوم للتحدي بلا حدود! 👑" 
+      });
+      return;
+    }
+
     const points = parseInt(challengePoints);
     if (!challengeTitle.trim()) { toast({ variant: "destructive", title: "أدخل اسم التحدي" }); return; }
     if (points > 100 || points < 10) { toast({ variant: "destructive", title: "النقاط (10-100)" }); return; }
@@ -54,20 +70,25 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
       await set(challengeRef, {
         id: challengeId,
         senderId: currentUser.uid,
-        senderName: allUsersData[currentUser.uid]?.name || 'بطل مجهول',
+        senderName: myData.name || 'بطل مجهول',
         receiverId: id,
         receiverName: userData.name,
         title: challengeTitle.trim(),
         duration: parseInt(challengeTime),
         pointsStake: points,
-        status: 'pending_acceptance', // حالة جديدة لبدء المسار المطور
+        status: 'pending_acceptance',
         createdAt: serverTimestamp()
+      });
+
+      // تحديث عداد التحديات المرسلة
+      await update(ref(database, `users/${currentUser.uid}/weeklyChallengesSent`), {
+        [startOfWeek]: weeklySent + 1
       });
 
       push(ref(database, `users/${id}/notifications`), {
         type: 'challenge',
         title: 'طلب مبارزة ثنائية! ⚔️',
-        message: `يتحداك ${allUsersData[currentUser.uid]?.name} في: ${challengeTitle.trim()} مقابل ${points}ن.`,
+        message: `يتحداك ${myData.name} في: ${challengeTitle.trim()} مقابل ${points}ن.`,
         challengeId: challengeId,
         isRead: false,
         timestamp: serverTimestamp()
@@ -83,7 +104,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
     }
   };
 
-  const isLikedByMe = userData?.likedBy?.[currentUser?.uid || ''];
   const isImageAvatar = userData?.avatar && (userData.avatar.startsWith('http') || userData.avatar.startsWith('data:image'));
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
@@ -129,7 +149,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                   </div>
                   <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 flex items-start gap-3"><AlertTriangle className="text-orange-600 shrink-0" size={18} /><p className="text-[10px] font-bold text-orange-800 leading-relaxed">تنبيه: الكذب في الإثبات سيعرضك لنزاع عام وتصويت من المجتمع، مما قد يؤدي لإدراجك في جدار العار.</p></div>
                 </div>
-                <DialogFooter><Button onClick={handleSendChallenge} disabled={isSendingChallenge} className="w-full h-14 rounded-2xl font-black text-xl bg-primary shadow-lg">{isSendingChallenge ? "جاري الإرسال..." : "إرسال التحدي ⚔️"}</Button></DialogFooter>
+                <DialogFooter><Button onClick={handleSendChallenge} disabled={isSendingChallenge} className="w-full h-14 rounded-2xl font-black text-xl bg-primary shadow-lg">{isSendingChallenge ? "جاري المعالجة..." : "إرسال التحدي ⚔️"}</Button></DialogFooter>
               </DialogContent>
             </Dialog>
           )}

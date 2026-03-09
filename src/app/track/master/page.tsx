@@ -28,11 +28,9 @@ export default function MasterTrackPage() {
   const [timerActive, setTimerActive] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const hasAutoCompletedMaster = useRef(false);
 
   const [todoInput, setTodoInput] = useState('');
   const [todoMinutes, setTodoMinutes] = useState('');
-  const [completingId, setCompletingId] = useState<string | null>(null);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
@@ -43,7 +41,6 @@ export default function MasterTrackPage() {
   const challengesRef = useMemoFirebase(() => ref(database, 'challenges'), [database]);
   const { data: allChallengesData } = useDatabase(challengesRef);
 
-  // التحديات الثنائية النشطة التي تتعلق بالمستخدم
   const activePvPChallenges = useMemo(() => {
     if (!allChallengesData || !user) return [];
     return Object.entries(allChallengesData)
@@ -56,9 +53,7 @@ export default function MasterTrackPage() {
 
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
   const today = new Date().toLocaleDateString('en-CA');
-
   const masterCountToday = userData?.dailyMasterCount?.[today] || 0;
-  const todoCountToday = userData?.dailyTodoCount?.[today] || 0;
 
   const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
     if (!user || !userData) return;
@@ -78,7 +73,6 @@ export default function MasterTrackPage() {
     await update(ref(database, `users/${user.uid}`), updates);
   }, [user, userData, database]);
 
-  // منطق معالجة الصور
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -101,7 +95,7 @@ export default function MasterTrackPage() {
     });
   };
 
-  const handlePvPAction = async (challenge: any, action: 'complete' | 'fail' | 'recognize' | 'dispute') => {
+  const handlePvPAction = async (challenge: any, action: 'complete' | 'recognize' | 'dispute') => {
     if (!user) return;
     playSound('click');
     const isSender = challenge.senderId === user.uid;
@@ -109,7 +103,6 @@ export default function MasterTrackPage() {
 
     if (action === 'complete') {
       fileInputRef.current?.click();
-      // يتم إكمال الإجراء في handleFileUpload
       return;
     }
 
@@ -118,7 +111,6 @@ export default function MasterTrackPage() {
       const loserId = user.uid;
       const points = challenge.pointsStake;
 
-      // تحديث الفائز
       const winnerRef = ref(database, `users/${winnerId}`);
       const wSnap = await get(winnerRef);
       const wData = wSnap.val();
@@ -128,7 +120,6 @@ export default function MasterTrackPage() {
         [`dailyPoints/${todayStr}`]: (wData.dailyPoints?.[todayStr] || 0) + points
       });
 
-      // تحديث الخاسر (الحالي)
       await update(ref(database, `users/${loserId}`), {
         points: Math.max(0, (userData.points || 0) - points),
         challengesLost: (userData.challengesLost || 0) + 1,
@@ -137,7 +128,7 @@ export default function MasterTrackPage() {
       });
 
       await remove(ref(database, `challenges/${challenge.id}`));
-      toast({ title: "تم الاعتراف بالنتيجة ✅", description: "تم توزيع النقاط وتحديث السجلات." });
+      toast({ title: "تم الاعتراف بالنتيجة ✅" });
       playSound('success');
     }
 
@@ -145,7 +136,6 @@ export default function MasterTrackPage() {
       const winnerId = isSender ? challenge.receiverId : challenge.senderId;
       const proof = isSender ? challenge.receiverProof : challenge.senderProof;
       
-      // إنشاء منشور نزاع عام
       const postRef = push(ref(database, 'publicPosts'));
       await set(postRef, {
         id: postRef.key,
@@ -164,7 +154,7 @@ export default function MasterTrackPage() {
       });
 
       await update(ref(database, `challenges/${challenge.id}`), { status: 'disputed' });
-      toast({ title: "تم رفع النزاع للمجتمع! 🌍", description: "سيقرر الجمهور النتيجة خلال 24 ساعة." });
+      toast({ title: "تم رفع النزاع للمجتمع! 🌍" });
     }
   };
 
@@ -191,7 +181,7 @@ export default function MasterTrackPage() {
       }
 
       await update(ref(database), updates);
-      toast({ title: "تم رفع الدليل! 📸", description: "بانتظار مراجعة الخصم." });
+      toast({ title: "تم رفع الدليل! 📸" });
       playSound('success');
     } catch (err) {
       toast({ variant: "destructive", title: "فشل رفع الصورة" });
@@ -205,14 +195,12 @@ export default function MasterTrackPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background md:pr-72 pb-40 overflow-x-hidden" dir="rtl">
+    <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner">
-              <Swords size={28} />
-            </div>
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
             <div className="text-right">
               <h1 className="text-xl font-black text-primary leading-tight">المسار العام</h1>
               <p className="text-[8px] font-bold text-muted-foreground uppercase">المبارزات والمهام الحرة</p>
@@ -221,7 +209,6 @@ export default function MasterTrackPage() {
           <Link href="/"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
         </header>
 
-        {/* قسم المبارزات النشطة المطور */}
         {activePvPChallenges.length > 0 && (
           <section className="mx-2 space-y-3">
             <h3 className="font-black text-primary text-sm flex items-center gap-2 px-2"> <ShieldCheck className="text-accent" size={18} /> ساحة المواجهة المباشرة ⚔️</h3>
@@ -240,7 +227,6 @@ export default function MasterTrackPage() {
           </section>
         )}
 
-        {/* المهام الفردية (Master) - باختصار */}
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card space-y-6 mx-2">
             <div className="flex items-center justify-between">
@@ -277,13 +263,12 @@ export default function MasterTrackPage() {
           </Card>
         )}
 
-        {/* قائمة المهام الشخصية - بسيطة */}
         <section className="space-y-4 pt-6 border-t border-border/50">
           <header className="flex items-center justify-between px-3">
             <h2 className="text-lg font-black text-primary flex items-center gap-2"> <ListChecks size={20} /> مهامي الشخصية </h2>
           </header>
           <Card className="rounded-[2rem] p-5 shadow-xl border-none bg-card space-y-5 mx-2">
-            <form onSubmit={(e) => { e.preventDefault(); if(!todoInput.trim()) return; playSound('click'); const newTodoRef = push(ref(database, `users/${user?.uid}/todos`)); set(newTodoRef, { id: newTodoRef.key, title: todoInput.trim(), timestamp: Date.now(), expiry: Date.now() + (todoMinutes ? parseInt(todoMinutes)*60000 : 24*60*60*1000) }); setTodoInput(''); setTodoMinutes(''); }} className="flex gap-2">
+            <form onSubmit={(e) => { e.preventDefault(); if(!todoInput.trim()) return; playSound('click'); const newTodoRef = push(ref(database, `users/${user?.uid}/todos`)); set(newTodoRef, { id: newTodoRef.key, title: todoInput.trim(), timestamp: Date.now() }); setTodoInput(''); }} className="flex gap-2">
               <Input placeholder="أضف مهمة..." className="flex-1 h-11 rounded-xl bg-secondary/50 border-none font-bold text-right text-xs" value={todoInput} onChange={(e) => setTodoInput(e.target.value)} />
               <Button type="submit" size="icon" className="h-11 w-11 rounded-xl bg-primary shadow-lg shrink-0"> <Plus size={20} /> </Button>
             </form>
@@ -308,15 +293,16 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
   const [timeLeft, setTimeLeft] = useState(0);
   const [isSyncing, setIsSenderWaiting] = useState(isSender && !challenge.senderStartTime);
 
+  const { database } = useFirebase();
+
   useEffect(() => {
-    if (isSyncing && challenge.receiverStartTime) {
-      // الطالب فتح التطبيق بعد موافقة الخصم -> بدأ وقت الطالب
-      update(ref(get(ref(currentUser.database)).database, `challenges/${challenge.id}`), {
+    if (isSyncing && challenge.status === 'active') {
+      update(ref(database, `challenges/${challenge.id}`), {
         senderStartTime: Date.now()
       });
       setIsSenderWaiting(false);
     }
-  }, [challenge, isSyncing, currentUser.database]);
+  }, [challenge, isSyncing, database]);
 
   useEffect(() => {
     if (!startTime) return;
@@ -348,10 +334,12 @@ function BattleCard({ challenge, currentUser, onAction, fileInputRef, onUpload }
           <p className="text-[10px] font-bold text-muted-foreground mt-1">الرهان: <span className="text-orange-600">{challenge.pointsStake} نقطة</span></p>
         </div>
 
-        {isSyncing ? (
+        {challenge.status === 'pending_acceptance' ? (
+          <div className="bg-secondary/20 p-4 rounded-xl text-center text-[10px] font-bold">بانتظار قبول الخصم... ⏳</div>
+        ) : isSyncing ? (
           <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center space-y-2">
             <Loader2 className="animate-spin text-orange-600 mx-auto" />
-            <p className="text-xs font-black text-orange-800">بانتظار موافقة الخصم لبدء مؤقتك...</p>
+            <p className="text-xs font-black text-orange-800">بانتظار مزامنة مؤقتك مع الخصم...</p>
           </div>
         ) : !myProof ? (
           <div className="space-y-3">

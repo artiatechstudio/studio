@@ -1,3 +1,4 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -5,6 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, LogOut, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
@@ -88,7 +90,7 @@ export default function MasterTrackPage() {
   const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
     if (!user || !userData) return;
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString('en-CA');
     let newStreak = userData.streak || 0;
     if (userData.lastActiveDate !== todayStr) {
@@ -421,7 +423,7 @@ export default function MasterTrackPage() {
             </div>
             <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
               <p className="text-xs font-black text-red-800">الخاسر المكافح ❌</p>
-              <p className="text-lg font-black text-red-600">{resultDialog.data?.loserId === resultDialog.data?.senderId ? resultDialog.data?.senderName : resultDialog.data?.receiverName}</p>
+              <p className="text-lg font-black text-green-600">{resultDialog.data?.loserId === resultDialog.data?.senderId ? resultDialog.data?.senderName : resultDialog.data?.receiverName}</p>
               <p className="text-[10px] font-bold text-red-700">خصم منه {resultDialog.data?.pointsStake} نقطة</p>
             </div>
           </div>

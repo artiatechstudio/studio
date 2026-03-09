@@ -40,6 +40,15 @@ export default function Home() {
   const isAdmin = userData?.name === 'admin';
   const isPremium = userData?.isPremium === 1 || isAdmin;
 
+  // دالة مساعدة لحساب المرحلة الحالية الحقيقية لأي مسار
+  const getTrackCurrentStage = (trackType: string) => {
+    const track = userData?.trackProgress?.[trackType];
+    if (!track) return 1;
+    const completed = track.completedStages || [];
+    if (completed.length === 0) return 1;
+    return Math.min(30, Math.max(...completed) + 1);
+  };
+
   useEffect(() => {
     if (userData && user && !hasCheckedStatus.current) {
       hasCheckedStatus.current = true; 
@@ -192,7 +201,7 @@ export default function Home() {
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-black text-orange-600">{userData?.streak || 0}ي</span>
                       <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-orange-500 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} />
+                        <div className="bg-orange-50 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} />
                       </div>
                     </div>
                   </div>
@@ -221,10 +230,10 @@ export default function Home() {
             <section className="space-y-4 mx-2">
               <h2 className="text-xl font-black text-primary px-2 text-right">مسارات النمو</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
-                <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
-                <TrackCard type="Behavior" currentStage={userData?.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
-                <TrackCard type="Study" currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Fitness" currentStage={getTrackCurrentStage('Fitness')} totalStages={30} />
+                <TrackCard type="Nutrition" currentStage={getTrackCurrentStage('Nutrition')} totalStages={30} />
+                <TrackCard type="Behavior" currentStage={getTrackCurrentStage('Behavior')} totalStages={30} />
+                <TrackCard type="Study" currentStage={getTrackCurrentStage('Study')} totalStages={30} />
               </div>
               
               <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">

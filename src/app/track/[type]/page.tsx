@@ -33,6 +33,14 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
   const progress = progressData || { currentStage: 1, completedStages: [], lastCompletedDate: null };
   const isOnCooldown = todayStr ? progress.lastCompletedDate === todayStr : false;
 
+  // منطق مرن لحساب المرحلة الحالية المفتوحة بناءً على المنجز فعلياً
+  const calculatedCurrentStage = useMemo(() => {
+    const completed = progress.completedStages || [];
+    if (completed.length === 0) return 1;
+    const maxDone = Math.max(...completed);
+    return Math.min(30, maxDone + 1);
+  }, [progress.completedStages]);
+
   const stages = useMemo(() => {
     return Array.from({ length: 30 }, (_, i) => {
       const id = i + 1;
@@ -41,7 +49,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
       
       if (completedStages.includes(id)) {
         status = 'completed';
-      } else if (id === (progress.currentStage || 1)) {
+      } else if (id === calculatedCurrentStage) {
         if (isOnCooldown && id > 1) {
           status = 'cooldown';
         } else {
@@ -57,7 +65,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
 
       return { id, status, offset };
     });
-  }, [progress, isOnCooldown]);
+  }, [progress.completedStages, calculatedCurrentStage, isOnCooldown]);
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden pb-32 md:pr-72 pt-4 md:pt-0" dir="rtl">
@@ -90,7 +98,7 @@ export default function TrackPathPage({ params }: { params: Promise<{ type: stri
           <div className="absolute inset-0 bg-gradient-to-t from-primary/70 to-transparent" />
           <div className="absolute bottom-3 right-4 text-white">
              <p className="text-[8px] font-black uppercase opacity-80">المستوى الحالي</p>
-             <p className="text-xl font-black">{progress.currentStage || 1} / 30</p>
+             <p className="text-xl font-black">{calculatedCurrentStage} / 30</p>
           </div>
         </div>
 

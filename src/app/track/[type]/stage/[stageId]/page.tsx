@@ -69,10 +69,9 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         completedStages.push(stageId);
       }
 
-      let nextStage = currentProgress.currentStage || 1;
-      if (stageId === nextStage) {
-        nextStage = stageId + 1;
-      }
+      // حساب المرحلة التالية بشكل أكثر دقة بناءً على المكتمل فعلياً
+      const maxDone = Math.max(...completedStages);
+      const nextStage = Math.min(30, maxDone + 1);
 
       const userRef = ref(database, `users/${user.uid}`);
       const userSnap = await get(userRef);
@@ -160,7 +159,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
         setTimeLeft(remaining);
         setTimerActive(true);
       } else if (!completed && !onCooldown && !hasAutoCompleted.current) {
-        // إذا انتهى الوقت والمستخدم عاد للصفحة
         hasAutoCompleted.current = true;
         handleComplete();
       }
@@ -176,7 +174,6 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
             setTimerActive(false);
             const timerKey = `timer_end_${trackKey}_${stageId}`;
             localStorage.removeItem(timerKey);
-            // الإكمال التلقائي عند انتهاء الوقت والصفحة مفتوحة
             if (!hasAutoCompleted.current) {
               hasAutoCompleted.current = true;
               handleComplete();
@@ -198,8 +195,13 @@ export default function StageDetailPage({ params }: { params: Promise<{ type: st
       const todayStr = new Date().toLocaleDateString('en-CA');
       const hasCompletedTodayInThisTrack = progressData.lastCompletedDate === todayStr;
       
+      // المنطق المرن: لا يتم فرض وضع الانتظار على المرحلة الأولى أو المراحل المنجزة مسبقاً
       if (hasCompletedTodayInThisTrack && !isDone && stageId > 1) {
-        setOnCooldown(true);
+        // نتحقق إذا كانت هذه هي المرحلة المفتوحة فعلياً اليوم
+        const maxDone = Math.max(0, ...(progressData.completedStages || []));
+        if (stageId === maxDone + 1) {
+          setOnCooldown(true);
+        }
       }
       setLoading(false);
     } else {

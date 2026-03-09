@@ -38,6 +38,27 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const myRef = useMemoFirebase(() => currentUser ? ref(database, `users/${currentUser.uid}`) : null, [database, currentUser]);
   const { data: myData } = useDatabase(myRef);
 
+  const isLikedByMe = userData?.likedBy?.[currentUser?.uid || ''];
+
+  const handleToggleLike = () => {
+    if (!currentUser || !id) return;
+    playSound('click');
+    const refLiked = ref(database, `users/${id}/likedBy/${currentUser.uid}`);
+    const refCount = ref(database, `users/${id}/likesCount`);
+    
+    runTransaction(refLiked, (currentLikeStatus) => {
+      if (currentLikeStatus) {
+        // Unlike
+        runTransaction(refCount, (count) => (count || 1) - 1);
+        return null;
+      } else {
+        // Like
+        runTransaction(refCount, (count) => (count || 0) + 1);
+        return true;
+      }
+    });
+  };
+
   const handleSendChallenge = async () => {
     if (!currentUser || !id || !myData) return;
     
@@ -112,7 +133,16 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
       <NavSidebar />
       <div className="app-container py-6 md:py-10 space-y-6">
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border relative overflow-hidden mx-2">
-          <div className="absolute top-3 left-3"><Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full"><ArrowLeft size={16} className="rotate-180" /></Button></div>
+          <div className="absolute top-3 left-3 flex gap-1">
+            {currentUser?.uid !== id && (
+              <Button onClick={handleToggleLike} variant="ghost" size="icon" className={cn("rounded-full", isLikedByMe ? "text-red-500" : "text-muted-foreground")}>
+                <Heart fill={isLikedByMe ? "currentColor" : "none"} size={20} />
+              </Button>
+            )}
+            <Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full">
+              <ArrowLeft size={16} className="rotate-180" />
+            </Button>
+          </div>
           <div className="w-24 h-24 md:w-32 md:h-32 border-4 border-secondary shadow-lg bg-white rounded-full overflow-hidden flex items-center justify-center shrink-0">
             {isImageAvatar ? <img src={userData.avatar} className="w-full h-full object-cover" alt={userData.name} /> : <span className="text-5xl">{userData.avatar || "🐱"}</span>}
           </div>
@@ -139,6 +169,9 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             <div className="flex justify-center md:justify-start gap-3 mt-3">
                <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full text-[10px] font-black border border-green-100">⚔️ فوز: {userData.challengesWon || 0}</div>
                <div className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-[10px] font-black border border-red-100">❌ خسارة: {userData.challengesLost || 0}</div>
+               <div className="bg-pink-50 text-red-500 px-3 py-1 rounded-full text-[10px] font-black border border-pink-100 flex items-center gap-1">
+                 <Heart size={10} fill="currentColor" /> {userData.likesCount || 0}
+               </div>
             </div>
           </div>
         </header>

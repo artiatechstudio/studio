@@ -6,8 +6,8 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { Activity, HeartPulse, Crown, ShieldCheck, Sparkles, Flame } from 'lucide-react';
+import { ref, update, push, serverTimestamp, remove } from 'firebase/database';
+import { Activity, HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, CheckCircle2, Swords } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -16,7 +16,7 @@ import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { requestNotificationPermission } from '@/lib/fcm-setup';
 import { OnboardingTour } from '@/components/onboarding-tour';
 
@@ -25,8 +25,11 @@ export default function Home() {
   const { database, auth } = useFirebase();
   const router = useRouter();
   const [showCelebration, setShowCelebration] = useState(false);
+  const [showResultDialog, setShowResultDialog] = useState(false);
   const [showTour, setShowTour] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const hasCheckedStatus = useRef(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
@@ -48,14 +51,6 @@ export default function Home() {
   const isAdmin = userData?.name === 'admin';
   const isPremium = userData?.isPremium === 1 || isAdmin;
 
-  const getTrackCurrentStage = (trackType: string) => {
-    const track = userData?.trackProgress?.[trackType];
-    if (!track) return 1;
-    const completed = track.completedStages || [];
-    if (completed.length === 0) return 1;
-    return Math.min(30, Math.max(...completed) + 1);
-  };
-
   useEffect(() => {
     if (userData && user && !hasCheckedStatus.current) {
       hasCheckedStatus.current = true; 
@@ -67,6 +62,13 @@ export default function Home() {
 
       if (userData.hasSeenTour !== true) {
         setShowTour(true);
+      }
+
+      if (userData.showChallengeResult) {
+        setShowResultDialog(true);
+        playSound('success');
+        updates.showChallengeResult = false;
+        needsUpdate = true;
       }
 
       if (!userData.notificationsEnabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
@@ -96,21 +98,11 @@ export default function Home() {
       if (!isPremium) {
         if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr && lastPenaltyDate !== todayStr) {
           const penalty = 150;
-          const currentPoints = userData.points || 0;
-          updates.points = Math.max(0, currentPoints - penalty);
+          updates.points = Math.max(0, (userData.points || 0) - penalty);
           updates.streak = 0;
           updates.lastStreakPenaltyDate = todayStr;
           needsUpdate = true;
-          if (currentPoints > 0) {
-            push(ref(database, `users/${user.uid}/notifications`), {
-              type: 'system',
-              title: 'تنبيه كسر الحماسة 🛑',
-              message: `لقد تغيبت عن التطبيق! تم خصم ${penalty} نقطة.`,
-              isRead: false,
-              timestamp: serverTimestamp()
-            });
-            toast({ variant: "destructive", title: "كسر الحماسة!", description: `تم خصم ${penalty} نقطة لغيابك.` });
-          }
+          toast({ variant: "destructive", title: "كسر الحماسة!", description: `تم خصم ${penalty} نقطة لغيابك.` });
         }
       } else {
         if (lastActive && lastActive !== todayStr && lastActive !== yesterdayStr) {
@@ -119,13 +111,6 @@ export default function Home() {
             updates.streakFreezes = currentFreezes - 1;
             updates.lastActiveDate = yesterdayStr; 
             needsUpdate = true;
-            push(ref(database, `users/${user.uid}/notifications`), {
-              type: 'bonus',
-              title: 'تم استخدام تجميد الحماسة 🧊',
-              message: 'لقد حافظت العضوية الملكية على سجل التزامك اليوم رغم غيابك!',
-              isRead: false,
-              timestamp: serverTimestamp()
-            });
           } else if (userData.lastStreakPenaltyDate !== todayStr) {
             updates.streak = 0;
             updates.lastStreakPenaltyDate = todayStr;
@@ -135,10 +120,79 @@ export default function Home() {
       }
 
       if (needsUpdate) {
-        update(ref(database, `users/${user.uid}`), updates).catch(e => console.error("Update failed", e));
+        update(ref(database, `users/${user.uid}`), updates);
       }
     }
   }, [userData, user, database, auth, isAdmin, isPremium]);
+
+  const handleShareResult = async () => {
+    if (!userData?.latestChallengeResult) return;
+    setIsGenerating(true);
+    playSound('click');
+
+    try {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const res = userData.latestChallengeResult;
+      const isWin = res.status === 'win';
+      const isTie = res.status === 'tie';
+
+      const gradient = ctx.createLinearGradient(0, 0, 0, 600);
+      gradient.addColorStop(0, isWin ? '#10B981' : isTie ? '#4F46E5' : '#EF4444'); 
+      gradient.addColorStop(1, '#1E293B'); 
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 400, 600);
+
+      ctx.fillStyle = 'white';
+      ctx.textAlign = 'center';
+      ctx.font = 'black 40px Cairo';
+      ctx.fillText('كارينجو | CAREINGO', 200, 100);
+
+      ctx.font = 'bold 30px Cairo';
+      ctx.fillText(isWin ? 'انتصار بطل! 🏆' : isTie ? 'تعادل عادل! ⚖️' : 'كبوة محارب! ⚔️', 200, 180);
+
+      ctx.font = '20px Cairo';
+      ctx.fillText(`تحدي: ${res.title}`, 200, 240);
+
+      ctx.fillStyle = 'rgba(255,255,255,0.1)';
+      ctx.fillRect(50, 280, 300, 150);
+      
+      ctx.fillStyle = 'white';
+      ctx.font = 'bold 24px Cairo';
+      ctx.fillText(isWin ? `+${res.stake} نقطة` : isTie ? '0 نقطة' : `-${res.stake} نقطة`, 200, 350);
+      ctx.font = '14px Cairo';
+      ctx.fillText('النتيجة في رصيد النمو', 200, 380);
+
+      ctx.font = 'bold 16px Cairo';
+      ctx.fillText('تواصل، تحدى، تطور مع كارينجو', 200, 500);
+      ctx.font = '12px Cairo';
+      ctx.fillText('https://www.artiatechstudio.com.ly/2026/03/careingo.html', 200, 530);
+
+      canvas.toBlob(async (blob) => {
+        if (!blob) return;
+        const file = new File([blob], 'careingo-result.png', { type: 'image/png' });
+        if (navigator.share && navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'نتيجتي في كارينجو 🐱',
+            text: 'انضم إليّ في رحلة النمو والتحدي! 🔥'
+          });
+        } else {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'careingo-result.png';
+          a.click();
+        }
+        setIsGenerating(false);
+      }, 'image/png');
+    } catch (e) {
+      setIsGenerating(false);
+    }
+  };
 
   const bmiInfo = useMemo(() => {
     if (!userData?.weight || !userData?.height) return { value: "--", status: "غير محدد", color: "text-muted-foreground" };
@@ -150,17 +204,9 @@ export default function Home() {
     return { value: val, status: "سمنة", color: "text-red-500" };
   }, [userData]);
 
-  if (isUserLoading || (user && isDataLoading) || (!user && !isUserLoading)) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
-        <div className="text-8xl animate-bounce">🐱</div>
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
-      </div>
-    );
-  }
+  if (isUserLoading || (user && isDataLoading)) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
 
-  if (!user) return null;
+  const res = userData?.latestChallengeResult;
 
   return (
     <div className="min-h-screen bg-background pb-32 md:pr-72 pt-14 md:pt-0" dir="rtl">
@@ -168,6 +214,7 @@ export default function Home() {
       <div className="app-container py-6 space-y-6">
         
         {showTour && <OnboardingTour onComplete={() => setShowTour(false)} />}
+        <canvas ref={canvasRef} width="400" height="600" className="hidden" />
 
         {isAdmin ? (
           <section className="bg-card rounded-[2rem] p-6 border border-border mx-2 shadow-lg space-y-6">
@@ -178,16 +225,11 @@ export default function Home() {
                 <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-wide">أهلاً بك يا مدير النظام ✨</p>
               </div>
             </div>
-            
             <div className="grid grid-cols-1 gap-3">
               <Link href="/admin/requests" onClick={() => playSound('click')} className="block">
                 <Button className="w-full h-14 rounded-2xl bg-accent hover:bg-accent/90 text-sm font-black gap-3 shadow-lg relative">
                   <Sparkles size={18} /> مراجعة طلبات الاشتراك
-                  {pendingRequestsCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-xl animate-bounce border-2 border-white">
-                      {pendingRequestsCount}
-                    </span>
-                  )}
+                  {pendingRequestsCount > 0 && <span className="absolute -top-2 -right-2 bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-xl animate-bounce border-2 border-white">{pendingRequestsCount}</span>}
                 </Button>
               </Link>
               <Link href="/admin" onClick={() => playSound('click')} className="block">
@@ -202,25 +244,19 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-3 mx-2">
               <Link href="/streak" className="block">
                 <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 shrink-0">
-                    <Flame size={20} fill="currentColor" />
-                  </div>
+                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 shrink-0"><Flame size={20} fill="currentColor" /></div>
                   <div className="overflow-hidden flex-1">
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">سجل الحماسة</p>
                     <div className="flex items-center gap-2">
                       <span className="text-lg font-black text-orange-600">{userData?.streak || 0}ي</span>
-                      <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden">
-                        <div className="bg-orange-50 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} />
-                      </div>
+                      <div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden"><div className="bg-orange-50 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} /></div>
                     </div>
                   </div>
                 </Card>
               </Link>
               <Link href="/profile" className="block">
                 <Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
-                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0">
-                    <HeartPulse size={20} />
-                  </div>
+                  <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0"><HeartPulse size={20} /></div>
                   <div className="overflow-hidden flex-1">
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p>
                     <div className="flex items-center gap-2">
@@ -232,24 +268,19 @@ export default function Home() {
               </Link>
             </div>
 
-            <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner">
-              <Mascot />
-            </section>
+            <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner"><Mascot /></section>
 
             <section className="space-y-4 mx-2">
               <h2 className="text-xl font-black text-primary px-2 text-right">مسارات النمو</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <TrackCard type="Fitness" currentStage={getTrackCurrentStage('Fitness')} totalStages={30} />
-                <TrackCard type="Nutrition" currentStage={getTrackCurrentStage('Nutrition')} totalStages={30} />
-                <TrackCard type="Behavior" currentStage={getTrackCurrentStage('Behavior')} totalStages={30} />
-                <TrackCard type="Study" currentStage={getTrackCurrentStage('Study')} totalStages={30} />
+                <TrackCard type="Fitness" currentStage={userData?.trackProgress?.Fitness?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Nutrition" currentStage={userData?.trackProgress?.Nutrition?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Behavior" currentStage={userData?.trackProgress?.Behavior?.currentStage || 1} totalStages={30} />
+                <TrackCard type="Study" userData={userData} currentStage={userData?.trackProgress?.Study?.currentStage || 1} totalStages={30} />
               </div>
-              
               <Link href="/track/master" onClick={() => playSound('click')} className="block mt-4">
                 <Card className="p-5 rounded-[2rem] shadow-lg border-2 border-primary/20 bg-primary/5 flex items-center justify-center gap-4 hover:scale-[1.02] transition-transform border-dashed">
-                  <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-md">
-                    <Sparkles size={24} />
-                  </div>
+                  <div className="w-10 h-10 bg-primary text-white rounded-xl flex items-center justify-center shadow-md"><Sparkles size={24} /></div>
                   <div className="text-right">
                     <p className="text-lg font-black text-primary leading-tight">الماستر</p>
                     <p className="text-[10px] font-bold text-primary/60">تحديات الأساطير والتدريب الحر 🔥</p>
@@ -260,25 +291,52 @@ export default function Home() {
           </>
         )}
 
-        <div className="mx-2">
-          <AdBanner label="إعلان ممول" />
-        </div>
+        <div className="mx-2"><AdBanner label="إعلان ممول" /></div>
+
+        {/* ديالوج نتيجة التحدي */}
+        <Dialog open={showResultDialog} onOpenChange={setShowResultDialog}>
+          <DialogContent className="rounded-[2.5rem] p-8 text-center max-w-sm" dir="rtl">
+            <DialogHeader>
+              <div className={cn("w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce", res?.status === 'win' ? "bg-green-100 text-green-600" : res?.status === 'tie' ? "bg-blue-100 text-blue-600" : "bg-red-100 text-red-600")}>
+                {res?.status === 'win' ? <Trophy size={48} /> : res?.status === 'tie' ? <Swords size={48} /> : <XCircle size={48} />}
+              </div>
+              <DialogTitle className="text-2xl font-black text-primary">
+                {res?.status === 'win' ? 'انتصرت في المبارزة! 🏆' : res?.status === 'tie' ? 'تعادل سيد الأحكام! ⚖️' : 'خسرت التحدي.. ⚔️'}
+              </DialogTitle>
+              <DialogDescription className="text-sm font-bold text-muted-foreground mt-2 leading-relaxed">
+                تحدي: {res?.title}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="py-6 space-y-4">
+              <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center">
+                <span className="text-[10px] font-black text-muted-foreground uppercase">النقاط</span>
+                <span className={cn("text-lg font-black", res?.status === 'win' ? "text-green-600" : "text-red-600")}>
+                  {res?.status === 'win' ? `+${res.stake}` : res?.status === 'tie' ? '0' : `-${res.stake}`}ن
+                </span>
+              </div>
+              <p className="text-[10px] font-bold text-muted-foreground">
+                {res?.status === 'loss' ? 'لقد تم إدراجك في جدار العار. عُد للمنافسة بقوة لتخرج منه! 🔥' : 'لقد أثبتّ جدارتك في مجتمع كارينجو.'}
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Button onClick={handleShareResult} disabled={isGenerating} className="w-full h-12 rounded-xl bg-accent font-black gap-2">
+                {isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={18} />} مشاركة النتيجة
+              </Button>
+              <Button onClick={() => setShowResultDialog(false)} variant="ghost" className="w-full h-12 font-black">إغلاق</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showCelebration} onOpenChange={setShowCelebration}>
           <DialogContent className="rounded-[3rem] p-10 text-center max-w-sm">
             <DialogHeader>
-              <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce">
-                <Crown size={48} fill="currentColor" />
-              </div>
+              <div className="w-20 h-20 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-bounce"><Crown size={48} fill="currentColor" /></div>
               <DialogTitle className="text-3xl font-black text-primary">تهانينا يا بطل! 👑</DialogTitle>
-              <DialogDescription className="text-lg font-bold text-muted-foreground mt-4 leading-relaxed">
-                لقد تمت ترقية حسابك لعضوية **بريميوم الملكية**. استمتع الآن بكل الميزات بلا حدود!
-              </DialogDescription>
+              <DialogDescription className="text-lg font-bold text-muted-foreground mt-4 leading-relaxed">لقد تمت ترقية حسابك لعضوية **بريميوم الملكية**. استمتع الآن بكل الميزات بلا حدود!</DialogDescription>
             </DialogHeader>
             <Button onClick={() => setShowCelebration(false)} className="w-full h-14 rounded-2xl bg-accent text-xl font-black shadow-lg mt-6">هيا لننطلق! 🚀</Button>
           </DialogContent>
         </Dialog>
-
       </div>
     </div>
   );

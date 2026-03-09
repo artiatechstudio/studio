@@ -12,82 +12,31 @@ import { playSound } from '@/lib/sounds';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
-  
-  const leadersQuery = useMemoFirebase(() => {
-    return query(ref(database, 'users'), orderByChild('points'), limitToLast(200));
-  }, [database]);
-
+  const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
   const stats = useMemo(() => {
     if (!rawData) return { leaders: [], losers: [] };
-    
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('en-CA');
-    
-    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
-    const yesterdayStr = yesterday.toLocaleDateString('en-CA');
-    
-    const dayBefore = new Date(); dayBefore.setDate(today.getDate() - 2);
-    const dayBeforeStr = dayBefore.toLocaleDateString('en-CA');
-
-    const threeDaysAgo = new Date(); threeDaysAgo.setDate(today.getDate() - 3);
-    const threeDaysAgoStr = threeDaysAgo.toLocaleDateString('en-CA');
-
-    const allUsers = Object.values(rawData)
-      .filter((u: any) => u.name !== 'admin')
-      .map((user: any) => {
-        const p1 = user.dailyPoints?.[todayStr] || 0;
-        const p2 = user.dailyPoints?.[yesterdayStr] || 0;
-        const p3 = user.dailyPoints?.[dayBeforeStr] || 0;
-        const averagePoints = Math.round((p1 + p2 + p3) / 3);
-
-        let bmiColor = "text-gray-400";
-        let bmiValue = "--";
-        let bmiStatus = "غير محدد";
-        
-        if (user.weight && user.height) {
-          const bmi = user.weight / ((user.height / 100) * (user.height / 100));
-          bmiValue = bmi.toFixed(1);
-          if (bmi >= 18.5 && bmi < 25) { bmiColor = "text-green-500"; bmiStatus = "مثالي"; }
-          else if (bmi >= 25 && bmi < 30) { bmiColor = "text-orange-500"; bmiStatus = "زيادة"; }
-          else if (bmi >= 30) { bmiColor = "text-red-500"; bmiStatus = "سمنة"; }
-          else { bmiColor = "text-blue-500"; bmiStatus = "نحافة"; }
-        }
-
-        return { ...user, averagePoints, bmiColor, bmiValue, bmiStatus };
-      });
+    const todayStr = new Date().toLocaleDateString('en-CA');
+    const allUsers = Object.values(rawData).filter((u: any) => u.name !== 'admin').map((user: any) => ({...user}));
 
     const leaders = [...allUsers]
-      .filter((user: any) => user.averagePoints > 0)
-      .sort((a: any, b: any) => b.averagePoints - a.averagePoints)
+      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
       .slice(0, 100);
 
-    // جدار العار: من تم معاقبتهم بسبب الغياب أو خسارة التحديات في آخر 3 أيام
     const losers = allUsers
-      .filter((user: any) => 
-        (user.lastStreakPenaltyDate && user.lastStreakPenaltyDate >= threeDaysAgoStr) ||
-        (user.lastChallengeLossDate && user.lastChallengeLossDate >= threeDaysAgoStr)
-      )
-      .sort((a: any, b: any) => {
-        const dateA = a.lastChallengeLossDate || a.lastStreakPenaltyDate || '';
-        const dateB = b.lastChallengeLossDate || b.lastStreakPenaltyDate || '';
-        return dateB.localeCompare(dateA);
+      .filter((user: any) => {
+        const isLoss = user.lastChallengeLossDate === todayStr;
+        const hasNotWonSince = !user.lastChallengeWinDate || user.lastChallengeWinDate < user.lastChallengeLossDate;
+        return (user.lastStreakPenaltyDate === todayStr) || (isLoss && hasNotWonSince);
       })
+      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
       .slice(0, 20);
 
     return { leaders, losers };
   }, [rawData]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
-        <div className="text-8xl animate-bounce">🐱</div>
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
-      </div>
-    );
-  }
+  if (isLoading) return <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6"><div className="text-8xl animate-bounce">🐱</div><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /><p className="text-primary font-black text-xl animate-pulse">Careingo</p></div>;
 
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">
@@ -95,123 +44,70 @@ export default function LeaderboardPage() {
       <div className="app-container py-6 space-y-8">
         <header className="space-y-2 px-2">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white dark:border-slate-800">
-              <Trophy size={20} />
-            </div>
-            <div className="text-right">
-              <h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1>
-              <p className="text-muted-foreground text-[9px] font-bold flex items-center justify-end gap-1 mt-0.5">
-                الترتيب حسب متوسط نشاط آخر 3 أيام ⚡
-              </p>
-            </div>
+            <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white"><Trophy size={20} /></div>
+            <div className="text-right"><h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1><p className="text-muted-foreground text-[9px] font-bold">الترتيب حسب إجمالي نقاط النمو ⚡</p></div>
           </div>
         </header>
 
         <div className="space-y-10">
           <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
             <div className="p-4 border-b border-border bg-secondary/5 text-right flex items-center justify-between flex-row-reverse px-6">
-              <h2 className="text-[10px] font-black text-primary uppercase">أبطال الـ 72 ساعة الأخيرة</h2>
+              <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع</h2>
               <Timer size={14} className="text-primary opacity-40" />
             </div>
             <div className="divide-y divide-border">
-              {stats.leaders.length > 0 ? stats.leaders.map((user: any, index: number) => {
-                const isImageAvatar = user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:image'));
-                const isPremium = user.isPremium === 1 || user.name === 'admin';
-                return (
-                  <div key={user.id} className={cn("p-3 flex items-center justify-between hover:bg-secondary/5 transition-all", index < 3 ? 'bg-primary/[0.02]' : '')}>
-                    <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
-                      <div className="flex items-center gap-1 justify-center">
-                        <TrendingUp size={10} className="text-accent" />
-                        <p className="font-black text-primary text-sm">{(user.averagePoints || 0).toLocaleString()}</p>
-                      </div>
-                      <p className="text-[7px] font-black text-muted-foreground uppercase text-center tracking-tighter leading-none">متوسط النقاط</p>
+              {stats.leaders.map((user: any, index: number) => (
+                <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
+                  <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
+                    <p className="font-black text-primary text-sm">{(user.points || 0).toLocaleString()}</p>
+                    <p className="text-[7px] font-black text-muted-foreground uppercase text-center">إجمالي النقاط</p>
+                  </div>
+                  <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
+                    <div className="w-6 text-center font-black text-sm text-primary shrink-0">
+                      {index < 3 ? <Medal className={index === 0 ? "text-yellow-500" : index === 1 ? "text-slate-400" : "text-amber-600"} /> : <span className="opacity-40 text-[10px]">#{index + 1}</span>}
                     </div>
-
-                    <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
-                      <div className="w-6 text-center font-black text-sm text-primary shrink-0">
-                        {index === 0 ? <Medal className="text-yellow-500 w-6 h-6 mx-auto" /> : 
-                         index === 1 ? <Medal className="text-slate-400 w-6 h-6 mx-auto" /> : 
-                         index === 2 ? <Medal className="text-amber-600 w-6 h-6 mx-auto" /> : 
-                         <span className="opacity-40 text-[10px]">#{index + 1}</span>}
+                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
+                      <div className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white rounded-full overflow-hidden relative">
+                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? <img src={user.avatar} className="object-cover w-full h-full" alt={user.name} /> : <span className="text-xl">{user.avatar || "🐱"}</span>}
                       </div>
-                      
-                      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                        <div className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white rounded-full hover:scale-105 transition-transform overflow-hidden relative">
-                          {isImageAvatar ? (
-                            <img src={user.avatar} alt={user.name} className="object-cover w-full h-full" />
-                          ) : (
-                            <span className="text-xl">{user.avatar || "🐱"}</span>
-                          )}
-                        </div>
-                      </Link>
-
-                      <div className="text-right overflow-hidden flex-1 px-1">
-                        <div className="flex items-center justify-end gap-1 mb-1">
-                          <h3 className="font-black text-primary text-[11px] truncate leading-none">{user.name}</h3>
-                          {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-                        </div>
-                        <div className="flex flex-wrap items-center justify-end gap-1">
-                          <span className="flex items-center gap-0.5 bg-red-50 px-1 py-0.5 rounded-full text-[7px] font-black text-red-600 border border-red-100">
-                            {user.likesCount || 0} <Heart size={8} fill="currentColor" />
-                          </span>
-                          <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600 border border-orange-100">
-                            {user.streak || 0}ي <Flame size={8} fill="currentColor" />
-                          </span>
-                          <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600 border border-blue-100">
-                            {user.challengesWon || 0} <Swords size={8} />
-                          </span>
-                        </div>
+                    </Link>
+                    <div className="text-right overflow-hidden flex-1 px-1">
+                      <div className="flex items-center justify-end gap-1 mb-1"><h3 className="font-black text-primary text-[11px] truncate">{user.name}</h3>{(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}</div>
+                      <div className="flex flex-wrap items-center justify-end gap-1">
+                        <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600"><Flame size={8} fill="currentColor" /> {user.streak || 0}ي</span>
+                        <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600"><Swords size={8} /> {user.challengesWon || 0}</span>
                       </div>
                     </div>
                   </div>
-                );
-              }) : (
-                <div className="p-16 text-center text-muted-foreground font-black text-xs italic">لا يوجد متسابقون نشطون.</div>
-              )}
+                </div>
+              ))}
             </div>
           </div>
 
           <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
             <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
-              <div className="flex items-center gap-2">
-                <Skull size={18} />
-                <h2 className="text-sm font-black uppercase tracking-widest">جدار العار 🛑</h2>
-              </div>
+              <div className="flex items-center gap-2"><Skull size={18} /><h2 className="text-sm font-black uppercase">جدار العار 🛑</h2></div>
               <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام أو خسروا مبارزات</p>
             </div>
             <div className="p-4 space-y-3">
-              {stats.losers.length > 0 ? stats.losers.map((user: any) => {
-                const isChallengeLoser = user.lastChallengeLossDate && user.lastChallengeLossDate >= user.lastStreakPenaltyDate;
-                const isImageAvatar = user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:image'));
-                return (
-                  <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
-                    <div className="flex flex-col items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px]">
-                      <span className="text-[8px] font-black text-red-600 flex items-center gap-1">
-                        {isChallengeLoser ? <Swords size={8}/> : <AlertCircle size={8}/>}
-                        {isChallengeLoser ? "هزيمة مبارزة" : "عقوبة غياب"}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3 flex-row-reverse">
-                      <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden relative border border-border">
-                          {isImageAvatar ? (
-                            <img src={user.avatar} alt={user.name} className="object-cover w-full h-full opacity-50" />
-                          ) : (
-                            <span className="opacity-50">{user.avatar || "🐱"}</span>
-                          )}
-                        </div>
-                      </Link>
-                      <div className="text-right">
-                        <p className="font-black text-red-900 text-xs">{user.name}</p>
-                        <p className="text-[8px] font-bold text-red-400">سقط في {isChallengeLoser ? user.lastChallengeLossDate : user.lastStreakPenaltyDate}</p>
-                      </div>
-                    </div>
+              {stats.losers.length > 0 ? stats.losers.map((user: any) => (
+                <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100">
+                  <div className="flex flex-col items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px]">
+                    <span className="text-[8px] font-black text-red-600 flex items-center gap-1">
+                      {user.lastChallengeLossDate ? <Swords size={8}/> : <AlertCircle size={8}/>}
+                      {user.lastChallengeLossDate ? "هزيمة مبارزة" : "عقوبة غياب"}
+                    </span>
                   </div>
-                );
-              }) : (
-                <div className="p-10 text-center text-red-500 font-black text-xs italic">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>
-              )}
+                  <div className="flex items-center gap-3 flex-row-reverse">
+                    <Link href={`/user/${user.id}`} className="shrink-0">
+                      <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden border border-border">
+                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? <img src={user.avatar} className="object-cover w-full h-full opacity-50" alt={user.name} /> : <span className="opacity-50">{user.avatar || "🐱"}</span>}
+                      </div>
+                    </Link>
+                    <div className="text-right"><p className="font-black text-red-900 text-xs">{user.name}</p><p className="text-[8px] font-bold text-red-400">سقط في {user.lastChallengeLossDate || user.lastStreakPenaltyDate}</p></div>
+                  </div>
+                </div>
+              )) : <div className="p-10 text-center text-red-500 font-black text-xs italic">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>}
             </div>
           </div>
         </div>

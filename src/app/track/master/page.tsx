@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -6,7 +5,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, LogOut } from 'lucide-react';
+import { ArrowLeft, Sparkles, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, LogOut, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -64,7 +63,6 @@ export default function MasterTrackPage() {
     }
   }, [activePvPChallenges, resultDialog.open, user, database]);
 
-  // محرك المؤقت للشاشة الماستر
   useEffect(() => {
     if (timerActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
@@ -90,7 +88,7 @@ export default function MasterTrackPage() {
   const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
     if (!user || !userData) return;
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString('en-CA');
     let newStreak = userData.streak || 0;
     if (userData.lastActiveDate !== todayStr) {
@@ -289,7 +287,7 @@ export default function MasterTrackPage() {
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
             <div className="text-right">
-              <h1 className="text-xl font-black text-primary leading-tight">الشاشة الماستر</h1>
+              <h1 className="text-xl font-black text-primary leading-tight">الماستر</h1>
               <p className="text-[8px] font-bold text-muted-foreground uppercase">تحديات الأساطير والمهام الشخصية</p>
             </div>
           </div>

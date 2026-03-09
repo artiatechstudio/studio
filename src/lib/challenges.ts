@@ -169,6 +169,10 @@ const masterBaseTitles: Record<TrackKey, string[]> = {
   Study: ["تركيز بومودورو", "خرائط المعرفة", "بحث الأساطير", "إتقان اللغات", "كتابة ملهمة", "حل المعضلات", "تفكير نقدي", "ابتكار فكرة", "مراجعة شاملة", "عرض الإتقان"]
 };
 
+// تعريف القوائم اللازمة للتكرار البرمجي لضمان عدم حدوث خطأ ReferenceError
+const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
+const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
+
 for (let i = 1; i <= 120; i++) {
   const type = types[i % 4];
   const diff = diffs[Math.floor((i - 1) / 40)];

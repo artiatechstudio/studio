@@ -35,7 +35,7 @@ export default function TrialsPage() {
 
     try {
       const voteSnap = await runTransaction(userVoteRef, (current) => {
-        if (current) return; // تم التصويت مسبقاً
+        if (current) return;
         return true;
       });
 
@@ -120,7 +120,6 @@ export default function TrialsPage() {
                     >
                       صادق ✅
                     </Button>
-                    {/* حل مشكلة Objects as React Child بعرض القيمة العددية فقط */}
                     <p className="text-center text-[10px] font-black text-muted-foreground">
                       {typeof trial.votes?.[trial.challengerId] === 'object' ? 0 : (trial.votes?.[trial.challengerId] || 0)} صوت
                     </p>

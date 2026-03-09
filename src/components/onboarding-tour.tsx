@@ -86,7 +86,7 @@ const TOUR_STEPS = [
   },
   {
     title: "اختصار على أندرويد 🤖",
-    content: "من متصفح Chrome، اضغط على النقاط الثلاث (⋮) في الأعلى، ثم اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home screen).",
+    content: "من مستعرض Chrome، اضغط على النقاط الثلاث (⋮) في الأعلى، ثم اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home screen).",
     icon: Download,
     color: "text-green-600"
   },

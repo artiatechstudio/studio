@@ -58,14 +58,11 @@ export default function RegisterPage() {
 
     try {
       const dbRef = ref(database);
-      
       const usersSnapshot = await get(child(dbRef, 'users'));
       const allUsers = usersSnapshot.exists() ? Object.values(usersSnapshot.val()) : [];
       const normalizedName = name.trim().toLowerCase();
       
-      // نتحقق إذا كان الاسم مأخوذاً بالفعل
       const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === normalizedName);
-
       if (nameExists) {
         toast({ variant: "destructive", title: "اسم المستخدم مأخوذ", description: "يرجى اختيار اسم آخر فريد." });
         setLoading(false);
@@ -77,11 +74,9 @@ export default function RegisterPage() {
 
       await sendEmailVerification(user);
 
-      const membershipRank = allUsers.length; // الآدمن لا يحسب فالعضو الأول هو رقم 1
-
-      const initialBadges = name.trim() === 'admin' 
-        ? ['المطور المؤسس 🛡️', 'مدير النظام 👑'] 
-        : ['عضو جديد 🐱', 'أول خطوة 🌱'];
+      // منطق "المستخدم صفر" للآدمن
+      const isAdminUser = normalizedName === 'admin';
+      const membershipRank = isAdminUser ? 0 : allUsers.length || 1;
 
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,
@@ -92,13 +87,13 @@ export default function RegisterPage() {
         height: h,
         weight: w,
         avatar,
-        bio: name.trim() === 'admin' ? "مدير النظام الرسمي 🛡️" : "عضو جديد طموح 🌱",
+        bio: isAdminUser ? "مدير النظام الرسمي 🛡️" : "عضو جديد طموح 🌱",
         points: 0,
         streak: 0,
-        isPremium: name.trim() === 'admin' ? 1 : 0,
+        isPremium: isAdminUser ? 1 : 0,
         registrationRank: membershipRank,
         registrationDate: new Date().toISOString(),
-        badges: initialBadges,
+        badges: isAdminUser ? ['المؤسس 🛡️', 'مدير النظام 👑'] : ['عضو جديد 🐱'],
         trackProgress: {
           Fitness: { currentStage: 1, completedStages: [] },
           Nutrition: { currentStage: 1, completedStages: [] },
@@ -143,7 +138,6 @@ export default function RegisterPage() {
                 required 
               />
             </div>
-            
             <div className="space-y-2">
               <Label>اختر رفيقك (الأفاتار)</Label>
               <Select onValueChange={setAvatar} defaultValue="🐱">
@@ -161,88 +155,38 @@ export default function RegisterPage() {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
               <Label>البريد الإلكتروني</Label>
-              <Input 
-                type="email" 
-                placeholder="email@example.com" 
-                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required 
-              />
+              <Input type="email" placeholder="email@example.com" className="h-12 rounded-xl bg-secondary/50 border-none font-bold" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
-
             <div className="space-y-2">
               <Label>كلمة المرور</Label>
-              <Input 
-                type="password" 
-                placeholder="••••••••" 
-                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required 
-              />
+              <Input type="password" placeholder="••••••••" className="h-12 rounded-xl bg-secondary/50 border-none font-bold" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
-
             <div className="space-y-2">
               <Label>العمر</Label>
-              <Input 
-                type="number" 
-                placeholder="25" 
-                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
-                value={age}
-                onChange={(e) => setAge(e.target.value)}
-                required 
-              />
+              <Input type="number" placeholder="25" className="h-12 rounded-xl bg-secondary/50 border-none font-bold" value={age} onChange={(e) => setAge(e.target.value)} required />
             </div>
-
             <div className="space-y-2">
               <Label>الجنس</Label>
               <Select onValueChange={setGender} defaultValue="male">
-                <SelectTrigger className="h-12 rounded-xl bg-secondary/50 border-none">
-                  <SelectValue placeholder="اختر الجنس" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="male">ذكر</SelectItem>
-                  <SelectItem value="female">أنثى</SelectItem>
-                </SelectContent>
+                <SelectTrigger className="h-12 rounded-xl bg-secondary/50 border-none"><SelectValue placeholder="اختر الجنس" /></SelectTrigger>
+                <SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
               <Label>الطول (سم)</Label>
-              <Input 
-                type="number" 
-                placeholder="170" 
-                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
-                value={height}
-                onChange={(e) => setHeight(e.target.value)}
-                required 
-              />
+              <Input type="number" placeholder="170" className="h-12 rounded-xl bg-secondary/50 border-none font-bold" value={height} onChange={(e) => setHeight(e.target.value)} required />
             </div>
-
             <div className="space-y-2">
               <Label>الوزن (كجم)</Label>
-              <Input 
-                type="number" 
-                placeholder="70" 
-                className="h-12 rounded-xl bg-secondary/50 border-none font-bold"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-                required 
-              />
+              <Input type="number" placeholder="70" className="h-12 rounded-xl bg-secondary/50 border-none font-bold" value={weight} onChange={(e) => setWeight(e.target.value)} required />
             </div>
-
             <Button type="submit" disabled={loading} className="w-full col-span-1 md:col-span-2 h-14 rounded-2xl bg-accent hover:bg-accent/90 text-lg font-black shadow-lg shadow-accent/20 mt-4">
               {loading ? "جاري المعالجة..." : "إتمام التسجيل والبدء 🐱"}
             </Button>
           </form>
-
-          <p className="text-center text-sm text-muted-foreground font-bold">
-            لديك حساب بالفعل؟ <Link href="/login" className="text-primary hover:underline">سجل دخولك</Link>
-          </p>
+          <p className="text-center text-sm text-muted-foreground font-bold">لديك حساب بالفعل؟ <Link href="/login" className="text-primary hover:underline">سجل دخولك</Link></p>
         </CardContent>
       </Card>
     </div>

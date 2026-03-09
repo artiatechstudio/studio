@@ -153,7 +153,6 @@ export default function TrialsPage() {
                   <p className="text-sm font-bold text-muted-foreground text-right leading-relaxed">
                     يقول البطل <span className="text-primary font-black">{trial.winnerName}</span> أنه انتصر في زمن قياسي، فهل تصدقه؟ 📸
                   </p>
-                  {/* عرض الصورة بشكل كبير وواضح */}
                   <div className="relative w-full aspect-square md:aspect-video rounded-3xl overflow-hidden shadow-2xl border-4 border-secondary bg-black/5 flex items-center justify-center group">
                     {trial.proof ? (
                       <img src={trial.proof} alt="Proof" className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105" />
@@ -168,11 +167,11 @@ export default function TrialsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Button onClick={() => handleVote(trial.id, trial.winnerId)} className="w-full h-14 rounded-2xl bg-primary font-black text-xs gap-2 shadow-lg">صادق ✅</Button>
-                    <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes?.[trial.winnerId] || 0} صوت</p>
+                    <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes ? trial.votes[trial.winnerId] || 0 : 0} صوت</p>
                   </div>
                   <div className="space-y-2">
                     <Button onClick={() => handleVote(trial.id, trial.winnerId === trial.senderId ? trial.receiverId : trial.senderId)} variant="outline" className="w-full h-14 rounded-2xl border-2 border-orange-500 text-orange-600 font-black text-xs gap-2 shadow-sm">كاذب ❌</Button>
-                    <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes?.[trial.winnerId === trial.senderId ? trial.receiverId : trial.senderId] || 0} صوت</p>
+                    <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes ? trial.votes[trial.winnerId === trial.senderId ? trial.receiverId : trial.senderId] || 0 : 0} صوت</p>
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border flex items-center justify-between opacity-60">

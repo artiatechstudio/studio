@@ -50,6 +50,7 @@ export default function PublicChatPage() {
     if (!postsData) return [];
     return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .filter((p: any) => !p.type || p.type !== 'dispute') // استبعاد النزاعات من المجتمع العام
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
@@ -57,8 +58,8 @@ export default function PublicChatPage() {
     e.preventDefault();
     if (!postText.trim() || !user || isSending) return;
 
-    if (!isPremium && remainingPosts <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بمنشورين في اليوم للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
+    if (!isPremium && dailyCount >= 2) {
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بـ 2 منشور يومياً للأعضاء العاديين. 👑" });
       return;
     }
 
@@ -160,12 +161,6 @@ export default function PublicChatPage() {
                       {isPremium ? <Infinity size={14} className="text-yellow-500" /> : <span>{remainingPosts} منشور</span>}
                     </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-muted-foreground uppercase">الحروف</span>
-                    <span className={cn("text-[10px] font-black", postText.length > 250 ? "text-red-500" : "text-primary")}>
-                      {280 - postText.length}
-                    </span>
-                  </div>
                 </div>
                 <Button 
                   type="submit" 
@@ -247,7 +242,7 @@ export default function PublicChatPage() {
                     )}
                   >
                     <Heart size={18} fill={post.likes?.[user?.uid || ''] ? "currentColor" : "none"} />
-                    <span className="text-xs">{Object.keys(post.likes || {}).length}</span>
+                    <span className="text-xs">{post.likes ? Object.keys(post.likes).length : 0}</span>
                   </button>
                 </div>
               </CardContent>

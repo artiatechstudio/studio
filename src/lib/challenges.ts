@@ -60,7 +60,7 @@ const nutritionChallenges: Challenge[] = [
   { title: "اليوم 5: وجبة الفاكهة", description: "استبدل الحلوى بفاكهة طازجة.", time: 5, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 6: قوة البروتين", description: "بروتين في كل وجبة اليوم.", time: 15, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 7: الحبوب الكاملة", description: "خبز أسمر بدلاً من الأبيض.", time: 10, difficulty: 'متوسط', points: getPoints('متوسط') },
-  { title: "اليوم 8: تقليل الملح", description: "لا تضف ملحاً إاجافياً اليوم.", time: 0, difficulty: 'سهل', points: getPoints('سهل') },
+  { title: "اليوم 8: تقليل الملح", description: "لا تضف ملحاً إضافياً اليوم.", time: 0, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 9: فطور ملوكي", description: "فطور غني بالألياف والبروتين.", time: 15, difficulty: 'متوسط', points: getPoints('متوسط') },
   { title: "اليوم 10: وجبة البيت", description: "كل وجباتك من صنع يديك.", time: 45, difficulty: 'متوسط', points: getPoints('متوسط') },
   { title: "اليوم 11: قراءة الملصقات", description: "تجنب أي زيت مهدرج اليوم.", time: 10, difficulty: 'متوسط', points: getPoints('متوسط') },
@@ -168,15 +168,14 @@ const masterTitles: Record<TrackKey, string[]> = {
   Study: ["تركيز بومودورو", "تلخيص ذكي", "خريطة ذهنية", "بحث معمق", "تعلم لغة", "كتابة إبداعية", "حل مشكلات", "تفكير نقدي", "مراجعة شاملة", "ابتكار فكرة"]
 };
 
-const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
-const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
+const typesArr: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
+const diffsArr: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
 
 for (let i = 1; i <= 120; i++) {
-  const type = types[i % 4];
-  const diff = diffs[Math.floor((i - 1) / 40)];
+  const type = typesArr[i % 4];
+  const diff = diffsArr[Math.floor((i - 1) / 40)];
   const time = diff === 'سهل' ? 10 : diff === 'متوسط' ? 30 : 60;
   const titleBase = masterTitles[type][i % 10];
-  
   ADDITIONAL_MASTER_CHALLENGES.push({
     id: `master-${i}`,
     type,
@@ -184,7 +183,7 @@ for (let i = 1; i <= 120; i++) {
     points: getPoints(diff),
     time,
     title: `تحدي الأساطير ${i}: ${titleBase}`,
-    description: `هذا تحدي عشوائي من المستوى المتقدم لزيادة كفاءتك في مسار ${type === 'Fitness' ? 'اللياقة' : type === 'Nutrition' ? 'التغذية' : type === 'Behavior' ? 'سلوك' : 'دراسة'}. المطلوب هو الاستمرارية والتركيز المطلق لمدة ${time} دقيقة.`,
+    description: `هذا تحدي عشوائي من المستوى المتقدم لزيادة كفاءتك في مسار ${type}. المطلوب هو الاستمرارية والتركيز المطلق لمدة ${time} دقيقة.`,
     isTimeLocked: diff !== 'سهل'
   });
 }

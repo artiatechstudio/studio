@@ -33,6 +33,14 @@ export function NavSidebar() {
   const notificationsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/notifications`) : null, [database, user]);
   const { data: notificationsData } = useDatabase(notificationsRef);
 
+  const allUsersRef = useMemoFirebase(() => userData?.name === 'admin' ? ref(database, 'users') : null, [database, userData]);
+  const { data: allUsersData } = useDatabase(allUsersRef);
+
+  const pendingRequestsCount = useMemo(() => {
+    if (!allUsersData || userData?.name !== 'admin') return 0;
+    return Object.values(allUsersData).filter((u: any) => u.premiumRequest?.status === 'pending').length;
+  }, [allUsersData, userData]);
+
   const unreadChatCount = useMemo(() => {
     if (!chatsData || !user) return 0;
     let totalUnread = 0;
@@ -79,7 +87,7 @@ export function NavSidebar() {
     if (isAdmin) {
       return [
         ...base,
-        { label: 'طلبات البريميوم', icon: ClipboardList, href: '/admin/requests' },
+        { label: 'طلبات البريميوم', icon: ClipboardList, href: '/admin/requests', badge: pendingRequestsCount },
         { label: 'لوحة التحكم', icon: ShieldCheck, href: '/admin' },
       ];
     }
@@ -97,7 +105,7 @@ export function NavSidebar() {
     if (isAdmin) {
       return [
         { label: 'الدردشة', icon: MessageCircle, href: '/chat' },
-        { label: 'الطلبات', icon: ClipboardList, href: '/admin/requests' },
+        { label: 'الطلبات', icon: ClipboardList, href: '/admin/requests', badge: pendingRequestsCount },
         { label: 'الرئيسية', icon: Home, href: '/', isCenter: true },
         { label: 'الإدارة', icon: ShieldCheck, href: '/admin' },
         { label: 'الإعدادات', icon: Settings, href: '/settings' },
@@ -173,7 +181,7 @@ export function NavSidebar() {
         </div>
 
         <nav className="flex-1 space-y-3" dir="rtl">
-          {getSideItems().map((item) => (
+          {getSideItems().map((item: any) => (
             <Link
               key={item.href}
               href={item.href}
@@ -197,6 +205,12 @@ export function NavSidebar() {
               {item.label === 'الإشعارات' && unreadNotifCount > 0 && (
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-accent text-white text-[10px] font-black min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center shadow-lg animate-bounce border-2 border-white">
                   {unreadNotifCount}
+                </span>
+              )}
+
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 bg-red-600 text-white text-[10px] font-black min-w-6 h-6 px-1.5 rounded-full flex items-center justify-center shadow-lg animate-bounce border-2 border-white">
+                  {item.badge}
                 </span>
               )}
             </Link>
@@ -232,7 +246,7 @@ export function NavSidebar() {
 
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/95 backdrop-blur-2xl border-t border-border flex justify-around items-center h-20 px-2 z-50 shadow-[0_-15px_40px_rgba(0,0,0,0.15)] rounded-t-[2.5rem]">
-        {getMobileItems().map((item) => (
+        {getMobileItems().map((item: any) => (
           <Link
             key={item.href}
             href={item.href}
@@ -254,6 +268,12 @@ export function NavSidebar() {
               {item.label === 'الدردشة' && unreadChatCount > 0 && (
                 <span className="absolute -top-1 -left-1 bg-red-500 text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-pulse border-2 border-white">
                   {unreadChatCount > 99 ? "99+" : unreadChatCount}
+                </span>
+              )}
+
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="absolute -top-1 -left-1 bg-red-600 text-white text-[8px] font-black min-w-5 h-5 px-1 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
+                  {item.badge}
                 </span>
               )}
             </div>

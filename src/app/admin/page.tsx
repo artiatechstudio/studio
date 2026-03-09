@@ -8,7 +8,7 @@ import { ref, update, remove } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { ShieldCheck, Search, Trophy, TrendingUp, AlertTriangle, LogOut, Crown, Trash2, Users } from 'lucide-react';
+import { ShieldCheck, Search, Trophy, TrendingUp, AlertTriangle, LogOut, Crown, Trash2, Users, ClipboardList } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -25,6 +25,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import Link from 'next/link';
 
 export default function AdminDashboardPage() {
   const { user } = useUser();
@@ -52,6 +53,11 @@ export default function AdminDashboardPage() {
       .filter((u: any) => u.name !== 'admin' && u.name?.toLowerCase().includes(searchTerm.toLowerCase()))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
   }, [usersData, searchTerm]);
+
+  const pendingRequestsCount = useMemo(() => {
+    if (!usersData) return 0;
+    return Object.values(usersData).filter((u: any) => u.premiumRequest?.status === 'pending').length;
+  }, [usersData]);
 
   const handleGlobalClearPosts = async () => {
     setIsClearingPosts(true);
@@ -116,41 +122,58 @@ export default function AdminDashboardPage() {
           </Button>
         </header>
 
-        <section className="mx-2 space-y-3">
-          <h3 className="text-xs font-black text-primary px-2">إجراءات سريعة</h3>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="outline" className="w-full h-14 rounded-2xl border-destructive/20 text-destructive font-black gap-2 hover:bg-destructive/5">
-                <Trash2 size={18} /> تطهير المجتمع (حذف كافة المنشورات)
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="text-2xl font-black text-primary text-right">هل أنت متأكد؟</AlertDialogTitle>
-                <AlertDialogDescription className="text-sm font-bold text-muted-foreground leading-relaxed mt-2 text-right">
-                  هذا الإجراء سيمسح **كافة** المنشورات العامة من المجتمع نهائياً. لا يمكن التراجع عن هذا! ⚠️
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
-                <AlertDialogAction onClick={handleGlobalClearPosts} disabled={isClearingPosts} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">
-                  {isClearingPosts ? "جاري التطهير..." : "نعم، احذف الكل"}
-                </AlertDialogAction>
-                <AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </section>
-
-        <div className="grid grid-cols-2 gap-3 mx-2">
+        <div className="grid grid-cols-3 gap-3 mx-2">
            <Card className="p-4 rounded-[1.5rem] bg-secondary/20 border-none shadow-sm text-center">
-              <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">إجمالي الأعضاء</p>
-              <p className="text-2xl font-black text-primary">{users.length}</p>
+              <p className="text-[8px] font-black text-muted-foreground uppercase mb-1">الأعضاء</p>
+              <p className="text-xl font-black text-primary">{users.length}</p>
            </Card>
            <Card className="p-4 rounded-[1.5rem] bg-yellow-50 border-none shadow-sm text-center">
-              <p className="text-[8px] font-black text-yellow-600 uppercase mb-1">بريميوم نشط</p>
-              <p className="text-2xl font-black text-yellow-600">{users.filter((u:any) => u.isPremium === 1).length}</p>
+              <p className="text-[8px] font-black text-yellow-600 uppercase mb-1">بريميوم</p>
+              <p className="text-xl font-black text-yellow-600">{users.filter((u:any) => u.isPremium === 1).length}</p>
            </Card>
+           <Link href="/admin/requests" className="block">
+             <Card className={cn(
+               "p-4 rounded-[1.5rem] border-none shadow-sm text-center transition-colors",
+               pendingRequestsCount > 0 ? "bg-red-50" : "bg-secondary/20"
+             )}>
+                <p className={cn("text-[8px] font-black uppercase mb-1", pendingRequestsCount > 0 ? "text-red-600" : "text-muted-foreground")}>طلبات معلقة</p>
+                <p className={cn("text-xl font-black", pendingRequestsCount > 0 ? "text-red-600" : "text-primary")}>{pendingRequestsCount}</p>
+             </Card>
+           </Link>
         </div>
+
+        <section className="mx-2 space-y-3">
+          <h3 className="text-xs font-black text-primary px-2">إجراءات سريعة</h3>
+          <div className="grid grid-cols-1 gap-2">
+            <Link href="/admin/requests">
+              <Button variant="outline" className="w-full h-14 rounded-2xl border-primary/20 text-primary font-black gap-2 hover:bg-primary/5">
+                <ClipboardList size={18} /> إدارة طلبات الاشتراك
+                {pendingRequestsCount > 0 && <span className="bg-red-600 text-white text-[10px] px-2 py-0.5 rounded-full mr-2 animate-pulse">{pendingRequestsCount} طلب</span>}
+              </Button>
+            </Link>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="w-full h-14 rounded-2xl border-destructive/20 text-destructive font-black gap-2 hover:bg-destructive/5">
+                  <Trash2 size={18} /> تطهير المجتمع (حذف المنشورات)
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="text-2xl font-black text-primary text-right">هل أنت متأكد؟</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm font-bold text-muted-foreground leading-relaxed mt-2 text-right">
+                    هذا الإجراء سيمسح **كافة** المنشورات العامة من المجتمع نهائياً. لا يمكن التراجع عن هذا! ⚠️
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2">
+                  <AlertDialogAction onClick={handleGlobalClearPosts} disabled={isClearingPosts} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">
+                    {isClearingPosts ? "جاري التطهير..." : "نعم، احذف الكل"}
+                  </AlertDialogAction>
+                  <AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </section>
 
         <div className="mx-2 relative">
           <Search className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />

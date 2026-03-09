@@ -31,6 +31,14 @@ export default function Home() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
 
+  const allUsersRef = useMemoFirebase(() => userData?.name === 'admin' ? ref(database, 'users') : null, [database, userData]);
+  const { data: allUsersData } = useDatabase(allUsersRef);
+
+  const pendingRequestsCount = useMemo(() => {
+    if (!allUsersData || userData?.name !== 'admin') return 0;
+    return Object.values(allUsersData).filter((u: any) => u.premiumRequest?.status === 'pending').length;
+  }, [allUsersData, userData]);
+
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace('/login');
@@ -40,7 +48,6 @@ export default function Home() {
   const isAdmin = userData?.name === 'admin';
   const isPremium = userData?.isPremium === 1 || isAdmin;
 
-  // دالة مساعدة لحساب المرحلة الحالية الحقيقية لأي مسار
   const getTrackCurrentStage = (trackType: string) => {
     const track = userData?.trackProgress?.[trackType];
     if (!track) return 1;
@@ -177,8 +184,13 @@ export default function Home() {
             
             <div className="grid grid-cols-1 gap-3">
               <Link href="/admin/requests" onClick={() => playSound('click')} className="block">
-                <Button className="w-full h-14 rounded-2xl bg-accent hover:bg-accent/90 text-sm font-black gap-3 shadow-lg">
+                <Button className="w-full h-14 rounded-2xl bg-accent hover:bg-accent/90 text-sm font-black gap-3 shadow-lg relative">
                   <Sparkles size={18} /> مراجعة طلبات الاشتراك
+                  {pendingRequestsCount > 0 && (
+                    <span className="absolute -top-2 -right-2 bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-xl animate-bounce border-2 border-white">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
                 </Button>
               </Link>
               <Link href="/admin" onClick={() => playSound('click')} className="block">

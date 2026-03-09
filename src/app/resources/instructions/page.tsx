@@ -4,7 +4,7 @@
 import React from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Star, Timer as TimerIcon, Flame, Milestone, Crown, Sparkles, Globe, MessageSquare, Snowflake, Swords, AlertCircle, Scale, Camera, Eye, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Star, Timer as TimerIcon, Flame, Milestone, Crown, Sparkles, Globe, Snowflake, Swords, Scale, Camera, Eye, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Card } from '@/components/ui/card';

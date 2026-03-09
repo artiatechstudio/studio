@@ -90,7 +90,7 @@ export default function MasterTrackPage() {
   const updateStreakAndPoints = useCallback(async (pointsToAdd: number) => {
     if (!user || !userData) return;
     const todayStr = new Date().toLocaleDateString('en-CA');
-    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
     const yesterdayStr = yesterday.toLocaleDateString('en-CA');
     let newStreak = userData.streak || 0;
     if (userData.lastActiveDate !== todayStr) {

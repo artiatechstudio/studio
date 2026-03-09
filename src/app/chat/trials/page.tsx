@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, runTransaction, serverTimestamp } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Gavel, ArrowLeft, Trophy, ThumbsUp, Timer, ShieldCheck, Scale, Loader2 } from 'lucide-react';
+import { Gavel, ArrowLeft, Timer, ShieldCheck, Scale, Loader2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -33,18 +33,21 @@ export default function TrialsPage() {
     const voteRef = ref(database, `publicPosts/${postId}/votes/${candidateId}`);
     const userVoteRef = ref(database, `publicPosts/${postId}/votedBy/${user.uid}`);
 
-    // نتحقق إذا كان المستخدم قد صوت بالفعل
-    const userVoteSnap = await runTransaction(userVoteRef, (current) => {
-      if (current) return current;
-      return true;
-    });
+    try {
+      const voteSnap = await runTransaction(userVoteRef, (current) => {
+        if (current) return; // تم التصويت مسبقاً
+        return true;
+      });
 
-    if (userVoteSnap.committed && userVoteSnap.snapshot.val() !== true) {
-      runTransaction(voteRef, (count) => (count || 0) + 1);
-      toast({ title: "تم تسجيل صوتك بالعدل! ⚖️" });
-      playSound('success');
-    } else {
-      toast({ variant: "destructive", title: "لقد شاركت في هذا الحكم مسبقاً" });
+      if (voteSnap.committed && voteSnap.snapshot.val() === true) {
+        runTransaction(voteRef, (count) => (count || 0) + 1);
+        toast({ title: "تم تسجيل صوتك بالعدل! ⚖️" });
+        playSound('success');
+      } else {
+        toast({ variant: "destructive", title: "لقد شاركت في هذا الحكم مسبقاً" });
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل التصويت" });
     }
   };
 
@@ -97,7 +100,6 @@ export default function TrialsPage() {
                     يقول <span className="text-primary font-black">{trial.challengerName}</span> أنه انتصر، ولكن <span className="text-orange-600 font-black">{trial.defenderName}</span> طعن في صحة الدليل المرفق.
                   </p>
                   
-                  {/* عرض الصورة بشكل كبير وواضح */}
                   <div className="relative w-full aspect-video rounded-3xl overflow-hidden shadow-inner border-4 border-secondary bg-black/5">
                     <img 
                       src={trial.proof} 
@@ -118,7 +120,10 @@ export default function TrialsPage() {
                     >
                       صادق ✅
                     </Button>
-                    <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes?.[trial.challengerId] || 0} صوت</p>
+                    {/* حل مشكلة Objects as React Child بعرض القيمة العددية فقط */}
+                    <p className="text-center text-[10px] font-black text-muted-foreground">
+                      {typeof trial.votes?.[trial.challengerId] === 'object' ? 0 : (trial.votes?.[trial.challengerId] || 0)} صوت
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Button 
@@ -128,7 +133,9 @@ export default function TrialsPage() {
                     >
                       كاذب ❌
                     </Button>
-                    <p className="text-center text-[10px] font-black text-muted-foreground">{trial.votes?.[trial.defenderId] || 0} صوت</p>
+                    <p className="text-center text-[10px] font-black text-muted-foreground">
+                      {typeof trial.votes?.[trial.defenderId] === 'object' ? 0 : (trial.votes?.[trial.defenderId] || 0)} صوت
+                    </p>
                   </div>
                 </div>
 

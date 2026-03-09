@@ -69,7 +69,7 @@ export default function Home() {
         setShowTour(true);
       }
 
-      if (!userData.notificationsEnabled && Notification.permission === 'default') {
+      if (!userData.notificationsEnabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
         requestNotificationPermission(auth, database);
       }
 
@@ -77,9 +77,6 @@ export default function Home() {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
-        if (userData.avatar?.startsWith('data:') || userData.avatar?.startsWith('http')) {
-          updates.avatar = "🐱";
-        }
         needsUpdate = true;
         toast({ title: "انتهى اشتراك بريميوم", description: "شكراً لثقتك، تم تجديد اشتراكك عبر الإعدادات! 🐱" });
       }

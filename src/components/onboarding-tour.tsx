@@ -32,7 +32,7 @@ const TOUR_STEPS = [
   },
   {
     title: "الماستر 👑",
-    content: "للأبطال الذين تجاوزوا الحدود! هنا تجد 'تحديات الأساطير' العشوائية، وقائمة مهامك الشخصية (Todos) التي تمنحك نقاطاً إضافية وتمدد حماستك.",
+    content: "للأبطال الذين تجاوزوا الحدود! هنا تجد 'تحديات الأساطير' العشوائية والمواجهات الثنائية، وقائمة مهامك الشخصية الموقوتة.",
     icon: Crown,
     color: "text-yellow-600"
   },
@@ -61,40 +61,16 @@ const TOUR_STEPS = [
     color: "text-blue-500"
   },
   {
-    title: "الموارد والدعم 📚",
-    content: "في قسم 'الموارد' ستجد أدلة شاملة للياقة والتعلم. وإذا واجهت أي مشكلة، قسم 'تواصل معنا' في الإعدادات يربطك مباشرة بفريق الدعم.",
-    icon: HelpCircle,
-    color: "text-green-600"
+    title: "المحاكمة المجتمعية ⚖️",
+    content: "هنا يُحسم النزاع! إذا اختلف بطلان في نتيجة مبارزة، يُعرض الأمر هنا مع صورة الإثبات ليصوت الجمهور على الصدق والكذب.",
+    icon: Gavel,
+    color: "text-red-600"
   },
   {
     title: "العضوية الملكية (Premium) 👑",
-    content: "احصل على 'تجميد الحماسة' لحمايتك عند الغياب، وإمكانية رفع صورة شخصية حقيقية، وتجربة نقية بدون إعلانات.",
+    content: "احصل على 'تجميد الحماسة' لحمايتك عند الغياب، وإمكانية رفع صورة شخصية حقيقية، ونشر غير محدود في المجتمع.",
     icon: Crown,
     color: "text-yellow-600"
-  },
-  {
-    title: "منطقة الأمان والحذف ⚠️",
-    content: "نحن نحترم قرارك. يمكنك حذف حسابك نهائياً من الإعدادات، مما سيؤدي لمسح كافة بياناتك ونقاطك من النظام فوراً دون تراجع.",
-    icon: Trash2,
-    color: "text-destructive"
-  },
-  {
-    title: "سهولة الوصول للويب 📱",
-    content: "كارينجو هو تطبيق ويب متطور يعمل مباشرة عبر متصفح هاتفك. يمكنك إضافة اختصار له على شاشتك الرئيسية ليكون متاحاً بلمسة واحدة.",
-    icon: Smartphone,
-    color: "text-primary"
-  },
-  {
-    title: "اختصار على أندرويد 🤖",
-    content: "من مستعرض Chrome، اضغط على النقاط الثلاث (⋮) في الأعلى، ثم اختر 'إضافة إلى الشاشة الرئيسية' (Add to Home screen).",
-    icon: Download,
-    color: "text-green-600"
-  },
-  {
-    title: "اختصار على آيفون 🍎",
-    content: "من متصفح Safari، اضغط على زر 'مشاركة' (Share) في الأسفل، ثم مرر واختر 'إضافة للشاشة الرئيسية' (Add to Home Screen).",
-    icon: Share2,
-    color: "text-primary"
   },
   {
     title: "جاهز للانطلاق؟ 🚀",
@@ -136,7 +112,7 @@ export function OnboardingTour({ onComplete }: { onComplete: () => void }) {
   };
 
   const step = TOUR_STEPS[currentStep];
-  const Icon = step.icon;
+  const Icon = step.icon || Sparkles;
 
   return (
     <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-md flex items-center justify-center p-4" dir="rtl">
@@ -168,12 +144,11 @@ export function OnboardingTour({ onComplete }: { onComplete: () => void }) {
           <div className="flex gap-3">
             {currentStep > 0 && (
               <Button onClick={handleBack} variant="outline" className="flex-1 h-12 rounded-2xl font-black border-2">
-                <ChevronRight size={18} className="ml-1" /> السابق
+                السابق
               </Button>
             )}
             <Button onClick={handleNext} className="flex-1 h-12 rounded-2xl bg-primary text-white font-black shadow-lg">
-              {currentStep === TOUR_STEPS.length - 1 ? "فهمت، لنبدأ! 🚀" : "التالي"}
-              {currentStep < TOUR_STEPS.length - 1 && <ChevronLeft size={18} className="mr-1" />}
+              {currentStep === TOUR_STEPS.length - 1 ? "لنبدأ! 🚀" : "التالي"}
             </Button>
           </div>
         </div>

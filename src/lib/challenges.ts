@@ -1,3 +1,4 @@
+
 export type TrackKey = 'Fitness' | 'Nutrition' | 'Behavior' | 'Study';
 
 export interface Challenge {
@@ -8,10 +9,9 @@ export interface Challenge {
   difficulty: 'سهل' | 'متوسط' | 'صعب';
   points: number;
   type?: TrackKey; 
-  isTimeLocked?: boolean; // خاصية جديدة لمنع الإنهاء المبكر
+  isTimeLocked?: boolean;
 }
 
-// دالة لتوليد نقاط بناءً على الصعوبة المطلوبة
 const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
   if (diff === 'سهل') return 50;
   if (diff === 'متوسط') return 70;
@@ -157,10 +157,8 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   Study: studyChallenges,
 };
 
-// الـ 120 تحدي الإضافية للمسار العام (حصرياً)
 export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [];
 
-// توليد باقي الـ 120 تحدي برمجياً لضمان وجود قائمة كاملة للاختيار العشوائي
 const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
 const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
 
@@ -169,8 +167,6 @@ while (ADDITIONAL_MASTER_CHALLENGES.length < 120) {
   const diff = diffs[Math.floor(Math.random() * diffs.length)];
   const id = ADDITIONAL_MASTER_CHALLENGES.length + 1;
   const time = diff === 'سهل' ? 10 : diff === 'متوسط' ? 30 : 60;
-  
-  // جعل المهام الصعبة في الماستر دائماً محمية زمنياً
   const isLocked = diff === 'صعب' || (diff === 'متوسط' && Math.random() > 0.5);
 
   ADDITIONAL_MASTER_CHALLENGES.push({
@@ -178,13 +174,12 @@ while (ADDITIONAL_MASTER_CHALLENGES.length < 120) {
     difficulty: diff,
     points: getPoints(diff),
     time,
-    title: `تحدي الأساطير رقم ${id}: إتقان الـ ${type}`,
-    description: `هذا تحدي عشوائي من المستوى المتقدم لزيادة كفاءتك في مسار ${type}. المطلوب هو الاستمرارية والتركيز المطلق لمدة ${time} دقيقة.`,
+    title: `تحدي الأساطير رقم ${id}: إتقان الـ ${type === 'Fitness' ? 'لياقة' : type === 'Nutrition' ? 'تغذية' : type === 'Behavior' ? 'سلوك' : 'دراسة'}`,
+    description: `هذا تحدي عشوائي من المستوى المتقدم لزيادة كفاءتك. المطلوب هو الاستمرارية والتركيز المطلق لمدة ${time} دقيقة.`,
     isTimeLocked: isLocked
   });
 }
 
 export const getMasterPool = (type: TrackKey, difficulty: string): Challenge[] => {
-  // الاختيار حصرياً من قائمة الـ 120 تحدي الإضافية فقط
   return ADDITIONAL_MASTER_CHALLENGES.filter(c => c.type === type && c.difficulty === difficulty);
 };

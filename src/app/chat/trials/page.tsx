@@ -91,7 +91,7 @@ export default function TrialsPage() {
                   <ShieldCheck size={16} /> نزاع: {trial.title}
                 </div>
                 <div className="bg-red-100 text-red-600 px-3 py-1 rounded-full text-[10px] font-black">
-                  الرهان: {trial.points}ن
+                  الرهان: {trial.pointsStake}ن
                 </div>
               </div>
               <CardContent className="p-6 space-y-6">

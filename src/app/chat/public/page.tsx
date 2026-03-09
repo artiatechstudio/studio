@@ -8,7 +8,7 @@ import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction,
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Globe, Send, Trash2, Heart, Clock, Crown, Sparkles, Infinity, User, Loader2 } from 'lucide-react';
+import { Globe, Send, Trash2, Heart, Clock, Crown, Sparkles, Infinity, User } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -27,7 +27,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export default function PublicChatPage() {
+export default function PublicWallPage() {
   const { user } = useUser();
   const { database } = useFirebase();
   const [postText, setPostText] = useState('');
@@ -48,8 +48,10 @@ export default function PublicChatPage() {
 
   const posts = useMemo(() => {
     if (!postsData) return [];
+    // عرض المنشورات العادية فقط (تصفية النزاعات)
     return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .filter((p: any) => p.type !== 'dispute')
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
@@ -58,7 +60,7 @@ export default function PublicChatPage() {
     if (!postText.trim() || !user || isSending) return;
 
     if (!isPremium && remainingPosts <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح ببوستين فقط يومياً للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بـ 2 منشور يومياً للأعضاء العاديين. 👑" });
       return;
     }
 

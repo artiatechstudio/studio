@@ -19,8 +19,6 @@ import { cn } from '@/lib/utils';
 export default function MasterTrackPage() {
   const { user } = useUser();
   const { database } = useFirebase();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  
   const [step, setStep] = useState<'setup' | 'active' | 'done'>('setup');
   const [selectedType, setSelectedType] = useState<TrackKey>('Fitness');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'سهل' | 'متوسط' | 'صعب'>('سهل');
@@ -48,7 +46,7 @@ export default function MasterTrackPage() {
       .map(([id, val]: [string, any]) => ({ id, ...val }))
       .filter((c: any) => 
         (c.senderId === user.uid || c.receiverId === user.uid) && 
-        ['active', 'awaiting_recognition', 'pending_acceptance', 'concluded'].includes(c.status)
+        ['active', 'awaiting_recognition', 'pending_acceptance'].includes(c.status)
       );
   }, [allChallengesData, user]);
 
@@ -305,7 +303,7 @@ function TodoItem({ todo, onComplete }: { todo: any, onComplete: (t: any) => voi
 
 function BattleCard({ challenge, currentUser, database }: { challenge: any, currentUser: any, database: any }) {
   const [timeLeft, setTimeLeft] = useState(0);
-  const [isFinishing, setIsFinishing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isActive = challenge.status === 'active';
@@ -316,12 +314,11 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
   useEffect(() => {
     if (!isActive) return;
 
-    const timer = setInterval(() => {
+    const timer = setInterval(async () => {
       const now = Date.now();
       let limit = (challenge.duration || 15) * 60 * 1000;
       let start = challenge.acceptedAt || challenge.createdAt;
 
-      // إذا كان هناك فائز، يصبح زمنه هو السقف الجديد للآخر
       if (isWinnerSet && !isMineWinner) {
         limit = challenge.winnerTime;
         start = currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime;
@@ -331,18 +328,74 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       const rem = Math.max(0, Math.floor((limit - elapsed) / 1000));
       setTimeLeft(rem);
 
-      if (rem <= 0 && !isWinnerSet) {
-        // انتهاء الوقت تلقائياً دون إنجاز
+      // منطق العقوبة عند انتهاء الوقت للطرفين
+      if (rem <= 0 && !isWinnerSet && !isProcessing) {
+        handleTimeout();
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isActive, challenge, currentUser, isWinnerSet, isMineWinner]);
+  }, [isActive, challenge, currentUser, isWinnerSet, isMineWinner, isProcessing]);
+
+  const handleTimeout = async () => {
+    setIsProcessing(true);
+    const today = new Date().toLocaleDateString('en-CA');
+    const stake = challenge.pointsStake || 50;
+
+    // خصم النقاط من الطرفين
+    const players = [challenge.senderId, challenge.receiverId];
+    for (const pid of players) {
+      const pRef = ref(database, `users/${pid}`);
+      const snap = await get(pRef);
+      const data = snap.val();
+      update(pRef, {
+        points: Math.max(0, (data.points || 0) - stake),
+        [`dailyPoints/${today}`]: Math.max(0, (data.dailyPoints?.[today] || 0) - stake)
+      });
+    }
+
+    update(ref(database, `challenges/${challenge.id}`), { status: 'failed_timeout' });
+    toast({ variant: "destructive", title: "انتهى الوقت! 🛑", description: "خسر الطرفان نقاط الرهان لعدم الالتزام." });
+    setIsProcessing(false);
+  };
+
+  const handleWithdraw = async () => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    playSound('click');
+    const today = new Date().toLocaleDateString('en-CA');
+    const stake = challenge.pointsStake || 50;
+
+    try {
+      const uRef = ref(database, `users/${currentUser.uid}`);
+      const snap = await get(uRef);
+      const data = snap.val();
+
+      await update(uRef, {
+        points: Math.max(0, (data.points || 0) - stake),
+        challengesLost: (data.challengesLost || 0) + 1,
+        [`dailyPoints/${today}`]: Math.max(0, (data.dailyPoints?.[today] || 0) - stake)
+      });
+
+      await update(ref(database, `challenges/${challenge.id}`), {
+        status: 'concluded',
+        winnerId: currentUser.uid === challenge.senderId ? challenge.receiverId : challenge.senderId,
+        withdrawerId: currentUser.uid
+      });
+
+      toast({ title: "تم الانسحاب 🏳️", description: "تم خصم نقاط الرهان كعقوبة انسحاب." });
+      playSound('success');
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الانسحاب" });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const handleUploadProof = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !currentUser) return;
-    setIsFinishing(true);
+    if (!file || !currentUser || isProcessing) return;
+    setIsProcessing(true);
     playSound('click');
 
     try {
@@ -353,22 +406,20 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
         const timeUsed = Date.now() - (currentUser.uid === challenge.senderId ? challenge.senderStartTime : challenge.receiverStartTime);
 
         const updates: any = {};
-        if (!challenge.winnerId || timeUsed < challenge.winnerTime) {
-          updates.winnerId = currentUser.uid;
-          updates.winnerName = currentUser.displayName || 'بطل';
-          updates.winnerTime = timeUsed;
-          updates.proof = base64;
-          updates.status = 'awaiting_recognition';
-        }
+        updates.winnerId = currentUser.uid;
+        updates.winnerName = userData?.name || 'بطل';
+        updates.winnerTime = timeUsed;
+        updates.proof = base64;
+        updates.status = 'awaiting_recognition';
 
         await update(ref(database, `challenges/${challenge.id}`), updates);
-        toast({ title: "تم رفع الإثبات! 📸", description: "في انتظار اعتراف الخصم أو التحكيم." });
+        toast({ title: "تم رفع الإثبات! 📸", description: "توقف المؤقت؛ بانتظار اعتراف الخصم." });
         playSound('success');
       };
     } catch (e) {
       toast({ variant: "destructive", title: "فشل الرفع" });
     } finally {
-      setIsFinishing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -379,7 +430,7 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
       <div className="flex items-center justify-between mb-3">
         <div className="text-right">
           <p className="text-xs font-black text-primary leading-tight">{challenge.title}</p>
-          <p className="text-[10px] font-bold text-muted-foreground mt-1">مقابل: {challenge.pointsStake}ن 💰</p>
+          <p className="text-[10px] font-bold text-muted-foreground mt-1">الرهان: {challenge.pointsStake}ن 💰</p>
         </div>
         {isActive && (
           <div className={cn("px-3 py-1 rounded-xl text-xs font-black flex items-center gap-2", timeLeft < 60 ? "bg-red-100 text-red-600 animate-pulse" : "bg-secondary text-primary")}>
@@ -388,31 +439,36 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
         )}
       </div>
 
-      {isActive ? (
-        <div className="space-y-3">
-          {amITheSlowOne && (
-            <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-start gap-2">
-              <AlertTriangle className="text-orange-600 shrink-0" size={14} />
-              <p className="text-[9px] font-bold text-orange-800 leading-tight">حطم الخصم رقماً قياسياً! يجب عليك إنهاء المهمة في أقل من {format(Math.floor(challenge.winnerTime/1000))} للفوز.</p>
-            </div>
-          )}
-          <Button 
-            onClick={() => fileInputRef.current?.click()} 
-            disabled={isFinishing || (isWinnerSet && timeLeft <= 0)}
-            className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black text-xs gap-2"
-          >
-            {isFinishing ? <Loader2 className="animate-spin" /> : <Camera size={16} />}
-            رفع الإثبات لإيقاف الزمن 📸
-          </Button>
-          <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUploadProof} />
-        </div>
-      ) : (
-        <Link href="/chat/trials">
-          <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-primary/40 text-primary font-black text-xs gap-2">
-            انتقل للمحاكمة / النتائج ⚖️
-          </Button>
-        </Link>
-      )}
+      <div className="space-y-3">
+        {isActive ? (
+          <>
+            {amITheSlowOne && (
+              <div className="bg-orange-50 p-3 rounded-xl border border-orange-100 flex items-start gap-2">
+                <AlertTriangle className="text-orange-600 shrink-0" size={14} />
+                <p className="text-[9px] font-bold text-orange-800 leading-tight">يجب عليك إنهاء المهمة في أقل من {format(Math.floor(challenge.winnerTime/1000))} للفوز!</p>
+              </div>
+            )}
+            <Button 
+              onClick={() => fileInputRef.current?.click()} 
+              disabled={isProcessing}
+              className="w-full h-12 rounded-xl bg-primary hover:bg-primary/90 font-black text-xs gap-2"
+            >
+              {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={16} />}
+              رفع الإثبات 📸
+            </Button>
+            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUploadProof} />
+            <Button onClick={handleWithdraw} variant="ghost" disabled={isProcessing} className="w-full h-10 text-destructive/60 font-bold text-[10px]">
+              انسحاب من التحدي 🏳️
+            </Button>
+          </>
+        ) : (
+          <Link href="/chat/trials">
+            <Button variant="outline" className="w-full h-12 rounded-xl border-dashed border-primary/40 text-primary font-black text-xs gap-2">
+              بانتظار الحكم أو الاعتراف ⚖️
+            </Button>
+          </Link>
+        )}
+      </div>
     </Card>
   );
 }

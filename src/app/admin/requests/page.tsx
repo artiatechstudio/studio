@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ClipboardList, CheckCircle, XCircle, Mail, Clock, Crown, ArrowLeft } from 'lucide-react';
+import { ClipboardList, CheckCircle, XCircle, Mail, Clock, Crown, ArrowLeft, Phone } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { toast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -118,7 +118,9 @@ export default function AdminRequestsPage() {
                     <div className="w-12 h-12 bg-secondary rounded-xl flex items-center justify-center text-2xl">{req.avatar || "🐱"}</div>
                     <div className="text-right">
                       <h3 className="font-black text-primary text-sm">{req.name}</h3>
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground font-bold"><Mail size={10} /> {req.email}</div>
+                      <div className="flex items-center gap-1 text-[11px] text-orange-600 font-black bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100">
+                        <Phone size={10} /> {req.premiumRequest?.phoneNumber || "لا يوجد رقم"}
+                      </div>
                     </div>
                   </div>
                   <div className="bg-amber-50 text-amber-700 px-3 py-1 rounded-full text-[10px] font-black border border-amber-100 flex items-center gap-1">

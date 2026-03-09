@@ -46,6 +46,7 @@ export default function SettingsPage() {
 
   const [isRequestOpen, setIsRequestOpen] = useState(false);
   const [selectedPlan, setSelectedType] = useState('1month');
+  const [requestPhone, setRequestPhone] = useState('');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -204,6 +205,11 @@ export default function SettingsPage() {
 
   const handleSendPremiumRequest = async () => {
     if (!user) return;
+    if (!requestPhone.trim() || requestPhone.length < 10) {
+      toast({ variant: "destructive", title: "رقم الهاتف غير صالح", description: "يرجى إدخال رقم الهاتف الذي ستحول منه بشكل صحيح." });
+      return;
+    }
+    
     setIsSubmittingRequest(true);
     playSound('click');
 
@@ -217,9 +223,10 @@ export default function SettingsPage() {
       await update(ref(database, `users/${user.uid}/premiumRequest`), {
         status: 'pending',
         duration: selectedPlan,
+        phoneNumber: requestPhone.trim(),
         requestedAt: Date.now()
       });
-      toast({ title: "جاري المعالجة... ⏳", description: "طلبك تحت الإجراء حالياً، سيتم التفعيل يدوياً بعد التأكد من التحويل." });
+      toast({ title: "جاري المعالجة... ⏳", description: "سيقوم الآدمن بمطابقة التحويل من رقمك وتفعيل الاشتراك قريباً." });
       setIsRequestOpen(false);
     } catch (e) {
       toast({ variant: "destructive", title: "فشل إرسال الطلب" });
@@ -265,7 +272,7 @@ export default function SettingsPage() {
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
           <CardHeader className="bg-primary/5 p-6 border-b border-border text-right">
-            <CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تخصيص التجربة <Sparkles size={20} /></CardTitle>
+            <CardTitle className="text-lg font-black text-primary flex items-center gap-2 justify-end">تخصيص التجربة <Sparkles size={20} /></CardTitle>
           </CardHeader>
           <CardContent className="p-0 divide-y divide-border">
             <div className="p-6 flex items-center justify-between">
@@ -332,24 +339,39 @@ export default function SettingsPage() {
         <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
           <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-black text-primary text-right">اختر باقة النمو</DialogTitle>
-              <DialogDescription className="text-right font-bold">باقات بسيطة لتجربة ملكية كاملة</DialogDescription>
+              <DialogTitle className="text-2xl font-black text-primary text-right">طلب اشتراك بريميوم</DialogTitle>
+              <DialogDescription className="text-right font-bold text-xs">سيتم تحويل الرصيد لضمان تفعيل العضوية الملكية.</DialogDescription>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              {[
-                { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 د.ل' },
-                { id: '1month', label: 'شهر كامل (اقتصادي)', price: '3 د.ل' },
-                { id: '6months', label: '6 أشهر (احترافي)', price: '15 د.ل' }
-              ].map((plan) => (
-                <div key={plan.id} onClick={() => { playSound('click'); setSelectedType(plan.id); }} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20")}>
-                  <div className="flex items-center gap-3">{selectedPlan === plan.id ? <CheckCircle2 className="text-primary" /> : <div className="w-6 h-6 rounded-full border-2 border-border" />}<span className="font-black text-sm">{plan.label}</span></div>
-                  <span className="bg-secondary px-3 py-1 rounded-full text-xs font-black text-primary">{plan.price}</span>
-                </div>
-              ))}
+            <div className="space-y-6 py-4">
+              <div className="space-y-3">
+                <Label className="text-xs font-black text-primary">1. اختر باقة النمو</Label>
+                {[
+                  { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 د.ل' },
+                  { id: '1month', label: 'شهر كامل (اقتصادي)', price: '3 د.ل' },
+                  { id: '6months', label: '6 أشهر (احترافي)', price: '15 د.ل' }
+                ].map((plan) => (
+                  <div key={plan.id} onClick={() => { playSound('click'); setSelectedType(plan.id); }} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20")}>
+                    <div className="flex items-center gap-3">{selectedPlan === plan.id ? <CheckCircle2 className="text-primary" /> : <div className="w-6 h-6 rounded-full border-2 border-border" />}<span className="font-black text-sm">{plan.label}</span></div>
+                    <span className="bg-secondary px-3 py-1 rounded-full text-xs font-black text-primary">{plan.price}</span>
+                  </div>
+                ))}
+              </div>
+
+              <div className="space-y-3">
+                <Label className="text-xs font-black text-primary">2. رقم الهاتف (الذي ستحول منه)</Label>
+                <Input 
+                  placeholder="09XXXXXXXX" 
+                  type="tel" 
+                  className="h-14 rounded-2xl bg-secondary/50 border-none font-black text-center text-lg tracking-widest" 
+                  value={requestPhone}
+                  onChange={(e) => setRequestPhone(e.target.value)}
+                />
+                <p className="text-[10px] text-muted-foreground font-bold leading-relaxed">أدخل رقمك الذي سترسل منه الرصيد ليتمكن الآدمن من مطابقة الدفعة فوراً.</p>
+              </div>
             </div>
             
             <DialogFooter>
-              <Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-12 rounded-xl font-black text-lg">
+              <Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-14 rounded-2xl font-black text-xl bg-primary shadow-lg">
                 {isSubmittingRequest ? "جاري الإرسال..." : "تأكيد الطلب والتحويل 🐱"}
               </Button>
             </DialogFooter>

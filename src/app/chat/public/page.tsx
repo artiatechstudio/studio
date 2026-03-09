@@ -7,7 +7,7 @@ import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, push, serverTimestamp, query, limitToLast, remove, get, update } from 'firebase/database';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, Send, Trash2, Heart, Clock, Crown, Infinity, Camera, X, Loader2 } from 'lucide-react';
+import { Globe, Send, Trash2, Heart, Clock, Crown, Sparkles, Infinity, Camera, X, Loader2 } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -26,7 +26,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-export default function PublicWallPage() {
+export default function PublicChatPage() {
   const { user } = useUser();
   const { database } = useFirebase();
   const [postText, setPostText] = useState('');
@@ -37,7 +37,7 @@ export default function PublicWallPage() {
 
   const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
   const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
-  const { data: postsData, isLoading } = useDatabase(postsQuery);
+  const { data: postsData } = useDatabase(postsQuery);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
@@ -52,34 +52,27 @@ export default function PublicWallPage() {
     if (!postsData) return [];
     return Object.entries(postsData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((p: any) => !p.type) // عرض المنشورات العادية فقط
       .sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
   }, [postsData]);
 
   const compressImage = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = (event) => {
+      reader.onload = (e) => {
         const img = new Image();
-        img.src = event.target?.result as string;
+        img.src = e.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_WIDTH = 800;
-          let width = img.width;
-          let height = img.height;
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
+          const MAX = 800;
+          let w = img.width, h = img.height;
+          if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+          else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d')?.drawImage(img, 0, 0, w, h);
           resolve(canvas.toDataURL('image/jpeg', 0.6));
         };
       };
-      reader.onerror = reject;
     });
   };
 
@@ -87,15 +80,10 @@ export default function PublicWallPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsCompressing(true);
-    try {
-      const compressed = await compressImage(file);
-      setPostImage(compressed);
-      playSound('click');
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل معالجة الصورة" });
-    } finally {
-      setIsCompressing(false);
-    }
+    const compressed = await compressImage(file);
+    setPostImage(compressed);
+    setIsCompressing(false);
+    playSound('click');
   };
 
   const handleSendPost = async (e: React.FormEvent) => {
@@ -103,7 +91,7 @@ export default function PublicWallPage() {
     if ((!postText.trim() && !postImage) || !user || isSending) return;
 
     if (!isPremium && remainingPosts <= 0) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بمنشورين فقط يومياً للأعضاء العاديين. 👑" });
+      toast({ variant: "destructive", title: "وصلت للحد اليومي", description: "يسمح بمنشورين في اليوم للأعضاء العاديين. اشترك في بريميوم للنشر بلا حدود! 👑" });
       return;
     }
 
@@ -124,7 +112,9 @@ export default function PublicWallPage() {
     try {
       await push(postsRef, newPost);
       if (!isPremium) {
-        await update(ref(database, `users/${user.uid}/dailyPostsCount`), { [todayStr]: dailyCount + 1 });
+        await update(ref(database, `users/${user.uid}/dailyPostsCount`), {
+          [todayStr]: dailyCount + 1
+        });
       }
       setPostText('');
       setPostImage(null);
@@ -140,7 +130,7 @@ export default function PublicWallPage() {
     playSound('click');
     try {
       await remove(ref(database, `publicPosts/${postId}`));
-      toast({ title: "تم حذف المنشور" });
+      toast({ title: "تم حذف المنشور بنجاح" });
     } catch (e) {
       toast({ variant: "destructive", title: "فشل الحذف" });
     }
@@ -150,8 +140,8 @@ export default function PublicWallPage() {
     if (!user) return;
     playSound('click');
     const likeRef = ref(database, `publicPosts/${postId}/likes/${user.uid}`);
-    get(likeRef).then(snap => {
-      if (snap.exists()) remove(likeRef);
+    get(likeRef).then(snapshot => {
+      if (snapshot.exists()) remove(likeRef);
       else update(ref(database, `publicPosts/${postId}/likes`), { [user.uid]: true });
     });
   };
@@ -161,12 +151,10 @@ export default function PublicWallPage() {
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
         <header className="flex items-center gap-4 bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2 mt-2">
-          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center">
-            <Globe size={24} />
-          </div>
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center"><Globe size={24} /></div>
           <div className="text-right">
             <h1 className="text-2xl font-black text-primary">المجتمع العام</h1>
-            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">شارك إنجازاتك بالصور والكلمات 📸🌍</p>
+            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">شارك إنجازاتك مع العالم 🌍</p>
           </div>
         </header>
 
@@ -174,43 +162,29 @@ export default function PublicWallPage() {
           <CardContent className="p-6 space-y-4">
             <form onSubmit={handleSendPost} className="space-y-4">
               <div className="flex items-start gap-3">
-                <Link href="/profile">
-                  <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl overflow-hidden border border-border">
-                    {userData?.avatar?.startsWith('data:image') || userData?.avatar?.startsWith('http') ? (
-                      <img src={userData.avatar} className="w-full h-full object-cover" alt="Me" />
-                    ) : (
-                      <span>{userData?.avatar || "🐱"}</span>
-                    )}
-                  </div>
-                </Link>
-                <div className="flex-1 space-y-3">
-                  <textarea 
-                    placeholder={`بماذا تفكر يا ${userData?.name?.split(' ')[0]}؟`}
-                    className="w-full min-h-[100px] p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm focus:ring-2 focus:ring-primary/20 resize-none outline-none"
-                    value={postText}
-                    onChange={(e) => setPostText(e.target.value)}
-                    maxLength={280}
-                  />
-                  {postImage && (
-                    <div className="relative w-full aspect-video rounded-2xl overflow-hidden border-4 border-secondary shadow-inner">
-                      <img src={postImage} className="w-full h-full object-cover" alt="Preview" />
-                      <button onClick={() => setPostImage(null)} className="absolute top-2 right-2 bg-black/50 text-white p-1 rounded-full"><X size={16}/></button>
-                    </div>
-                  )}
-                </div>
+                <Link href="/profile"><div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl overflow-hidden border border-border">{userData?.avatar?.startsWith('data:image') || userData?.avatar?.startsWith('http') ? <img src={userData.avatar} className="w-full h-full object-cover" alt="Me" /> : <span>{userData?.avatar || "🐱"}</span>}</div></Link>
+                <textarea placeholder={`بماذا تفكر يا ${userData?.name?.split(' ')[0]}؟`} className="flex-1 min-h-[100px] p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm focus:ring-2 focus:ring-primary/20 resize-none outline-none" value={postText} onChange={(e) => setPostText(e.target.value)} maxLength={280} />
               </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                  <Button type="button" onClick={() => fileInputRef.current?.click()} variant="outline" size="icon" className="rounded-xl border-2 border-primary/20 text-primary h-12 w-12" disabled={isCompressing}>
-                    {isCompressing ? <Loader2 className="animate-spin" size={18}/> : <Camera size={20} />}
-                  </Button>
-                  <div className="flex flex-col">
-                    <span className="text-[9px] font-black text-muted-foreground uppercase">المتبقي</span>
-                    <div className="font-black text-primary text-xs">{isPremium ? <Infinity size={12}/> : remainingPosts}</div>
-                  </div>
+              
+              {postImage && (
+                <div className="relative w-32 h-32 rounded-xl overflow-hidden border-2 border-primary shadow-lg group">
+                  <img src={postImage} className="w-full h-full object-cover" alt="Preview" />
+                  <button type="button" onClick={() => setPostImage(null)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><X size={14}/></button>
                 </div>
-                <Button type="submit" disabled={(!postText.trim() && !postImage) || isSending || (!isPremium && remainingPosts <= 0)} className="h-12 px-8 rounded-xl bg-primary font-black gap-2">
+              )}
+
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-[9px] font-black text-muted-foreground uppercase">المتبقي اليوم</span>
+                    <div className="flex items-center gap-1 font-black text-primary">{isPremium ? <Infinity size={14} className="text-yellow-500" /> : <span>{remainingPosts} منشور</span>}</div>
+                  </div>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                  <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()} disabled={isCompressing} className="h-12 w-12 rounded-xl text-primary bg-primary/10">
+                    {isCompressing ? <Loader2 className="animate-spin" size={18}/> : <Camera size={20}/>}
+                  </Button>
+                </div>
+                <Button type="submit" disabled={(!postText.trim() && !postImage) || isSending || (!isPremium && remainingPosts <= 0)} className="h-12 px-8 rounded-xl bg-primary hover:bg-primary/90 shadow-lg font-black gap-2">
                   {isSending ? "جاري النشر..." : "نشر الآن"} <Send size={16} className="rotate-180" />
                 </Button>
               </div>
@@ -219,50 +193,33 @@ export default function PublicWallPage() {
         </Card>
 
         <div className="space-y-4 mx-2">
-          {isLoading ? (
-            <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-20 opacity-20 font-black text-xl">كن أول من ينشر! 🐱✨</div>
+          {posts.length === 0 ? (
+            <div className="text-center py-20 opacity-20 font-black text-xl">كن أول من ينشر في المجتمع! 🐱✨</div>
           ) : posts.map((post) => (
             <Card key={post.id} className="rounded-[2rem] shadow-md border border-border bg-card overflow-hidden">
-              <div className="p-5 pb-2 flex items-center justify-between">
+              <CardHeader className="p-5 pb-2 flex flex-row items-center justify-between space-y-0">
                 <div className="flex items-center gap-3">
-                  <Link href={`/user/${post.userId}`}>
-                    <div className="w-11 h-11 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm overflow-hidden">
-                      {post.userAvatar?.startsWith('data:image') || post.userAvatar?.startsWith('http') ? (
-                        <img src={post.userAvatar} className="w-full h-full object-cover" alt={post.userName} />
-                      ) : (
-                        <span>{post.userAvatar || "🐱"}</span>
-                      )}
-                    </div>
-                  </Link>
+                  <Link href={`/user/${post.userId}`} onClick={() => playSound('click')}><div className="w-11 h-11 bg-white rounded-full flex items-center justify-center text-xl border border-border shadow-sm overflow-hidden hover:scale-105 transition-transform">{post.userAvatar?.startsWith('data:image') || post.userAvatar?.startsWith('http') ? <img src={post.userAvatar} className="w-full h-full object-cover" alt={post.userName} /> : <span>{post.userAvatar || "🐱"}</span>}</div></Link>
                   <div className="text-right">
-                    <div className="flex items-center gap-1">
-                      <p className="font-black text-primary text-sm">{post.userName}</p>
-                      {post.isPremium === 1 && <Crown size={12} className="text-yellow-500" fill="currentColor" />}
-                    </div>
-                    <p className="text-[8px] font-bold text-muted-foreground">{post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}</p>
+                    <div className="flex items-center gap-1"><Link href={`/user/${post.userId}`} className="font-black text-primary text-sm hover:underline">{post.userName}</Link>{post.isPremium === 1 && <Crown size={12} className="text-yellow-500" fill="currentColor" />}</div>
+                    <div className="flex items-center gap-1 text-[8px] font-bold text-muted-foreground"><Clock size={8} /> {post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}</div>
                   </div>
                 </div>
                 {(post.userId === user?.uid || isAdmin) && (
                   <AlertDialog>
-                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive/40"><Trash2 size={16}/></Button></AlertDialogTrigger>
-                    <AlertDialogContent className="rounded-[2.5rem]" dir="rtl">
-                      <AlertDialogHeader><AlertDialogTitle className="text-right">حذف المنشور؟</AlertDialogTitle><AlertDialogDescription className="text-right">سيتم حذف هذا المنشور نهائياً من المجتمع.</AlertDialogDescription></AlertDialogHeader>
-                      <AlertDialogFooter className="gap-2"><AlertDialogAction onClick={() => handleDeletePost(post.id)} className="bg-destructive">نعم، احذف</AlertDialogAction><AlertDialogCancel>إلغاء</AlertDialogCancel></AlertDialogFooter>
+                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="rounded-full text-destructive/40 hover:text-destructive hover:bg-destructive/10"><Trash2 size={16} /></Button></AlertDialogTrigger>
+                    <AlertDialogContent className="rounded-[2.5rem] p-10 text-center" dir="rtl">
+                      <AlertDialogHeader><AlertDialogTitle className="text-2xl font-black text-primary text-right">حذف المنشور؟</AlertDialogTitle><AlertDialogDescription className="text-sm font-bold text-muted-foreground text-right mt-2">هل أنت متأكد من رغبتك في حذف هذا المنشور نهائياً؟ 🐱⚠️</AlertDialogDescription></AlertDialogHeader>
+                      <AlertDialogFooter className="mt-6 flex flex-col sm:flex-row gap-2"><AlertDialogAction onClick={() => handleDeletePost(post.id)} className="flex-1 h-12 rounded-xl font-black bg-destructive hover:bg-destructive/90">نعم، احذف</AlertDialogAction><AlertDialogCancel className="flex-1 h-12 rounded-xl font-black">إلغاء</AlertDialogCancel></AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
                 )}
-              </div>
+              </CardHeader>
               <CardContent className="p-5 pt-2 space-y-4">
-                {post.text && <p className="text-sm font-bold text-primary/80 leading-relaxed text-right whitespace-pre-wrap">{post.text}</p>}
-                {post.image && (
-                  <div className="rounded-2xl overflow-hidden border border-border shadow-sm bg-black/5">
-                    <img src={post.image} className="w-full max-h-[400px] object-contain" alt="Post" />
-                  </div>
-                )}
+                {post.image && <img src={post.image} className="rounded-2xl w-full max-h-[400px] object-cover bg-black/5" alt="Post" />}
+                <p className="text-sm font-bold text-primary/80 leading-relaxed text-right whitespace-pre-wrap">{post.text}</p>
                 <div className="pt-3 border-t border-border/50 flex items-center gap-4">
-                  <button onClick={() => handleToggleLike(post.id)} className={cn("flex items-center gap-1.5 px-4 py-2 rounded-full transition-all", post.likes?.[user?.uid || ''] ? "bg-red-50 text-red-600 font-black" : "text-muted-foreground hover:bg-secondary font-bold")}>
+                  <button onClick={() => handleToggleLike(post.id)} className={cn("flex items-center gap-1.5 px-4 py-2 rounded-full transition-all", post.likes?.[user?.uid || ''] ? "bg-red-50 text-red-600 font-black shadow-sm" : "text-muted-foreground hover:bg-secondary font-bold")}>
                     <Heart size={18} fill={post.likes?.[user?.uid || ''] ? "currentColor" : "none"} />
                     <span className="text-xs">{Object.keys(post.likes || {}).length}</span>
                   </button>

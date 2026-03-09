@@ -158,9 +158,16 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   Study: studyChallenges,
 };
 
-// --- الـ 120 تحدي الجديدة والحصرية للماستر ---
-export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [];
+// الـ 120 تحدي الإضافية للمسار العام (حصرياً)
+export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [
+  // Fitness (30)
+  { type: 'Fitness', difficulty: 'متوسط', points: 70, time: 20, title: "ماستر اللياقة 1: تحمل السكوات", description: "أكبر عدد من السكوات خلال 20 دقيقة مع إثبات فيديو قصير أو صورة للعداد." },
+  { type: 'Fitness', difficulty: 'صعب', points: 100, time: 30, title: "ماستر اللياقة 2: ماراثون المنزل", description: "جري في المكان أو مشي سريع لمدة 30 دقيقة متواصلة دون توقف." },
+  { type: 'Fitness', difficulty: 'سهل', points: 50, time: 10, title: "ماستر اللياقة 3: تنشيط الجذع", description: "ثبات بلانك 2 دقيقة و50 تكرار لتمارين البطن." },
+  // ... (توليد باقي الـ 120 يدوياً بأسماء مميزة)
+];
 
+// توليد باقي الـ 120 تحدي بأسماء مميزة لضمان وجود قائمة كاملة
 const masterTitles: Record<TrackKey, string[]> = {
   Fitness: ["ضغط مكثف", "سكوات عميق", "بلانك حديدي", "كاردبو حارق", "تسلق جبال", "بربي الأساطير", "توازن الساموراي", "قوة الجذع", "انفجار الطاقة", "تمارين مركبة"],
   Nutrition: ["ديتوكس الماء", "منع السكر", "وجبة البروتين", "الأكل الصامت", "تحضير مسبق", "خضروات قوس قزح", "بدائل صحية", "صيام متقطع", "مضغ بطيء", "توازن العناصر"],
@@ -176,6 +183,7 @@ for (let i = 1; i <= 120; i++) {
   const diff = diffsArr[Math.floor((i - 1) / 40)];
   const time = diff === 'سهل' ? 10 : diff === 'متوسط' ? 30 : 60;
   const titleBase = masterTitles[type][i % 10];
+  
   ADDITIONAL_MASTER_CHALLENGES.push({
     id: `master-${i}`,
     type,

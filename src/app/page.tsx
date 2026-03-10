@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp } from 'firebase/database';
+import { ref, update } from 'firebase/database';
 import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -49,7 +49,6 @@ export default function Home() {
   useEffect(() => {
     if (userData && user && !hasCheckedStatus.current) {
       hasCheckedStatus.current = true; 
-      const todayStr = new Date().toLocaleDateString('en-CA');
       const now = Date.now();
       const updates: any = {};
       let needsUpdate = false;

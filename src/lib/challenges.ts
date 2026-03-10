@@ -9,7 +9,7 @@ export interface Challenge {
   difficulty: 'سهل' | 'متوسط' | 'صعب';
   points: number;
   type?: TrackKey; 
-  isTimeLocked?: boolean;
+  isTimeLocked?: boolean; 
 }
 
 const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
@@ -18,7 +18,6 @@ const getPoints = (diff: 'سهل' | 'متوسط' | 'صعب') => {
   return 100;
 };
 
-// --- تحديات المسارات الـ 30 الأصلية لكل مسار ---
 const fitnessChallenges: Challenge[] = [
   { title: "اليوم 1: البداية الصغيرة", description: "قم بـ 10 تمارين سكوات و 5 تمارين ضغط.", time: 5, difficulty: 'سهل', points: getPoints('سهل') },
   { title: "اليوم 2: تمدد الصباح", description: "ثبات بلانك لمدة 30 ثانية و دقيقتين تمدد.", time: 5, difficulty: 'سهل', points: getPoints('سهل'), isTimeLocked: true },
@@ -158,20 +157,17 @@ export const STATIC_CHALLENGES: Record<TrackKey, Challenge[]> = {
   Study: studyChallenges,
 };
 
-// الـ 120 تحدي الإضافية للمسار العام (حصرياً)
 export const ADDITIONAL_MASTER_CHALLENGES: Challenge[] = [];
 
-// توليد 120 تحدي ماستر فريد برمجياً مع أسماء مستلهمة
+const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
+const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
+
 const masterBaseTitles: Record<TrackKey, string[]> = {
   Fitness: ["ضغط الأساطير", "ماراثون السكوات", "بلانك الجليد", "انفجار الكارديو", "توازن الساموراي", "قوة الجذع", "تسلق القمة", "بربي المحاربين", "لياقة النينجا", "تحدي الجاذبية"],
   Nutrition: ["ديتوكس الماء", "منع السكر المطلق", "وجبة العمالقة", "صيام الماستر", "هندسة الألياف", "قوس قزح الصحي", "بدائل الطبيعة", "الأكل الصامت", "مضغ الأبطال", "توازن الكيمياء"],
   Behavior: ["تأمل الفجر", "امتنان عميق", "ديتوكس رقمي", "قوة الرفض", "ترتيب العقل", "وعي الحواس", "صبر الجبال", "تأكيدات النصر", "إدارة الزمن", "حديث الروح"],
   Study: ["تركيز بومودورو", "خرائط المعرفة", "بحث الأساطير", "إتقان اللغات", "كتابة ملهمة", "حل المعضلات", "تفكير نقدي", "ابتكار فكرة", "مراجعة شاملة", "عرض الإتقان"]
 };
-
-// تعريف القوائم اللازمة للتكرار البرمجي لضمان عدم حدوث خطأ ReferenceError
-const types: TrackKey[] = ['Fitness', 'Nutrition', 'Behavior', 'Study'];
-const diffs: ('سهل' | 'متوسط' | 'صعب')[] = ['سهل', 'متوسط', 'صعب'];
 
 for (let i = 1; i <= 120; i++) {
   const type = types[i % 4];

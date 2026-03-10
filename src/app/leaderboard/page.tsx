@@ -3,10 +3,9 @@
 
 import React, { useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { Trophy, Medal, Flame, TrendingUp, Heart, Skull, AlertCircle, Crown, Timer, Swords } from "lucide-react";
+import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
-import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 
@@ -19,7 +18,6 @@ export default function LeaderboardPage() {
     if (!rawData) return { leaders: [], losers: [] };
     const todayStr = new Date().toLocaleDateString('en-CA');
     
-    // ضمان وجود المعرفات عبر استخدام Object.entries
     const allUsers = Object.entries(rawData)
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin');
@@ -61,7 +59,7 @@ export default function LeaderboardPage() {
             </div>
             <div className="divide-y divide-border">
               {stats.leaders.map((user: any, index: number) => (
-                <div key={user.id || `leader-${index}`} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
+                <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
                   <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
                     <p className="font-black text-primary text-sm">{(user.points || 0).toLocaleString()}</p>
                     <p className="text-[7px] font-black text-muted-foreground uppercase text-center">إجمالي النقاط</p>
@@ -94,8 +92,8 @@ export default function LeaderboardPage() {
               <p className="text-[8px] font-bold opacity-80">فقدوا الالتزام أو خسروا مبارزات</p>
             </div>
             <div className="p-4 space-y-3">
-              {stats.losers.length > 0 ? stats.losers.map((user: any, idx: number) => (
-                <div key={user.id || `loser-${idx}`} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100">
+              {stats.losers.length > 0 ? stats.losers.map((user: any) => (
+                <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100">
                   <div className="flex flex-col items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px]">
                     <span className="text-[8px] font-black text-red-600 flex items-center gap-1">
                       {user.lastChallengeLossDate ? <Swords size={8}/> : <AlertCircle size={8}/>}

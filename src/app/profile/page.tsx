@@ -26,9 +26,6 @@ export default function ProfilePage() {
   const router = useRouter();
   const [showQr, setShowQr] = useState(false);
   
-  const allUsersRef = useMemoFirebase(() => ref(database, 'users'), [database]);
-  const { data: allUsersData, isLoading: isAllUsersLoading } = useDatabase(allUsersRef);
-  
   const profileRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(profileRef);
 
@@ -38,22 +35,6 @@ export default function ProfilePage() {
     }
   }, [user, isUserLoading, router]);
 
-  const membershipInfo = useMemo(() => {
-    if (!allUsersData || !user || !userData) return { rank: 0, total: 0 };
-    if (userData.name === 'admin') return { rank: 0, total: 0 };
-
-    const usersArray = Object.values(allUsersData) as any[];
-    const filteredUsers = usersArray.filter(u => u.name !== 'admin')
-      .sort((a, b) => {
-        const dateA = new Date(a.registrationDate || 0).getTime();
-        const dateB = new Date(b.registrationDate || 0).getTime();
-        return dateA - dateB;
-      });
-    
-    const rank = filteredUsers.findIndex(u => u.id === user.uid) + 1;
-    return { rank: rank > 0 ? rank : 1, total: filteredUsers.length };
-  }, [allUsersData, user, userData]);
-
   const handleLogout = async () => {
     playSound('click');
     await signOut(auth);
@@ -61,7 +42,7 @@ export default function ProfilePage() {
     router.replace('/login');
   };
 
-  if (isUserLoading || isDataLoading || isAllUsersLoading || (!user && !isUserLoading)) {
+  if (isUserLoading || isDataLoading || (!user && !isUserLoading)) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
         <div className="relative w-24 h-24 animate-bounce">
@@ -106,7 +87,7 @@ export default function ProfilePage() {
                 {(userData.isPremium === 1 || userData.name === 'admin') && <Crown size={24} className="text-yellow-500" fill="currentColor" />}
               </div>
               <span className="bg-primary/10 px-3 py-0.5 rounded-full text-[9px] font-black text-primary border border-primary/20">
-                {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${membershipInfo.rank} من ${membershipInfo.total}`}
+                {userData.name === 'admin' ? "العضو رقم 0" : `العضو رقم ${userData.registrationRank || 1}`}
               </span>
             </div>
             <p className="text-muted-foreground font-black text-sm italic">الرتبة : {getRankName(userData.points)}</p>

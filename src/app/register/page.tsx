@@ -59,7 +59,8 @@ export default function RegisterPage() {
     try {
       const dbRef = ref(database);
       const usersSnapshot = await get(child(dbRef, 'users'));
-      const allUsers = usersSnapshot.exists() ? Object.values(usersSnapshot.val()) : [];
+      const usersData = usersSnapshot.exists() ? usersSnapshot.val() : {};
+      const allUsers = Object.values(usersData);
       const normalizedName = name.trim().toLowerCase();
       
       const nameExists = allUsers.some((u: any) => u.name?.toLowerCase() === normalizedName);
@@ -74,9 +75,15 @@ export default function RegisterPage() {
 
       await sendEmailVerification(user);
 
-      // منطق "المستخدم صفر" للآدمن عند تصفير قاعدة البيانات
+      // منطق "المستخدم صفر" للآدمن
       const isAdminUser = normalizedName === 'admin';
-      const membershipRank = isAdminUser ? 0 : allUsers.length || 1;
+      let membershipRank = 0;
+      
+      if (!isAdminUser) {
+        // حساب الترتيب بحيث يكون الآدمن 0 والمستخدمين البقية يبدأون من 1
+        const maxRank = allUsers.reduce((max: number, curr: any) => Math.max(max, curr.registrationRank || 0), 0);
+        membershipRank = maxRank + 1;
+      }
 
       await set(ref(database, `users/${user.uid}`), {
         id: user.uid,

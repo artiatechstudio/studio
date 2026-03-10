@@ -23,7 +23,7 @@ export default function LeaderboardPage() {
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin');
 
-    // تصفية المستخدمين الذين نقاطهم أكبر من صفر فقط
+    // استثناء المستخدمين الذين نقاطهم صفر
     const leaders = allUsers
       .filter((u: any) => (u.points || 0) > 0)
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))

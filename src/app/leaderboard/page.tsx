@@ -23,7 +23,9 @@ export default function LeaderboardPage() {
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin');
 
-    const leaders = [...allUsers]
+    // تصفية المستخدمين الذين نقاطهم أكبر من صفر فقط
+    const leaders = allUsers
+      .filter((u: any) => (u.points || 0) > 0)
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
       .slice(0, 100);
 
@@ -42,7 +44,7 @@ export default function LeaderboardPage() {
   if (isLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6 text-center">
       <div className="relative w-32 h-32 animate-bounce">
-        <Image src="/logo.png" alt="Loading" fill className="object-contain" />
+        <Image src="/logo.png" alt="Loading" fill className="object-contain" priority />
       </div>
       <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
@@ -56,7 +58,7 @@ export default function LeaderboardPage() {
         <header className="space-y-2 px-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white"><Trophy size={20} /></div>
-            <div className="text-right"><h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1><p className="text-muted-foreground text-[9px] font-bold">الترتيب حسب إجمالي نقاط النمو ⚡</p></div>
+            <div className="text-right"><h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1><p className="text-muted-foreground text-[9px] font-bold">الأبطال النشطون فقط ⚡</p></div>
           </div>
         </header>
 
@@ -67,7 +69,9 @@ export default function LeaderboardPage() {
               <Timer size={14} className="text-primary opacity-40" />
             </div>
             <div className="divide-y divide-border">
-              {stats.leaders.map((user: any, index: number) => (
+              {stats.leaders.length === 0 ? (
+                <div className="p-20 text-center opacity-30 font-black">لا يوجد متصدرون حالياً ☕</div>
+              ) : stats.leaders.map((user: any, index: number) => (
                 <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
                   <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
                     <p className="font-black text-primary text-sm">{(user.points || 0).toLocaleString()}</p>

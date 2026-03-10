@@ -77,7 +77,9 @@ export default function LoginPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-6">
-           <div className="text-8xl animate-bounce">🐱</div>
+           <div className="relative w-24 h-24 animate-bounce">
+             <Image src="/logo.png" alt="Loading" fill className="object-contain" />
+           </div>
            <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
            <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
         </div>

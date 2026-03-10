@@ -49,7 +49,9 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden" dir="rtl">
       {showEntry ? (
         <div className="flex flex-col items-center gap-8 animate-in fade-in zoom-in duration-700 px-6 w-full max-w-sm text-center">
-          <div className="text-8xl animate-float mb-4">🐱</div>
+          <div className="relative w-32 h-32 animate-float mb-4">
+            <Image src="/logo.png" alt="Careingo Logo" fill className="object-contain" priority />
+          </div>
           <div className="space-y-2">
             <h1 className="text-3xl font-black text-primary">مرحباً بك في كارينجو</h1>
             <p className="text-muted-foreground font-bold">رفيقك الذكي لرحلة التغيير</p>

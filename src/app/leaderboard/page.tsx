@@ -2,6 +2,7 @@
 "use client"
 
 import React, { useMemo } from 'react';
+import Image from 'next/image';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
@@ -38,7 +39,15 @@ export default function LeaderboardPage() {
     return { leaders, losers };
   }, [rawData]);
 
-  if (isLoading) return <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6"><div className="text-8xl animate-bounce">🐱</div><div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" /><p className="text-primary font-black text-xl animate-pulse">Careingo</p></div>;
+  if (isLoading) return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6 text-center">
+      <div className="relative w-32 h-32 animate-bounce">
+        <Image src="/logo.png" alt="Loading" fill className="object-contain" />
+      </div>
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">

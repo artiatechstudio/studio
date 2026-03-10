@@ -2,6 +2,7 @@
 "use client"
 
 import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Card } from './ui/card';
 import { useUser, useDatabase, useMemoFirebase, useFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
@@ -147,8 +148,8 @@ export function Mascot({ messageOnly = false, customMessage }: MascotProps) {
     <div className="flex items-center gap-4 max-w-lg" dir="rtl">
       <div className="relative shrink-0 animate-float">
         <div className="absolute inset-0 bg-accent/20 blur-xl rounded-full scale-110" />
-        <div className="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center text-4xl md:text-5xl shadow-xl border-4 border-white dark:border-slate-700 relative z-10">
-          🐱
+        <div className="w-16 h-16 md:w-20 md:h-20 bg-white dark:bg-slate-800 rounded-full flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-700 relative z-10 overflow-hidden p-3">
+          <Image src="/logo.png" alt="Careingo Logo" width={60} height={60} className="object-contain" />
         </div>
         <div className="absolute -bottom-1 -left-1 bg-primary text-white px-2 py-0.5 rounded-full text-[9px] font-black z-20 shadow-md">
           كاري

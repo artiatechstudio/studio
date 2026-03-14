@@ -24,6 +24,14 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (!isUserLoading && user && user.emailVerified) {
+      // إرسال الـ UID إلى تطبيق الهاتف في حال تشغيله داخل WebView
+      if (typeof window !== 'undefined' && (window as any).CareingoApp) {
+        try {
+          (window as any).CareingoApp.postMessage(user.uid);
+        } catch (e) {
+          console.error("WebView Bridge Error:", e);
+        }
+      }
       router.replace('/');
     }
   }, [user, isUserLoading, router]);
@@ -34,9 +42,9 @@ export default function LoginPage() {
     playSound('click');
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const loggedInUser = userCredential.user;
 
-      if (!user.emailVerified) {
+      if (!loggedInUser.emailVerified) {
         toast({ 
           variant: "destructive", 
           title: "لم يتم تفعيل البريد", 
@@ -46,6 +54,12 @@ export default function LoginPage() {
       } else {
         playSound('login');
         toast({ title: "أهلاً بعودتك!", description: "جاري تحميل بياناتك..." });
+        
+        // التحقق مرة أخرى عند الضغط المباشر للتأكد من إرسال الرسالة للبريدج
+        if (typeof window !== 'undefined' && (window as any).CareingoApp) {
+          (window as any).CareingoApp.postMessage(loggedInUser.uid);
+        }
+        
         router.push('/');
       }
     } catch (error: any) {

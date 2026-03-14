@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update } from 'firebase/database';
-import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords } from 'lucide-react';
+import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords, ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -33,6 +33,16 @@ export default function Home() {
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading: isDataLoading } = useDatabase(userRef);
+
+  const challengesRef = useMemoFirebase(() => ref(database, 'challenges'), [database]);
+  const { data: allChallengesData } = useDatabase(challengesRef);
+
+  const activeDuels = useMemo(() => {
+    if (!allChallengesData || !user) return [];
+    return Object.entries(allChallengesData)
+      .map(([id, val]: [string, any]) => ({ id, ...val }))
+      .filter((c: any) => (c.senderId === user.uid || c.receiverId === user.uid));
+  }, [allChallengesData, user]);
 
   const allUsersRef = useMemoFirebase(() => userData?.name === 'admin' ? ref(database, 'users') : null, [database, userData]);
   const { data: allUsersData } = useDatabase(allUsersRef);
@@ -82,7 +92,7 @@ export default function Home() {
       ctx.font = '700 30px Cairo'; ctx.fillText(isWin ? 'انتصار بطل! 🏆' : isTie ? 'تعادل عادل! ⚖️' : 'كبوة محارب! ⚔️', 200, 180);
       ctx.font = '400 20px Cairo'; ctx.fillText(`تحدي: ${res.title}`, 200, 240);
       ctx.fillStyle = 'rgba(255,255,255,0.1)'; ctx.fillRect(50, 280, 300, 150);
-      ctx.fillStyle = 'white'; ctx.font = '700 24px Cairo'; ctx.fillText(isWin ? `+${res?.stake || 0} نقطة` : isTie ? '0 نقطة' : `-${res?.stake || 0} نقطة`, 200, 350);
+      ctx.fillStyle = 'white'; ctx.font = '700 24px Cairo'; ctx.fillText(isWin ? `+${res.stake || 0} نقطة` : isTie ? '0 نقطة' : `-${res.stake || 0} نقطة`, 200, 350);
       ctx.font = '700 16px Cairo'; ctx.fillText('تواصل، تحدى، تطور مع كارينجو', 200, 500);
       canvas.toBlob(async (blob) => {
         if (!blob) return;
@@ -138,7 +148,51 @@ export default function Home() {
                 <div className="overflow-hidden flex-1"><p className="text-[10px] font-black text-muted-foreground uppercase mb-1">مؤشر الكتلة</p><div className="flex items-center gap-2"><span className={cn("text-lg font-black", bmiInfo.color)}>{bmiInfo.value}</span><span className={cn("text-[8px] font-black uppercase opacity-60", bmiInfo.color)}>{bmiInfo.status}</span></div></div>
               </Card></Link>
             </div>
+            
             <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner"><Mascot /></section>
+
+            <section className="space-y-4 mx-2">
+              <h2 className="text-xl font-black text-primary px-2 text-right flex items-center justify-end gap-2">المبارزات <Swords size={20} className="text-red-500" /></h2>
+              {activeDuels.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3">
+                  {activeDuels.map((duel: any) => (
+                    <Link key={duel.id} href="/track/master">
+                      <Card className="p-4 rounded-[1.5rem] border-2 border-red-100 bg-red-50/30 flex items-center justify-between hover:scale-[1.01] transition-transform">
+                        <div className="flex items-center gap-3">
+                           <div className="px-2 py-1 bg-red-500 text-white rounded-lg text-[8px] font-black animate-pulse">جاري التحدي</div>
+                           <ArrowLeft size={14} className="text-primary opacity-30" />
+                        </div>
+                        <div className="text-right">
+                          <p className="font-black text-primary text-xs">{duel.title}</p>
+                          <p className="text-[9px] font-bold text-muted-foreground">الرهان: {duel.pointsStake}ن • ضد: {duel.senderId === user?.uid ? duel.receiverName : duel.senderName}</p>
+                        </div>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : userData?.latestChallengeResult ? (
+                <Card className={cn(
+                  "p-5 rounded-[2rem] border-none shadow-md relative overflow-hidden",
+                  userData.latestChallengeResult.status === 'win' ? "bg-green-50" : "bg-red-50"
+                )}>
+                  <div className="flex items-center justify-between relative z-10">
+                    <div className="flex items-center gap-2">
+                       <Trophy className={userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600"} size={20}/>
+                       <span className={cn("text-[10px] font-black", userData.latestChallengeResult.status === 'win' ? "text-green-700" : "text-red-700")}>آخر نتيجة</span>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-black text-primary text-xs">{userData.latestChallengeResult.title}</p>
+                      <p className={cn("font-bold text-[10px]", userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600")}>
+                        {userData.latestChallengeResult.status === 'win' ? 'انتصار مستحق! 🏆' : userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل ⚖️' : 'هزيمة مشرفة ⚔️'}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+              ) : (
+                <div className="text-center py-8 opacity-20 font-black text-sm border-2 border-dashed rounded-[2rem] mx-2">لا توجد مبارزات نشطة</div>
+              )}
+            </section>
+
             <section className="space-y-4 mx-2">
               <h2 className="text-xl font-black text-primary px-2 text-right">مسارات النمو</h2>
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -165,12 +219,7 @@ export default function Home() {
             <DialogTitle className="text-2xl font-black text-primary">{res?.status === 'win' ? 'انتصرت في المبارزة! 🏆' : res?.status === 'tie' ? 'تعادل سيد الأحكام! ⚖️' : 'خسرت التحدي.. ⚔️'}</DialogTitle>
             <DialogDescription className="text-sm font-bold text-muted-foreground mt-2">تحدي: {res?.title || "..."}</DialogDescription>
             <div className="py-6 space-y-4">
-              <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center">
-                <span className="text-[10px] font-black text-muted-foreground uppercase">النقاط</span>
-                <span className={cn("text-lg font-black", res?.status === 'win' ? "text-green-600" : "text-red-600")}>
-                  {res?.status === 'win' ? `+${res?.stake || 0}` : res?.status === 'tie' ? '0' : `-${res?.stake || 0}`}ن
-                </span>
-              </div>
+              <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center"><span className="text-[10px] font-black text-muted-foreground uppercase">النقاط</span><span className={cn("text-lg font-black", res?.status === 'win' ? "text-green-600" : "text-red-600")}>{res?.status === 'win' ? `+${res?.stake || 0}` : res?.status === 'tie' ? '0' : `-${res?.stake || 0}`}ن</span></div>
             </div>
             <div className="flex flex-col gap-2">
               <Button onClick={handleShareResult} disabled={isGenerating} className="w-full h-12 rounded-xl bg-accent font-black gap-2">{isGenerating ? <Loader2 className="animate-spin" /> : <Share2 size={18} />} مشاركة النتيجة</Button>

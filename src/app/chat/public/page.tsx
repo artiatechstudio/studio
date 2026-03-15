@@ -4,35 +4,36 @@
 import React, { useState, useMemo, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, remove, runTransaction } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, remove, runTransaction } from 'firebase/database';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Camera, Heart, Trash2, Crown, Globe, Loader2, X } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, Send, Trash2, Heart, Crown, Loader2, Camera, X, ArrowLeft } from 'lucide-react';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
 import { toast } from '@/hooks/use-toast';
+import { ToastAction } from "@/components/ui/toast";
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function PublicChatPage() {
   const { user } = useUser();
   const { database } = useFirebase();
+  const router = useRouter();
   const [postText, setPostText] = useState('');
   const [postImage, setPostImage] = useState<string | null>(null);
-  const [isPosting, setIsPosting] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const postsRef = useMemoFirebase(() => ref(database, 'publicPosts'), [database]);
-  const { data: postsData, isLoading } = useDatabase(postsRef);
+  const postsQuery = useMemoFirebase(() => query(postsRef, limitToLast(50)), [postsRef]);
+  const { data: postsData, isLoading } = useDatabase(postsQuery);
 
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
 
-  const isAdmin = userData?.name === 'admin';
-  const isPremium = userData?.isPremium === 1 || isAdmin;
+  const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
 
   const compressImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
@@ -67,31 +68,39 @@ export default function PublicChatPage() {
 
   const handleSendPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if ((!postText.trim() && !postImage) || !user || isPosting) return;
+    if (!user || isSending || (!postText.trim() && !postImage)) return;
 
     const todayStr = new Date().toLocaleDateString('en-CA');
     const dailyCount = userData?.dailyPostCount?.[todayStr] || 0;
 
     if (!isPremium && dailyCount >= 2) {
-      toast({ variant: "destructive", title: "وصلت للحد اليومي 🛑", description: "يمكنك نشر منشورين فقط يومياً. اشترك في بريميوم للنشر بلا حدود! 👑" });
+      toast({
+        variant: "destructive",
+        title: "وصلت للحد اليومي 🛑",
+        description: "اشترك في بريميوم للنشر غير المحدود ودعم نموك!",
+        action: <ToastAction altText="اشترك الآن" onClick={() => router.push('/settings')}>اشترك الآن</ToastAction>,
+      });
       return;
     }
 
-    setIsPosting(true);
+    setIsSending(true);
     playSound('click');
 
     try {
-      await push(ref(database, 'publicPosts'), {
+      const newPost = {
         userId: user.uid,
-        userName: userData.name,
-        userAvatar: userData.avatar || '🐱',
-        isPremium: isPremium ? 1 : 0,
+        userName: userData?.name || 'بطل مجهول',
+        userAvatar: userData?.avatar || '🐱',
+        isPremium: isPremium,
         text: postText.trim(),
         image: postImage,
         timestamp: serverTimestamp(),
         likesCount: 0
-      });
+      };
 
+      await push(postsRef, newPost);
+      
+      // تحديث عداد المنشورات اليومي
       await runTransaction(ref(database, `users/${user.uid}/dailyPostCount/${todayStr}`), (curr) => (curr || 0) + 1);
 
       setPostText('');
@@ -101,33 +110,8 @@ export default function PublicChatPage() {
     } catch (e) {
       toast({ variant: "destructive", title: "فشل النشر" });
     } finally {
-      setIsPosting(false);
+      setIsSending(false);
     }
-  };
-
-  const handleDeletePost = async (postId: string) => {
-    if (window.confirm("هل أنت متأكد من حذف المنشور؟")) {
-      playSound('click');
-      await remove(ref(database, `publicPosts/${postId}`));
-      toast({ title: "تم الحذف" });
-    }
-  };
-
-  const handleLike = (postId: string) => {
-    if (!user) return;
-    playSound('click');
-    const likeRef = ref(database, `publicPosts/${postId}/likedBy/${user.uid}`);
-    const countRef = ref(database, `publicPosts/${postId}/likesCount`);
-
-    runTransaction(likeRef, (curr) => {
-      if (curr) {
-        runTransaction(countRef, c => (c || 1) - 1);
-        return null;
-      } else {
-        runTransaction(countRef, c => (c || 0) + 1);
-        return true;
-      }
-    });
   };
 
   const posts = useMemo(() => {
@@ -141,106 +125,123 @@ export default function PublicChatPage() {
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-6">
-        <header className="flex items-center gap-4 bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2">
-          <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center shadow-inner"><Globe size={24} /></div>
-          <div className="text-right">
-            <h1 className="text-xl font-black text-primary">المجتمع العام</h1>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase opacity-60">تواصل وألهم الأبطال 🌍</p>
+        <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-xl border border-border mx-2">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-accent/10 text-accent rounded-xl flex items-center justify-center shadow-inner"><ImageIcon size={24} /></div>
+            <h1 className="text-2xl font-black text-primary">المجتمع العام</h1>
           </div>
+          <Link href="/chat"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
         </header>
 
-        <Card className="rounded-[2rem] p-4 shadow-xl border-none bg-card mx-2">
+        <Card className="rounded-[2.5rem] p-4 shadow-xl border-none bg-card mx-2">
           <form onSubmit={handleSendPost} className="space-y-4">
-            <div className="flex gap-3 items-start">
-              <div className="w-10 h-10 rounded-full bg-secondary shrink-0 overflow-hidden flex items-center justify-center text-xl">
-                {userData?.avatar?.startsWith('data:image') ? <img src={userData.avatar} className="w-full h-full object-cover" /> : <span>{userData?.avatar || '🐱'}</span>}
-              </div>
-              <textarea 
-                placeholder="بماذا تفكر يا بطل؟..." 
-                className="flex-1 min-h-[80px] bg-secondary/30 rounded-2xl p-4 border-none text-sm font-bold resize-none focus:ring-2 ring-primary/20 outline-none"
-                value={postText}
-                onChange={(e) => setPostText(e.target.value)}
-              />
-            </div>
-            
+            <textarea 
+              placeholder="بماذا تفكر يا بطل؟..." 
+              className="w-full min-h-[100px] p-4 rounded-2xl bg-secondary/30 border-none font-bold text-right text-sm resize-none focus:ring-2 ring-primary/20 transition-all outline-none"
+              value={postText}
+              onChange={(e) => setPostText(e.target.value)}
+            />
             {postImage && (
-              <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-primary shadow-lg mr-12">
-                <img src={postImage} className="w-full h-full object-cover" />
-                <button onClick={() => setPostImage(null)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><X size={12}/></button>
+              <div className="relative w-32 h-32 rounded-2xl overflow-hidden border-2 border-primary shadow-md">
+                <img src={postImage} className="w-full h-full object-cover" alt="Preview" />
+                <button type="button" onClick={() => setPostImage(null)} className="absolute top-1 right-1 bg-black/50 text-white p-1 rounded-full"><X size={12}/></button>
               </div>
             )}
-
-            <div className="flex items-center justify-between border-t border-border/50 pt-3">
+            <div className="flex items-center justify-between">
               <div className="flex gap-2">
                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                <Button type="button" onClick={() => fileInputRef.current?.click()} size="icon" variant="ghost" className="h-10 w-10 rounded-xl text-primary" disabled={isCompressing}>
-                  {isCompressing ? <Loader2 className="animate-spin" size={18}/> : <Camera size={20}/>}
+                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="rounded-xl h-12 border-primary/20 text-primary gap-2" disabled={isCompressing}>
+                  {isCompressing ? <Loader2 className="animate-spin" size={18}/> : <Camera size={18}/>}
+                  صورة
                 </Button>
               </div>
-              <Button type="submit" disabled={isPosting || (!postText.trim() && !postImage)} className="h-10 px-6 rounded-xl bg-primary font-black gap-2">
-                {isPosting ? <Loader2 className="animate-spin" size={16}/> : <Send size={16} className="rotate-180" />} نشر الإلهام
+              <Button type="submit" disabled={isSending} className="h-12 px-8 rounded-xl bg-primary font-black shadow-lg shadow-primary/20 gap-2">
+                {isSending ? <Loader2 className="animate-spin" /> : <Send size={18} className="rotate-180" />}
+                انشر الآن
               </Button>
             </div>
           </form>
         </Card>
 
-        <div className="space-y-4 mx-2">
+        <div className="space-y-6 mx-2">
           {isLoading ? (
             <div className="flex justify-center py-20"><Loader2 className="animate-spin text-primary" /></div>
           ) : posts.length === 0 ? (
-            <div className="text-center py-20 opacity-30 font-black text-xl">كن أول من ينشر في المجتمع! 🐱🚀</div>
-          ) : posts.map((post) => {
-            const isLiked = post.likedBy?.[user?.uid || ''];
-            const isOwner = post.userId === user?.uid;
-            const canDelete = isOwner || isAdmin;
-
-            return (
-              <Card key={post.id} className="rounded-[2rem] shadow-md border-none overflow-hidden bg-card animate-in fade-in slide-in-from-bottom-4 duration-500">
-                <CardContent className="p-5 space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center overflow-hidden text-xl shadow-inner">
-                        {post.userAvatar?.startsWith('data:image') ? <img src={post.userAvatar} className="w-full h-full object-cover" /> : <span>{post.userAvatar}</span>}
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <p className="font-black text-primary text-xs">{post.userName}</p>
-                          {post.isPremium === 1 && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-                        </div>
-                        <p className="text-[8px] font-bold text-muted-foreground">{post.timestamp ? formatDistanceToNow(post.timestamp, { addSuffix: true, locale: ar }) : 'الآن'}</p>
-                      </div>
-                    </div>
-                    {canDelete && (
-                      <Button onClick={() => handleDeletePost(post.id)} variant="ghost" size="icon" className="text-destructive/30 hover:text-destructive h-8 w-8 rounded-full">
-                        <Trash2 size={14} />
-                      </Button>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    {post.text && <p className="text-sm font-bold text-primary/80 leading-relaxed whitespace-pre-wrap text-right">{post.text}</p>}
-                    {post.image && (
-                      <div className="rounded-2xl overflow-hidden border border-border shadow-sm">
-                        <img src={post.image} className="w-full max-h-96 object-contain bg-black/5" alt="Post content" />
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-4 pt-2 border-t border-border/30">
-                    <button 
-                      onClick={() => handleLike(post.id)} 
-                      className={cn("flex items-center gap-1.5 transition-all group", isLiked ? "text-red-500 scale-110" : "text-muted-foreground hover:text-red-400")}
-                    >
-                      <Heart size={18} fill={isLiked ? "currentColor" : "none"} className={cn(isLiked && "animate-bounce")} />
-                      <span className="text-[10px] font-black">{post.likesCount || 0}</span>
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+            <div className="text-center py-20 opacity-30 font-black text-xl">كن أول من يلهم المجتمع! 🌍✨</div>
+          ) : posts.map((post) => (
+            <PostCard key={post.id} post={post} currentUser={user} database={database} isAdmin={userData?.name === 'admin'} />
+          ))}
         </div>
       </div>
     </div>
+  );
+}
+
+function PostCard({ post, currentUser, database, isAdmin }: { post: any, currentUser: any, database: any, isAdmin: boolean }) {
+  const isLiked = post.likedBy?.[currentUser?.uid || ''];
+  const canDelete = post.userId === currentUser?.uid || isAdmin;
+
+  const handleLike = () => {
+    if (!currentUser) return;
+    playSound('click');
+    const likeRef = ref(database, `publicPosts/${post.id}/likedBy/${currentUser.uid}`);
+    const countRef = ref(database, `publicPosts/${post.id}/likesCount`);
+    
+    runTransaction(likeRef, (curr) => {
+      if (curr) {
+        runTransaction(countRef, (c) => (c || 1) - 1);
+        return null;
+      } else {
+        runTransaction(countRef, (c) => (c || 0) + 1);
+        return true;
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    if (!canDelete) return;
+    playSound('click');
+    if (confirm("هل تريد حذف هذا المنشور؟")) {
+      remove(ref(database, `publicPosts/${post.id}`));
+      toast({ title: "تم حذف المنشور" });
+    }
+  };
+
+  return (
+    <Card className="rounded-[2.5rem] overflow-hidden border-none shadow-lg bg-card">
+      <CardContent className="p-0">
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {canDelete && <Button onClick={handleDelete} variant="ghost" size="icon" className="text-destructive/30 hover:text-destructive"><Trash2 size={18} /></Button>}
+          </div>
+          <div className="flex items-center gap-3 flex-row-reverse">
+            <Link href={`/user/${post.userId}`}>
+              <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl overflow-hidden border border-border">
+                {post.userAvatar?.startsWith('data:image') || post.userAvatar?.startsWith('http') ? <img src={post.userAvatar} className="w-full h-full object-cover" /> : <span>{post.userAvatar}</span>}
+              </div>
+            </Link>
+            <div className="text-right">
+              <div className="flex items-center justify-end gap-1">
+                <p className="font-black text-primary text-xs">{post.userName}</p>
+                {post.isPremium && <Crown size={12} className="text-yellow-500" fill="currentColor" />}
+              </div>
+              <p className="text-[8px] font-bold text-muted-foreground opacity-60">
+                {post.timestamp ? new Date(post.timestamp).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' }) : 'الآن'}
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        {post.text && <p className="px-6 pb-4 text-sm font-bold text-slate-700 leading-relaxed text-right whitespace-pre-wrap">{post.text}</p>}
+        {post.image && <img src={post.image} className="w-full max-h-[400px] object-cover bg-secondary/20" alt="Post" />}
+        
+        <div className="p-4 border-t border-border flex items-center justify-end">
+          <Button onClick={handleLike} variant="ghost" className={cn("rounded-full gap-2 font-black text-xs", isLiked ? "text-red-500" : "text-muted-foreground")}>
+            <span>{post.likesCount || 0}</span>
+            <Heart size={20} fill={isLiked ? "currentColor" : "none"} />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }

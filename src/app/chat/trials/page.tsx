@@ -26,7 +26,7 @@ async function concludeTrialResult(database: any, challenge: any, winnerId: stri
     
     const updates: any = {};
     if (isTie) {
-      // لا تغيير
+      // لا تغيير في النقاط
     } else if (isWinner) {
       updates.points = (data.points || 0) + stake;
       updates.challengesWon = (data.challengesWon || 0) + 1;

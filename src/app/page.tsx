@@ -7,7 +7,7 @@ import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, push, serverTimestamp } from 'firebase/database';
-import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords, ArrowLeft } from 'lucide-react';
+import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords, ArrowLeft, History } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -41,16 +41,8 @@ export default function Home() {
     if (!allChallengesData || !user) return [];
     return Object.entries(allChallengesData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((c: any) => (c.senderId === user.uid || c.receiverId === user.uid) && c.status === 'active');
+      .filter((c: any) => (c.senderId === user.uid || c.receiverId === user.uid));
   }, [allChallengesData, user]);
-
-  const allUsersRef = useMemoFirebase(() => userData?.name === 'admin' ? ref(database, 'users') : null, [database, userData]);
-  const { data: allUsersData } = useDatabase(allUsersRef);
-
-  const pendingRequestsCount = useMemo(() => {
-    if (!allUsersData || userData?.name !== 'admin') return 0;
-    return Object.values(allUsersData).filter((u: any) => u.premiumRequest?.status === 'pending').length;
-  }, [allUsersData, userData]);
 
   useEffect(() => {
     if (!isUserLoading && !user) router.replace('/login');
@@ -65,14 +57,14 @@ export default function Home() {
 
       if (userData.hasSeenTour !== true) setShowTour(true);
       
-      // منطق حماية البريميوم: حذف الصورة عند انتهاء الصلاحية
+      // منطق حماية البريميوم: تجريد الامتيازات عند الانتهاء
       const isAdmin = userData.name === 'admin';
       if (!isAdmin && userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
         
-        // إزالة الصورة الشخصية إذا كانت موجودة (Base64) لكونها ميزة بريميوم
+        // إزالة الصورة الشخصية (ميزة بريميوم)
         if (userData.avatar && (userData.avatar.startsWith('data:image') || userData.avatar.startsWith('http'))) {
           updates.avatar = "🐱";
         }
@@ -172,8 +164,8 @@ export default function Home() {
               <div><h1 className="text-2xl font-black text-primary leading-tight">لوحة الإدارة العليا</h1><p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-wide">أهلاً بك يا مدير النظام ✨</p></div>
             </div>
             <div className="grid grid-cols-1 gap-3">
-              <Link href="/admin/requests"><Button className="w-full h-14 rounded-2xl bg-accent text-sm font-black gap-3 shadow-lg relative">
-                <Sparkles size={18} /> مراجعة الطلبات {pendingRequestsCount > 0 && <span className="absolute -top-2 -right-2 bg-red-600 text-white w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shadow-xl animate-bounce border-2 border-white">{pendingRequestsCount}</span>}
+              <Link href="/admin/requests"><Button className="w-full h-14 rounded-2xl bg-accent text-sm font-black gap-3 shadow-lg">
+                <Sparkles size={18} /> مراجعة طلبات الاشتراك
               </Button></Link>
               <Link href="/admin"><Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-primary text-primary text-sm font-black gap-3"><ShieldCheck size={18} /> دخول لوحة التحكم</Button></Link>
             </div>
@@ -193,19 +185,25 @@ export default function Home() {
             
             <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner"><Mascot /></section>
 
+            {/* قسم المبارزات المتطور */}
             <section className="space-y-4 mx-2">
               <h2 className="text-xl font-black text-primary px-2 text-right flex items-center justify-end gap-2">المبارزات <Swords size={20} className="text-red-500" /></h2>
-              <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3">
                 {activeDuels.length > 0 ? activeDuels.map((duel: any) => (
                   <Link key={duel.id} href="/track/master">
                     <Card className="p-4 rounded-[1.5rem] border-2 border-red-100 bg-red-50/30 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
                       <div className="flex items-center gap-3">
-                         <div className="px-2 py-1 bg-red-500 text-white rounded-lg text-[8px] font-black animate-pulse">جاري التحدي</div>
+                         <div className={cn(
+                           "px-2 py-1 rounded-lg text-[8px] font-black animate-pulse",
+                           duel.status === 'active' ? "bg-red-500 text-white" : "bg-orange-500 text-white"
+                         )}>
+                           {duel.status === 'active' ? "جاري التحدي" : "في انتظار التأكيد"}
+                         </div>
                          <ArrowLeft size={14} className="text-primary opacity-30" />
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-primary text-xs">{String(duel.title || "تحدي مبارزة")}</p>
-                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? String(duel.receiverName || "بطل") : String(duel.senderName || "بطل")}</p>
+                        <p className="font-black text-primary text-xs truncate max-w-[150px]">{duel.title}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? duel.receiverName : duel.senderName}</p>
                       </div>
                     </Card>
                   </Link>
@@ -213,18 +211,20 @@ export default function Home() {
 
                 {userData?.latestChallengeResult && (
                   <Card className={cn(
-                    "p-5 rounded-[2rem] border-none shadow-md relative overflow-hidden",
-                    userData.latestChallengeResult.status === 'win' ? "bg-green-50" : "bg-red-50"
+                    "p-5 rounded-[2rem] border-none shadow-md relative overflow-hidden group",
+                    userData.latestChallengeResult.status === 'win' ? "bg-green-50" : userData.latestChallengeResult.status === 'tie' ? "bg-blue-50" : "bg-red-50"
                   )}>
                     <div className="flex items-center justify-between relative z-10">
-                      <div className="flex items-center gap-2">
-                         <Trophy className={userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600"} size={20}/>
-                         <span className={cn("text-[10px] font-black", userData.latestChallengeResult.status === 'win' ? "text-green-700" : "text-red-700")}>آخر نتيجة</span>
-                      </div>
+                      <Button onClick={handleShareResult} variant="ghost" size="icon" className="rounded-full hover:bg-white/50"><Share2 size={16}/></Button>
                       <div className="text-right">
-                        <p className="font-black text-primary text-xs">{String(userData.latestChallengeResult.title || "...")}</p>
-                        <p className={cn("font-bold text-[10px]", userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600")}>
-                          {userData.latestChallengeResult.status === 'win' ? 'انتصار مستحق! 🏆' : userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل ⚖️' : 'هزيمة مشرفة ⚔️'}
+                        <p className="text-[8px] font-black text-muted-foreground uppercase flex items-center gap-1 justify-end"><History size={10}/> آخر نتيجة مبارزة</p>
+                        <p className="font-black text-primary text-xs mt-1">{userData.latestChallengeResult.title}</p>
+                        <p className={cn("font-black text-[10px] mt-0.5", 
+                          userData.latestChallengeResult.status === 'win' ? "text-green-600" : 
+                          userData.latestChallengeResult.status === 'tie' ? "text-blue-600" : "text-red-600"
+                        )}>
+                          {userData.latestChallengeResult.status === 'win' ? 'انتصرت بجدارة! 🏆' : 
+                           userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل! ⚖️' : 'هزيمة مشرفة ⚔️'}
                         </p>
                       </div>
                     </div>
@@ -232,7 +232,7 @@ export default function Home() {
                 )}
 
                 {activeDuels.length === 0 && !userData?.latestChallengeResult && (
-                  <div className="text-center py-8 opacity-20 font-black text-sm border-2 border-dashed rounded-[2rem]">لا توجد مبارزات حالية</div>
+                  <div className="text-center py-10 opacity-20 font-black text-sm border-2 border-dashed rounded-[2.5rem]">لا توجد مبارزات حالية.. تحدَّ الأبطال الآن! ⚔️</div>
                 )}
               </div>
             </section>

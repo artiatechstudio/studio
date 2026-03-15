@@ -65,7 +65,7 @@ export default function Home() {
 
       if (userData.hasSeenTour !== true) setShowTour(true);
       
-      // منطق انتهاء البريميوم
+      // منطق حماية البريميوم: حذف الصورة عند انتهاء الصلاحية
       const isAdmin = userData.name === 'admin';
       if (!isAdmin && userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
@@ -77,11 +77,10 @@ export default function Home() {
           updates.avatar = "🐱";
         }
 
-        // إرسال إشعار بانتهاء الصلاحية
         push(ref(database, `users/${user.uid}/notifications`), {
           type: 'system',
           title: 'انتهت رحلة البريميوم ⌛',
-          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً للاستمتاع بكافة الميزات!',
+          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً للاستمتاع بكافة الميزات وحفظ صورتك الشخصية!',
           isRead: false,
           timestamp: serverTimestamp()
         });
@@ -205,8 +204,8 @@ export default function Home() {
                          <ArrowLeft size={14} className="text-primary opacity-30" />
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-primary text-xs">{duel.title}</p>
-                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? String(duel.receiverName) : String(duel.senderName)}</p>
+                        <p className="font-black text-primary text-xs">{String(duel.title || "تحدي مبارزة")}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? String(duel.receiverName || "بطل") : String(duel.senderName || "بطل")}</p>
                       </div>
                     </Card>
                   </Link>
@@ -223,7 +222,7 @@ export default function Home() {
                          <span className={cn("text-[10px] font-black", userData.latestChallengeResult.status === 'win' ? "text-green-700" : "text-red-700")}>آخر نتيجة</span>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-primary text-xs">{String(userData.latestChallengeResult.title)}</p>
+                        <p className="font-black text-primary text-xs">{String(userData.latestChallengeResult.title || "...")}</p>
                         <p className={cn("font-bold text-[10px]", userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600")}>
                           {userData.latestChallengeResult.status === 'win' ? 'انتصار مستحق! 🏆' : userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل ⚖️' : 'هزيمة مشرفة ⚔️'}
                         </p>

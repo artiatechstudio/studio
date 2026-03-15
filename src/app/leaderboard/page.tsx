@@ -26,8 +26,8 @@ export default function LeaderboardPage() {
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin');
 
-    // استثناء المستخدمين الذين نقاطهم صفر
-    const leaders = allUsers
+    // استثناء المستخدمين الذين نقاطهم صفر تماماً
+    const activeLeaders = allUsers
       .filter((u: any) => (u.points || 0) > 0)
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
 
@@ -41,9 +41,9 @@ export default function LeaderboardPage() {
       .slice(0, 20);
 
     return { 
-      leaders: leaders.slice(0, displayLimit), 
+      leaders: activeLeaders.slice(0, displayLimit), 
       losers,
-      totalLeaders: leaders.length 
+      totalLeaders: activeLeaders.length 
     };
   }, [rawData, displayLimit]);
 
@@ -64,19 +64,22 @@ export default function LeaderboardPage() {
         <header className="space-y-2 px-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white"><Trophy size={20} /></div>
-            <div className="text-right"><h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1><p className="text-muted-foreground text-[9px] font-bold">الأبطال النشطون فقط ⚡</p></div>
+            <div className="text-right">
+              <h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1>
+              <p className="text-muted-foreground text-[9px] font-bold">الأبطال الذين جمعوا النقاط فقط ⚡</p>
+            </div>
           </div>
         </header>
 
         <div className="space-y-10">
           <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
             <div className="p-4 border-b border-border bg-secondary/5 text-right flex items-center justify-between flex-row-reverse px-6">
-              <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع</h2>
+              <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع (التقسيم لصفحات)</h2>
               <Timer size={14} className="text-primary opacity-40" />
             </div>
             <div className="divide-y divide-border">
               {stats.leaders.length === 0 ? (
-                <div className="p-20 text-center opacity-30 font-black">لا يوجد متصدرون حالياً ☕</div>
+                <div className="p-20 text-center opacity-30 font-black">لا يوجد متصدرون بنقاط حالياً ☕</div>
               ) : stats.leaders.map((user: any, index: number) => (
                 <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
                   <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
@@ -89,11 +92,18 @@ export default function LeaderboardPage() {
                     </div>
                     <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
                       <div className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white rounded-full overflow-hidden relative">
-                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? <img src={user.avatar} className="object-cover w-full h-full" alt={user.name} /> : <span className="text-xl">{user.avatar || "🐱"}</span>}
+                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? (
+                          <img src={user.avatar} className="object-cover w-full h-full" alt={user.name} />
+                        ) : (
+                          <span className="text-xl">{user.avatar || "🐱"}</span>
+                        )}
                       </div>
                     </Link>
                     <div className="text-right overflow-hidden flex-1 px-1">
-                      <div className="flex items-center justify-end gap-1 mb-1"><h3 className="font-black text-primary text-[11px] truncate">{user.name}</h3>{(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}</div>
+                      <div className="flex items-center justify-end gap-1 mb-1">
+                        <h3 className="font-black text-primary text-[11px] truncate">{user.name}</h3>
+                        {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                      </div>
                       <div className="flex flex-wrap items-center justify-end gap-1">
                         <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600"><Flame size={8} fill="currentColor" /> {user.streak || 0}ي</span>
                         <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600"><Swords size={8} /> {user.challengesWon || 0}</span>
@@ -134,7 +144,11 @@ export default function LeaderboardPage() {
                   <div className="flex items-center gap-3 flex-row-reverse">
                     <Link href={`/user/${user.id}`} className="shrink-0">
                       <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden border border-border">
-                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? <img src={user.avatar} className="object-cover w-full h-full opacity-50" alt={user.name} /> : <span className="opacity-50">{user.avatar || "🐱"}</span>}
+                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? (
+                          <img src={user.avatar} className="object-cover w-full h-full opacity-50" alt={user.name} />
+                        ) : (
+                          <span className="opacity-50">{user.avatar || "🐱"}</span>
+                        )}
                       </div>
                     </Link>
                     <div className="text-right"><p className="font-black text-red-900 text-xs">{user.name}</p><p className="text-[8px] font-bold text-red-400">سقط في {user.lastChallengeLossDate || user.lastStreakPenaltyDate}</p></div>

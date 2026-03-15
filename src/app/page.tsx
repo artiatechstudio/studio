@@ -72,7 +72,7 @@ export default function Home() {
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
         
-        // فقدان الصورة الشخصية إذا كانت موجودة (Base64)
+        // إزالة الصورة الشخصية إذا كانت موجودة (Base64) لكونها ميزة بريميوم
         if (userData.avatar && (userData.avatar.startsWith('data:image') || userData.avatar.startsWith('http'))) {
           updates.avatar = "🐱";
         }
@@ -184,7 +184,7 @@ export default function Home() {
             <div className="grid grid-cols-2 gap-3 mx-2">
               <Link href="/streak"><Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
                 <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600 shrink-0"><Flame size={20} fill="currentColor" /></div>
-                <div className="overflow-hidden flex-1"><p className="text-[10px] font-black text-muted-foreground uppercase mb-1">سجل الحماسة</p><div className="flex items-center gap-2"><span className="text-lg font-black text-orange-600">{userData?.streak || 0}ي</span><div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden"><div className="bg-orange-50 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} /></div></div></div>
+                <div className="overflow-hidden flex-1"><p className="text-[10px] font-black text-muted-foreground uppercase mb-1">سجل الحماسة</p><div className="flex items-center gap-2"><span className="text-lg font-black text-orange-600">{userData?.streak || 0}ي</span><div className="flex-1 bg-secondary h-1.5 rounded-full overflow-hidden"><div className="bg-orange-500 h-full transition-all duration-1000" style={{ width: `${Math.min(100, ((userData?.streak || 0) / 30) * 100)}%` }} /></div></div></div>
               </Card></Link>
               <Link href="/profile"><Card className="p-4 rounded-[1.5rem] shadow-md border border-border flex items-center gap-3 bg-card hover:scale-[1.02] transition-transform">
                 <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center text-green-600 shrink-0"><HeartPulse size={20} /></div>
@@ -206,7 +206,7 @@ export default function Home() {
                       </div>
                       <div className="text-right">
                         <p className="font-black text-primary text-xs">{duel.title}</p>
-                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? duel.receiverName : duel.senderName}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? String(duel.receiverName) : String(duel.senderName)}</p>
                       </div>
                     </Card>
                   </Link>
@@ -223,7 +223,7 @@ export default function Home() {
                          <span className={cn("text-[10px] font-black", userData.latestChallengeResult.status === 'win' ? "text-green-700" : "text-red-700")}>آخر نتيجة</span>
                       </div>
                       <div className="text-right">
-                        <p className="font-black text-primary text-xs">{userData.latestChallengeResult.title}</p>
+                        <p className="font-black text-primary text-xs">{String(userData.latestChallengeResult.title)}</p>
                         <p className={cn("font-bold text-[10px]", userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600")}>
                           {userData.latestChallengeResult.status === 'win' ? 'انتصار مستحق! 🏆' : userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل ⚖️' : 'هزيمة مشرفة ⚔️'}
                         </p>
@@ -262,7 +262,7 @@ export default function Home() {
               {res?.status === 'win' ? <Trophy size={48} /> : res?.status === 'tie' ? <Swords size={48} /> : <XCircle size={48} />}
             </div>
             <DialogTitle className="text-2xl font-black text-primary">{res?.status === 'win' ? 'انتصرت في المبارزة! 🏆' : res?.status === 'tie' ? 'تعادل سيد الأحكام! ⚖️' : 'خسرت التحدي.. ⚔️'}</DialogTitle>
-            <DialogDescription className="text-sm font-bold text-muted-foreground mt-2">تحدي: {res?.title || "..."}</DialogDescription>
+            <DialogDescription className="text-sm font-bold text-muted-foreground mt-2">تحدي: {String(res?.title || "...")}</DialogDescription>
             <div className="py-6 space-y-4">
               <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center"><span className="text-[10px] font-black text-muted-foreground uppercase">النقاط</span><span className={cn("text-lg font-black", res?.status === 'win' ? "text-green-600" : "text-red-600")}>{res?.status === 'win' ? `+${res?.stake || 0}` : res?.status === 'tie' ? '0' : `-${res?.stake || 0}`}ن</span></div>
             </div>

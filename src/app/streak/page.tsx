@@ -85,7 +85,7 @@ export default function StreakPage() {
 
       ctx.save();
       ctx.beginPath(); ctx.arc(200, 120, 60, 0, Math.PI * 2); ctx.clip();
-      const avatar = userData?.avatar || "🐱";
+      const avatar = String(userData?.avatar || "🐱");
       if (avatar.startsWith('data:image') || avatar.startsWith('http')) {
         const img = new Image(); img.crossOrigin = "anonymous"; img.src = avatar;
         await new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; });
@@ -97,7 +97,7 @@ export default function StreakPage() {
       ctx.restore();
 
       ctx.fillStyle = 'white'; ctx.textAlign = 'center';
-      ctx.font = 'bold 28px Arial'; ctx.fillText(userData?.name || 'Hero', 200, 220);
+      ctx.font = 'bold 28px Arial'; ctx.fillText(String(userData?.name || 'Hero'), 200, 220);
       ctx.font = 'bold 16px Arial'; ctx.fillText(`الرتبة: ${getRankName(userData.points)}`, 200, 255);
 
       const drawBox = (y: number, l: string, v: string, i: string) => {

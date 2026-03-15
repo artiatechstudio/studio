@@ -41,7 +41,7 @@ export default function Home() {
     if (!allChallengesData || !user) return [];
     return Object.entries(allChallengesData)
       .map(([id, val]: [string, any]) => ({ id, ...val }))
-      .filter((c: any) => (c.senderId === user.uid || c.receiverId === user.uid));
+      .filter((c: any) => (c.senderId === user.uid || c.receiverId === user.uid) && c.status === 'active');
   }, [allChallengesData, user]);
 
   const allUsersRef = useMemoFirebase(() => userData?.name === 'admin' ? ref(database, 'users') : null, [database, userData]);
@@ -153,44 +153,46 @@ export default function Home() {
 
             <section className="space-y-4 mx-2">
               <h2 className="text-xl font-black text-primary px-2 text-right flex items-center justify-end gap-2">المبارزات <Swords size={20} className="text-red-500" /></h2>
-              {activeDuels.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3">
-                  {activeDuels.map((duel: any) => (
-                    <Link key={duel.id} href="/track/master">
-                      <Card className="p-4 rounded-[1.5rem] border-2 border-red-100 bg-red-50/30 flex items-center justify-between hover:scale-[1.01] transition-transform">
-                        <div className="flex items-center gap-3">
-                           <div className="px-2 py-1 bg-red-500 text-white rounded-lg text-[8px] font-black animate-pulse">جاري التحدي</div>
-                           <ArrowLeft size={14} className="text-primary opacity-30" />
-                        </div>
-                        <div className="text-right">
-                          <p className="font-black text-primary text-xs">{duel.title}</p>
-                          <p className="text-[9px] font-bold text-muted-foreground">الرهان: {duel.pointsStake}ن • ضد: {duel.senderId === user?.uid ? duel.receiverName : duel.senderName}</p>
-                        </div>
-                      </Card>
-                    </Link>
-                  ))}
-                </div>
-              ) : userData?.latestChallengeResult ? (
-                <Card className={cn(
-                  "p-5 rounded-[2rem] border-none shadow-md relative overflow-hidden",
-                  userData.latestChallengeResult.status === 'win' ? "bg-green-50" : "bg-red-50"
-                )}>
-                  <div className="flex items-center justify-between relative z-10">
-                    <div className="flex items-center gap-2">
-                       <Trophy className={userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600"} size={20}/>
-                       <span className={cn("text-[10px] font-black", userData.latestChallengeResult.status === 'win' ? "text-green-700" : "text-red-700")}>آخر نتيجة</span>
+              <div className="space-y-3">
+                {activeDuels.length > 0 ? activeDuels.map((duel: any) => (
+                  <Link key={duel.id} href="/track/master">
+                    <Card className="p-4 rounded-[1.5rem] border-2 border-red-100 bg-red-50/30 flex items-center justify-between hover:scale-[1.01] transition-transform shadow-sm">
+                      <div className="flex items-center gap-3">
+                         <div className="px-2 py-1 bg-red-500 text-white rounded-lg text-[8px] font-black animate-pulse">جاري التحدي</div>
+                         <ArrowLeft size={14} className="text-primary opacity-30" />
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-primary text-xs">{duel.title}</p>
+                        <p className="text-[9px] font-bold text-muted-foreground">ضد: {duel.senderId === user?.uid ? duel.receiverName : duel.senderName}</p>
+                      </div>
+                    </Card>
+                  </Link>
+                )) : null}
+
+                {userData?.latestChallengeResult && (
+                  <Card className={cn(
+                    "p-5 rounded-[2rem] border-none shadow-md relative overflow-hidden",
+                    userData.latestChallengeResult.status === 'win' ? "bg-green-50" : "bg-red-50"
+                  )}>
+                    <div className="flex items-center justify-between relative z-10">
+                      <div className="flex items-center gap-2">
+                         <Trophy className={userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600"} size={20}/>
+                         <span className={cn("text-[10px] font-black", userData.latestChallengeResult.status === 'win' ? "text-green-700" : "text-red-700")}>آخر نتيجة</span>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-primary text-xs">{userData.latestChallengeResult.title}</p>
+                        <p className={cn("font-bold text-[10px]", userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600")}>
+                          {userData.latestChallengeResult.status === 'win' ? 'انتصار مستحق! 🏆' : userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل ⚖️' : 'هزيمة مشرفة ⚔️'}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-black text-primary text-xs">{userData.latestChallengeResult.title}</p>
-                      <p className={cn("font-bold text-[10px]", userData.latestChallengeResult.status === 'win' ? "text-green-600" : "text-red-600")}>
-                        {userData.latestChallengeResult.status === 'win' ? 'انتصار مستحق! 🏆' : userData.latestChallengeResult.status === 'tie' ? 'تعادل عادل ⚖️' : 'هزيمة مشرفة ⚔️'}
-                      </p>
-                    </div>
-                  </div>
-                </Card>
-              ) : (
-                <div className="text-center py-8 opacity-20 font-black text-sm border-2 border-dashed rounded-[2rem] mx-2">لا توجد مبارزات نشطة</div>
-              )}
+                  </Card>
+                )}
+
+                {activeDuels.length === 0 && !userData?.latestChallengeResult && (
+                  <div className="text-center py-8 opacity-20 font-black text-sm border-2 border-dashed rounded-[2rem]">لا توجد مبارزات حالية</div>
+                )}
+              </div>
             </section>
 
             <section className="space-y-4 mx-2">

@@ -1,46 +1,24 @@
 
 "use client"
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Maximize } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
   const [mounted, setMounted] = useState(false);
   const [showEntry, setShowEntry] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-    const handleFsChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
-    document.addEventListener('fullscreenchange', handleFsChange);
-    return () => document.removeEventListener('fullscreenchange', handleFsChange);
   }, []);
 
-  const requestFull = useCallback(async () => {
-    try {
-      const doc = document.documentElement as any;
-      const request = doc.requestFullscreen || 
-                      doc.mozRequestFullScreen || 
-                      doc.webkitRequestFullscreen || 
-                      doc.msRequestFullscreen;
-      if (request) {
-        await request.call(doc);
-      }
-    } catch (e) {
-      console.warn("Fullscreen request failed", e);
-    }
-  }, []);
-
-  const handleStartApp = async () => {
-    await requestFull();
+  const handleStartApp = () => {
     setShowEntry(false);
     setTimeout(() => {
       onComplete();
-    }, 2500);
+    }, 2000);
   };
 
   if (!mounted) return null;
@@ -63,15 +41,14 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             <Sparkles className="group-hover:rotate-12 transition-transform" />
             ابدأ تطوير ذاتك
           </Button>
-          <p className="text-[10px] text-muted-foreground/60 font-bold">سيتم فتح التطبيق في وضع ملء الشاشة لأفضل تجربة</p>
         </div>
       ) : (
         <>
           <div className="flex flex-col items-center gap-0 w-full relative animate-in fade-in duration-500">
-            <div className="relative w-64 h-64 md:w-80 md:h-80 animate-float">
+            <div className="relative w-48 h-48 animate-float">
               <Image 
-                src="/splash.png" 
-                alt="Careingo Icon" 
+                src="/logo.png" 
+                alt="Careingo Logo" 
                 fill
                 className="object-contain"
                 priority
@@ -88,17 +65,6 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             </div>
           </div>
         </>
-      )}
-
-      {/* زر إعادة ملء الشاشة في حال الخروج المفاجئ (يظهر فقط بعد بدء التطبيق) */}
-      {!showEntry && !isFullscreen && (
-        <Button 
-          onClick={requestFull}
-          size="icon"
-          className="fixed top-4 right-4 z-[10000] rounded-full bg-primary/20 text-primary backdrop-blur-md border border-primary/20"
-        >
-          <Maximize size={18} />
-        </Button>
       )}
     </div>
   );

@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, update, runTransaction, get, remove } from 'firebase/database';
@@ -12,9 +12,6 @@ import { playSound } from '@/lib/sounds';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
 
-/**
- * دالة معالجة النتيجة الموحدة (مستوردة منطقياً من صفحة الماستر)
- */
 async function concludeTrialResult(database: any, challenge: any, winnerId: string | 'tie') {
   const todayStr = new Date().toLocaleDateString('en-CA');
   const stake = challenge.pointsStake || 50;
@@ -69,6 +66,9 @@ export default function TrialsPage() {
   const { user } = useUser();
   const { database } = useFirebase();
 
+  const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
+  const { data: userData } = useDatabase(userRef);
+
   const challengesRef = useMemoFirebase(() => ref(database, 'challenges'), [database]);
   const { data: challengesData, isLoading } = useDatabase(challengesRef);
 
@@ -79,6 +79,23 @@ export default function TrialsPage() {
       .filter((c: any) => c.status === 'awaiting_recognition')
       .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   }, [challengesData]);
+
+  // الحسم التلقائي بعد 24 ساعة
+  useEffect(() => {
+    if (trials.length > 0) {
+      trials.forEach(trial => {
+        const timePassed = Date.now() - (trial.createdAt || 0);
+        if (timePassed > 24 * 60 * 60 * 1000) {
+          const v1 = trial.votes?.[trial.senderId] || 0;
+          const v2 = trial.votes?.[trial.receiverId] || 0;
+          let winnerId: string | 'tie' = 'tie';
+          if (v1 > v2) winnerId = trial.senderId;
+          else if (v2 > v1) winnerId = trial.receiverId;
+          concludeTrialResult(database, trial, winnerId);
+        }
+      });
+    }
+  }, [trials, database]);
 
   const handleVote = async (challengeId: string, candidateId: string) => {
     if (!user) return;
@@ -115,6 +132,8 @@ export default function TrialsPage() {
     toast({ title: "تم حسم النزاع بناءً على أصوات الجمهور" });
   };
 
+  const isAdmin = userData?.name === 'admin';
+
   return (
     <div className="min-h-screen bg-background md:pr-72 pb-40" dir="rtl">
       <NavSidebar />
@@ -133,7 +152,7 @@ export default function TrialsPage() {
         <div className="bg-orange-50 border border-orange-100 p-4 rounded-[1.5rem] mx-2 flex items-start gap-3 shadow-sm">
           <Scale className="text-orange-600 shrink-0" size={20} />
           <p className="text-[10px] font-bold text-orange-800 text-right leading-relaxed">
-            راجع صورة الإثبات المرفقة وقارنها باسم التحدي، ثم صوت لمن تراه صادقاً. العدل هو أساس مجتمع كارينجو!
+            راجع صورة الإثبات المرفقة وقارنها باسم التحدي، ثم صوت لمن تراه صادقاً. العدل هو أساس مجتمع كارينجو! النزاع يُحسم تلقائياً بعد 24 ساعة.
           </p>
         </div>
 
@@ -175,8 +194,10 @@ export default function TrialsPage() {
                   </div>
                 </div>
                 <div className="pt-4 border-t border-border flex items-center justify-between opacity-60">
-                  <Button onClick={() => handleConclude(trial)} variant="ghost" size="sm" className="text-[9px] font-black text-primary hover:bg-primary/5">حسم النزاع (بناءً على التصويت)</Button>
-                  <p className="text-[9px] font-black">المعرف: #{trial.id.slice(-5)}</p>
+                  {isAdmin && (
+                    <Button onClick={() => handleConclude(trial)} variant="ghost" size="sm" className="text-[9px] font-black text-primary hover:bg-primary/5">حسم النزاع (إدارة) 🛡️</Button>
+                  )}
+                  <p className="text-[9px] font-black mr-auto">المعرف: #{trial.id.slice(-5)}</p>
                 </div>
               </CardContent>
             </Card>

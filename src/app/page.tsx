@@ -57,14 +57,14 @@ export default function Home() {
 
       if (userData.hasSeenTour !== true) setShowTour(true);
       
-      // منطق حماية البريميوم: تجريد الامتيازات عند الانتهاء
+      // منطق حماية البريميوم: تجريد الامتيازات وحذف الصورة الشخصية عند الانتهاء
       const isAdmin = userData.name === 'admin';
       if (!isAdmin && userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
         
-        // إزالة الصورة الشخصية (ميزة بريميوم)
+        // إزالة الصورة الشخصية (ميزة بريميوم) وإعادتها للأفاتار الافتراضي
         if (userData.avatar && (userData.avatar.startsWith('data:image') || userData.avatar.startsWith('http'))) {
           updates.avatar = "🐱";
         }
@@ -81,7 +81,7 @@ export default function Home() {
         toast({ 
           variant: "destructive", 
           title: "انتهى اشتراك بريميوم", 
-          description: "تمت إعادتك للوضع العادي وحذف الصورة الشخصية." 
+          description: "تمت إعادتك للوضع العادي وحذف صورتك الشخصية." 
         });
       }
 
@@ -185,7 +185,6 @@ export default function Home() {
             
             <section className="bg-primary/5 rounded-[2rem] p-5 border border-primary/10 mx-2 shadow-inner"><Mascot /></section>
 
-            {/* قسم المبارزات المتطور */}
             <section className="space-y-4 mx-2">
               <h2 className="text-xl font-black text-primary px-2 text-right flex items-center justify-end gap-2">المبارزات <Swords size={20} className="text-red-500" /></h2>
               <div className="grid grid-cols-1 gap-3">

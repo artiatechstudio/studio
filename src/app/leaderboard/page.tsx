@@ -1,22 +1,25 @@
 
 "use client"
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import { NavSidebar } from '@/components/nav-sidebar';
-import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle } from "lucide-react";
+import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle, ChevronDown, Loader2 } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
+import { Button } from '@/components/ui/button';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
-  const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
+  const [displayLimit, setDisplayLimit] = useState(20);
+  
+  const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(100)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
   const stats = useMemo(() => {
-    if (!rawData) return { leaders: [], losers: [] };
+    if (!rawData) return { leaders: [], losers: [], totalLeaders: 0 };
     const todayStr = new Date().toLocaleDateString('en-CA');
     
     const allUsers = Object.entries(rawData)
@@ -26,8 +29,7 @@ export default function LeaderboardPage() {
     // استثناء المستخدمين الذين نقاطهم صفر
     const leaders = allUsers
       .filter((u: any) => (u.points || 0) > 0)
-      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
-      .slice(0, 100);
+      .sort((a: any, b: any) => (b.points || 0) - (a.points || 0));
 
     const losers = allUsers
       .filter((user: any) => {
@@ -38,8 +40,12 @@ export default function LeaderboardPage() {
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
       .slice(0, 20);
 
-    return { leaders, losers };
-  }, [rawData]);
+    return { 
+      leaders: leaders.slice(0, displayLimit), 
+      losers,
+      totalLeaders: leaders.length 
+    };
+  }, [rawData, displayLimit]);
 
   if (isLoading) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6 text-center">
@@ -97,6 +103,18 @@ export default function LeaderboardPage() {
                 </div>
               ))}
             </div>
+            
+            {stats.totalLeaders > displayLimit && (
+              <div className="p-4 border-t border-border bg-secondary/5">
+                <Button 
+                  onClick={() => { setDisplayLimit(prev => prev + 20); playSound('click'); }} 
+                  variant="ghost" 
+                  className="w-full font-black text-primary gap-2"
+                >
+                  <ChevronDown size={18} /> عرض المزيد من الأبطال
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">

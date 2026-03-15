@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update } from 'firebase/database';
+import { ref, update, push, serverTimestamp } from 'firebase/database';
 import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords, ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -64,10 +64,53 @@ export default function Home() {
       let needsUpdate = false;
 
       if (userData.hasSeenTour !== true) setShowTour(true);
-      if (userData.showChallengeResult) { setShowResultDialog(true); playSound('success'); updates.showChallengeResult = false; needsUpdate = true; }
-      if (!userData.notificationsEnabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') requestNotificationPermission(auth, database);
-      if (userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) { updates.isPremium = 0; updates.premiumUntil = null; updates[`premiumRequest/status`] = 'expired'; needsUpdate = true; toast({ title: "انتهى اشتراك بريميوم" }); }
-      if (userData.showPremiumCelebration) { setShowCelebration(true); playSound('success'); updates.showPremiumCelebration = false; needsUpdate = true; }
+      
+      // منطق انتهاء البريميوم
+      const isAdmin = userData.name === 'admin';
+      if (!isAdmin && userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
+        updates.isPremium = 0;
+        updates.premiumUntil = null;
+        updates[`premiumRequest/status`] = 'expired';
+        
+        // فقدان الصورة الشخصية إذا كانت موجودة (Base64)
+        if (userData.avatar && (userData.avatar.startsWith('data:image') || userData.avatar.startsWith('http'))) {
+          updates.avatar = "🐱";
+        }
+
+        // إرسال إشعار بانتهاء الصلاحية
+        push(ref(database, `users/${user.uid}/notifications`), {
+          type: 'system',
+          title: 'انتهت رحلة البريميوم ⌛',
+          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً للاستمتاع بكافة الميزات!',
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+
+        needsUpdate = true;
+        toast({ 
+          variant: "destructive", 
+          title: "انتهى اشتراك بريميوم", 
+          description: "تمت إعادتك للوضع العادي وحذف الصورة الشخصية." 
+        });
+      }
+
+      if (userData.showChallengeResult) { 
+        setShowResultDialog(true); 
+        playSound('success'); 
+        updates.showChallengeResult = false; 
+        needsUpdate = true; 
+      }
+      
+      if (!userData.notificationsEnabled && typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
+        requestNotificationPermission(auth, database);
+      }
+      
+      if (userData.showPremiumCelebration) { 
+        setShowCelebration(true); 
+        playSound('success'); 
+        updates.showPremiumCelebration = false; 
+        needsUpdate = true; 
+      }
 
       if (needsUpdate) update(ref(database, `users/${user.uid}`), updates);
     }

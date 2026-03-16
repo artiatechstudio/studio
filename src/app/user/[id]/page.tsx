@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -102,6 +102,10 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
   if (!userData) return null;
 
+  const isUserPremium = userData.isPremium === 1 || userData.name === 'admin';
+  const avatar = userData.avatar;
+  const isImageAvatar = avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'));
+
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-4 md:pt-0" dir="rtl">
       <NavSidebar />
@@ -112,19 +116,28 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             <Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button>
           </div>
           <div className="w-24 h-24 bg-white rounded-[2rem] overflow-hidden border-4 border-secondary shadow-lg flex items-center justify-center shrink-0">
-            {userData.avatar?.startsWith('http') || userData.avatar?.startsWith('data:image') ? <img src={userData.avatar} className="w-full h-full object-cover" alt="Avatar" /> : <span className="text-5xl">{userData.avatar || "🐱"}</span>}
+            {isImageAvatar && isUserPremium ? (
+              <img src={avatar} className="w-full h-full object-cover" alt="Avatar" />
+            ) : (
+              <span className="text-5xl">{isImageAvatar ? "🐱" : (avatar || "🐱")}</span>
+            )}
           </div>
           <div className="flex-1 text-center md:text-right space-y-2">
             <div className="flex items-center justify-center md:justify-start gap-2">
               <h1 className="text-xl md:text-3xl font-black text-primary">{userData.name}</h1>
-              {(userData.isPremium === 1 || userData.name === 'admin') && <Crown size={16} className="text-yellow-500" fill="currentColor" />}
+              {isUserPremium && <Crown size={16} className="text-yellow-500" fill="currentColor" />}
             </div>
-            <p className="text-[10px] font-black text-primary/60 bg-primary/5 px-3 py-0.5 rounded-full inline-block">العضو رقم {userData.registrationRank || 0}</p>
+            <p className="text-[10px] font-black text-primary/60 bg-primary/5 px-3 py-0.5 rounded-full inline-block">
+              {userData.name === 'admin' ? "العضو المؤسس رقم 0" : `العضو رقم ${userData.registrationRank || 0}`}
+            </p>
             <p className="text-xs font-bold text-muted-foreground italic mt-1">{userData.bio || "عضو طموح في مجتمع كارينجو 🌱"}</p>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
               <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-primary/10">
                 <CalendarIcon size={12} /> {userData.age || '--'} سنة
+              </div>
+              <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10">
+                <UserIcon size={12} /> {userData.gender === 'male' ? 'ذكر' : 'أنثى'}
               </div>
               <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10">
                 <Ruler size={12} /> {userData.height || '--'} سم
@@ -155,10 +168,16 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2">
-          <Link href={`/chat/${id}`} className="w-full"><Button className="w-full h-14 rounded-2xl bg-secondary text-primary font-black gap-2"><UserIcon size={18} /> دردشة خاصة</Button></Link>
+          <Link href={`/chat/${id}`} className="w-full">
+            <Button className="w-full h-14 rounded-2xl bg-secondary text-primary font-black gap-2">
+              <UserIcon size={18} /> دردشة خاصة
+            </Button>
+          </Link>
           {currentUser?.uid !== id && (
             <Dialog open={isChallengeOpen} onOpenChange={setIsChallengeOpen}>
-              <DialogTrigger asChild><Button onClick={() => playSound('click')} className="w-full h-14 rounded-2xl bg-primary font-black shadow-lg">تحدي هذا البطل ⚔️</Button></DialogTrigger>
+              <DialogTrigger asChild>
+                <Button onClick={() => playSound('click')} className="w-full h-14 rounded-2xl bg-primary font-black shadow-lg">تحدي هذا البطل ⚔️</Button>
+              </DialogTrigger>
               <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
                 <DialogHeader><DialogTitle className="text-2xl font-black text-primary text-right">مبارزة ثنائية ⚔️</DialogTitle></DialogHeader>
                 <div className="space-y-6 py-4">
@@ -201,7 +220,10 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                         <p className="text-[6px] font-black text-center mt-1 truncate w-full">{badge.name}</p>
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="text-right p-4 rounded-2xl" dir="rtl"><p className="font-black text-sm">{badge.name}</p><p className="text-[10px] text-muted-foreground">{badge.description}</p></PopoverContent>
+                    <PopoverContent className="text-right p-4 rounded-2xl" dir="rtl">
+                      <p className="font-black text-sm">{badge.name}</p>
+                      <p className="text-[10px] text-muted-foreground">{badge.description}</p>
+                    </PopoverContent>
                   </Popover>
                 );
               })}

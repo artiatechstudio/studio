@@ -15,11 +15,13 @@ export default function LeaderboardPage() {
   const { database } = useFirebase();
   const [displayLimit, setDisplayLimit] = useState(20);
   
+  // جلب آخر 200 مستخدم حسب النقاط الكلية كأساس للمنافسة
   const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
   const stats = useMemo(() => {
     if (!rawData) return { leaders: [], losers: [], totalLeaders: 0 };
+    
     const today = new Date();
     const todayStr = today.toLocaleDateString('en-CA');
     const yest = new Date(today); yest.setDate(yest.getDate() - 1);

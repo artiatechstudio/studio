@@ -6,13 +6,12 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, ListChecks, Plus, Crown, Clock, XCircle, Trash2, Swords, Timer, Camera, Loader2, AlertTriangle, ShieldCheck, Trophy, Lock, Gavel, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, ListChecks, Plus, Swords, Timer, Camera, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, get, remove, set, runTransaction } from 'firebase/database';
+import { ref, update, push, serverTimestamp, get, remove, set } from 'firebase/database';
 import { toast } from '@/hooks/use-toast';
 import { ToastAction } from "@/components/ui/toast";
 import { useRouter } from 'next/navigation';
@@ -61,11 +60,8 @@ export default function MasterTrackPage() {
   const [selectedType, setSelectedType] = useState<TrackKey>('Fitness');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'سهل' | 'متوسط' | 'صعب'>('سهل');
   const [currentChallenge, setCurrentChallenge] = useState<Challenge | null>(null);
-  
-  const [timeLeft, setTimeLeft] = useState(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
   const [todoInput, setPostTodoInput] = useState('');
+
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
 
@@ -98,7 +94,7 @@ export default function MasterTrackPage() {
     }
     playSound('click');
     const newTodoRef = push(ref(database, `users/${user.uid}/todos`));
-    set(newTodoRef, { id: newTodoRef.key, title: todoInput.trim(), expiresAt: Date.now() + (10 * 60 * 1000) });
+    set(newTodoRef, { id: newTodoRef.key, title: todoInput.trim(), createdAt: Date.now() });
     update(ref(database, `users/${user.uid}`), { [`dailyTodosCount/${todayStr}`]: todoCountToday + 1 });
     setPostTodoInput('');
   };
@@ -109,7 +105,7 @@ export default function MasterTrackPage() {
       <div className="app-container py-6 space-y-6">
         <header className="flex items-center justify-between bg-card p-5 rounded-[2rem] shadow-lg border border-border mx-2">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center shadow-inner"><Swords size={28} /></div>
+            <div className="w-12 h-12 bg-primary/10 text-primary rounded-2xl flex items-center justify-center"><Swords size={28} /></div>
             <div className="text-right"><h1 className="text-xl font-black text-primary">الماستر</h1><p className="text-[8px] font-bold text-muted-foreground uppercase opacity-60">تحديات الأساطير 👑</p></div>
           </div>
           <Link href="/"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>
@@ -130,7 +126,7 @@ export default function MasterTrackPage() {
             <Button onClick={() => { 
               const pool = getMasterPool(selectedType, selectedDifficulty);
               const random = pool[Math.floor(Math.random() * pool.length)];
-              setCurrentChallenge(random); setStep('active'); setTimeLeft(random.time * 60); playSound('click');
+              setCurrentChallenge(random); setStep('active'); playSound('click');
             }} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">ابدأ تحدي الماستر 🔥</Button>
           </Card>
         )}
@@ -148,7 +144,15 @@ export default function MasterTrackPage() {
             <div className="space-y-2">
               {todosData ? Object.values(todosData).map((todo: any) => (
                 <div key={todo.id} className="flex items-center justify-between p-3 rounded-xl bg-secondary/20">
-                  <button onClick={() => { update(ref(database, `users/${user?.uid}`), { points: (userData?.points || 0) + 5, [`dailyPoints/${todayStr}`]: (userData?.dailyPoints?.[todayStr] || 0) + 5 }); remove(ref(database, `users/${user?.uid}/todos/${todo.id}`)); playSound('success'); }} className="w-6 h-6 rounded-lg bg-white border-2 border-primary/20 hover:border-primary shadow-sm" />
+                  <button onClick={() => { 
+                    const uRef = ref(database, `users/${user?.uid}`);
+                    get(uRef).then(s => {
+                      const d = s.val();
+                      update(uRef, { points: (d.points || 0) + 5, [`dailyPoints/${todayStr}`]: (d.dailyPoints?.[todayStr] || 0) + 5 });
+                    });
+                    remove(ref(database, `users/${user?.uid}/todos/${todo.id}`)); 
+                    playSound('success'); 
+                  }} className="w-6 h-6 rounded-lg bg-white border-2 border-primary/20 hover:border-primary shadow-sm" />
                   <span className="font-bold text-[11px] text-right flex-1 mr-3 text-primary">{todo.title}</span>
                 </div>
               )) : <p className="text-center py-4 opacity-30 text-[10px] font-black">لا توجد مهام حالية</p>}
@@ -195,27 +199,43 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
     <Card className="rounded-[2.5rem] border-2 border-primary/10 bg-card p-5 shadow-lg relative overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div className="text-right"><p className="text-xs font-black text-primary">{challenge.title}</p></div>
-        <div className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-black flex items-center gap-2">
-          <Timer size={14} className="animate-pulse" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}
-        </div>
+        {challenge.status === 'active' && (
+          <div className="px-3 py-1.5 rounded-xl bg-primary text-white text-xs font-black flex items-center gap-2">
+            <Timer size={14} className="animate-pulse" /> {Math.floor(timeLeft/60)}:{(timeLeft%60).toString().padStart(2,'0')}
+          </div>
+        )}
       </div>
       <div className="space-y-3">
         {challenge.status === 'awaiting_confirmation' ? (
           challenge.winnerId === currentUser?.uid ? (
-            <div className="bg-blue-50 p-4 rounded-2xl text-center"><p className="text-[10px] font-black text-blue-800">بانتظار اعتراف الخصم بالهزيمة ⌛</p></div>
+            <div className="bg-blue-50 p-4 rounded-2xl text-center space-y-3">
+              <p className="text-[10px] font-black text-blue-800">بانتظار اعتراف الخصم بالهزيمة ⌛</p>
+              {challenge.proof && (
+                <div className="rounded-xl overflow-hidden border border-blue-200">
+                  <img src={challenge.proof} className="w-full h-auto max-h-40 object-contain" alt="Proof" />
+                </div>
+              )}
+            </div>
           ) : (
             <div className="bg-orange-50 p-4 rounded-3xl space-y-4">
-              <p className="text-[10px] font-black text-orange-900 text-right">الخصم يزعم الانتصار! هل تقبل؟</p>
+              <p className="text-[10px] font-black text-orange-900 text-right">الخصم يزعم الانتصار! راجع الدليل:</p>
+              {challenge.proof && (
+                <div className="relative w-full rounded-2xl overflow-hidden border-2 border-orange-200 bg-white shadow-inner">
+                  <img src={challenge.proof} className="w-full h-auto max-h-60 object-contain mx-auto" alt="Proof to verify" />
+                </div>
+              )}
               <div className="flex gap-2">
-                <Button onClick={() => concludeChallenge(database, challenge, challenge.winnerId)} className="flex-1 bg-green-600 font-black text-[10px]">نعم، أقبل</Button>
-                <Button onClick={() => update(ref(database, `challenges/${challenge.id}`), { status: 'awaiting_recognition' })} variant="outline" className="flex-1 text-red-600 border-red-200">لا، اعتراض!</Button>
+                <Button onClick={() => concludeChallenge(database, challenge, challenge.winnerId)} className="flex-1 bg-green-600 font-black text-[10px]">نعم، أقبل الهزيمة</Button>
+                <Button onClick={() => update(ref(database, `challenges/${challenge.id}`), { status: 'awaiting_recognition' })} variant="outline" className="flex-1 text-red-600 border-red-200 font-black text-[10px]">لا، الدليل غير كافٍ!</Button>
               </div>
             </div>
           )
-        ) : (
+        ) : challenge.status === 'active' ? (
           <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary font-black text-xs gap-3">
             {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={20} />} رفع الإثبات 📸
           </Button>
+        ) : (
+          <div className="bg-secondary/30 p-4 rounded-2xl text-center font-bold text-[10px] text-muted-foreground italic">في انتظار تأكيد البداية...</div>
         )}
         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
       </div>

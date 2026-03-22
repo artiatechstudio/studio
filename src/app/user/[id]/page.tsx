@@ -7,12 +7,11 @@ import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
 import { ref, runTransaction, push, serverTimestamp, set, get, update } from 'firebase/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Clock, AlertTriangle, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight, XCircle } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight, XCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -20,6 +19,7 @@ import { toast } from '@/hooks/use-toast';
 import { ToastAction } from "@/components/ui/toast";
 import Link from 'next/link';
 import { ALL_ACHIEVEMENTS } from '@/lib/achievements';
+import { UserAvatar } from '@/components/user-avatar';
 
 export default function UserPublicProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -51,7 +51,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
       toast({ 
         variant: "destructive", 
         title: "وصلت للحد الأسبوعي 🛑", 
-        description: "اشترك في بريميوم لإرسال تحديات غير محدودة وتحطيم الأرقام!",
+        description: "اشترك في بريميوم لإرسال تحديات غير محدودة!",
         action: <ToastAction altText="اشترك الآن" onClick={() => router.push('/settings')}>اشترك الآن</ToastAction>
       });
       return;
@@ -103,8 +103,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   if (!userData) return null;
 
   const isUserPremium = userData.isPremium === 1 || userData.name === 'admin';
-  const avatar = userData.avatar;
-  const isImageAvatar = avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'));
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-4 md:pt-0" dir="rtl">
@@ -115,13 +113,9 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             {currentUser?.uid !== id && <Button onClick={handleToggleLike} variant="ghost" size="icon" className={cn("rounded-full", userData.likedBy?.[currentUser?.uid || ''] ? "text-red-500" : "text-muted-foreground")}><Heart fill={userData.likedBy?.[currentUser?.uid || ''] ? "currentColor" : "none"} /></Button>}
             <Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button>
           </div>
-          <div className="w-24 h-24 bg-white rounded-[2rem] overflow-hidden border-4 border-secondary shadow-lg flex items-center justify-center shrink-0">
-            {isImageAvatar && isUserPremium ? (
-              <img src={avatar} className="w-full h-full object-cover" alt="Avatar" />
-            ) : (
-              <span className="text-5xl">{isImageAvatar ? "🐱" : (avatar || "🐱")}</span>
-            )}
-          </div>
+          
+          <UserAvatar user={userData} size="xl" className="border-4 border-secondary shadow-lg rounded-[2.5rem]" />
+
           <div className="flex-1 text-center md:text-right space-y-2">
             <div className="flex items-center justify-center md:justify-start gap-2">
               <h1 className="text-xl md:text-3xl font-black text-primary">{userData.name}</h1>
@@ -150,17 +144,17 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         </header>
 
         <div className="grid grid-cols-3 gap-3 px-2">
-           <Card className="p-4 rounded-2xl bg-orange-50 border-none text-center">
+           <Card className="p-4 rounded-2xl bg-orange-50 border-none text-center shadow-sm">
               <Flame size={16} className="text-orange-600 mx-auto mb-1" fill="currentColor" />
               <p className="text-lg font-black text-orange-600 leading-none">{userData.streak || 0}</p>
               <p className="text-[7px] font-black text-orange-400 uppercase mt-1">حماسة</p>
            </Card>
-           <Card className="p-4 rounded-2xl bg-yellow-50 border-none text-center">
+           <Card className="p-4 rounded-2xl bg-yellow-50 border-none text-center shadow-sm">
               <Star size={16} className="text-yellow-600 mx-auto mb-1" fill="currentColor" />
-              <p className="text-lg font-black text-yellow-600 leading-none">{userData.points || 0}</p>
-              <p className="text-[7px] font-black text-yellow-400 uppercase mt-1">نقاط</p>
+              <p className="text-lg font-black text-yellow-600 leading-none">{(userData.points || 0).toLocaleString()}</p>
+              <p className="text-[7px] font-black text-yellow-400 uppercase mt-1">إجمالي النقاط</p>
            </Card>
-           <Card className="p-4 rounded-2xl bg-red-50 border-none text-center">
+           <Card className="p-4 rounded-2xl bg-red-50 border-none text-center shadow-sm">
               <Heart size={16} className="text-red-600 mx-auto mb-1" fill="currentColor" />
               <p className="text-lg font-black text-red-600 leading-none">{userData.likesCount || 0}</p>
               <p className="text-[7px] font-black text-red-400 uppercase mt-1">إعجابات</p>
@@ -194,12 +188,12 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         </div>
 
         <div className="grid grid-cols-2 gap-3 px-2">
-           <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
-              <Swords size={16} className="text-green-600 mx-auto mb-1" />
+           <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center flex flex-col items-center shadow-sm">
+              <Swords size={16} className="text-green-600 mb-1" />
               <p className="text-sm font-black text-green-700">انتصارات: {userData.challengesWon || 0}</p>
            </div>
-           <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center">
-              <XCircle size={16} className="text-red-600 mx-auto mb-1" />
+           <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center flex flex-col items-center shadow-sm">
+              <XCircle size={16} className="text-red-600 mb-1" />
               <p className="text-sm font-black text-red-700">هزائم: {userData.challengesLost || 0}</p>
            </div>
         </div>
@@ -222,7 +216,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                     </PopoverTrigger>
                     <PopoverContent className="text-right p-4 rounded-2xl" dir="rtl">
                       <p className="font-black text-sm">{badge.name}</p>
-                      <p className="text-[10px] text-muted-foreground">{badge.description}</p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed">{badge.description}</p>
                     </PopoverContent>
                   </Popover>
                 );

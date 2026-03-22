@@ -10,12 +10,13 @@ import { ref, query, orderByChild, limitToLast } from 'firebase/database';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Button } from '@/components/ui/button';
+import { UserAvatar } from '@/components/user-avatar';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
   const [displayLimit, setDisplayLimit] = useState(20);
   
-  // جلب آخر 200 مستخدم حسب النقاط الكلية كأساس للمنافسة
+  // جلب آخر 200 مستخدم كأساس للمنافسة لتقليل التكلفة
   const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
@@ -31,9 +32,9 @@ export default function LeaderboardPage() {
     
     const allUsers = Object.entries(rawData)
       .map(([id, val]: [string, any]) => ({ ...val, id }))
-      .filter((u: any) => u.name !== 'admin');
+      .filter((u: any) => u.name !== 'admin' && (u.points || 0) > 0);
 
-    // حساب متوسط آخر 3 أيام لكل مستخدم
+    // حساب متوسط آخر 3 أيام لكل مستخدم لضمان العدالة
     const usersWithAvg = allUsers.map(u => {
       const p1 = u.dailyPoints?.[todayStr] || 0;
       const p2 = u.dailyPoints?.[yestStr] || 0;
@@ -42,17 +43,15 @@ export default function LeaderboardPage() {
       return { ...u, threeDayAvg: avg };
     });
 
-    // القادة النشطون فقط (متوسط نقاط > 0)
     const activeLeaders = usersWithAvg
       .filter((u: any) => u.threeDayAvg > 0)
       .sort((a: any, b: any) => b.threeDayAvg - a.threeDayAvg);
 
-    // جدار العار: سقطوا بسبب كسر الحماسة أو الهزيمة
+    // جدار العار: الوقوع بسبب كسر الحماسة تلقائياً
     const losers = allUsers
       .filter((user: any) => {
         const isLoss = user.lastChallengeLossDate === todayStr;
         const lastActive = user.lastActiveDate;
-        // شرط كسر الحماسة: آخر نشاط كان أقدم من أمس
         const isStreakBroken = lastActive && lastActive < yestStr;
         return isStreakBroken || isLoss;
       })
@@ -71,12 +70,9 @@ export default function LeaderboardPage() {
   }, [rawData, displayLimit]);
 
   if (isLoading) return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6 text-center">
-      <div className="relative w-32 h-32 animate-bounce">
-        <Image src="/logo.png" alt="Loading" fill className="object-contain" priority />
-      </div>
-      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      <p className="text-primary font-black text-xl animate-pulse">Careingo</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
+      <div className="relative w-24 h-24 animate-bounce"><Image src="/logo.png" alt="Careingo" fill className="object-contain" priority /></div>
+      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );
 
@@ -84,7 +80,7 @@ export default function LeaderboardPage() {
     <div className="min-h-screen bg-background md:pr-72 pb-24" dir="rtl">
       <NavSidebar />
       <div className="app-container py-6 space-y-8">
-        <header className="space-y-2 px-2">
+        <header className="px-2">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white"><Trophy size={20} /></div>
             <div className="text-right">
@@ -94,91 +90,69 @@ export default function LeaderboardPage() {
           </div>
         </header>
 
-        <div className="space-y-10">
-          <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
-            <div className="p-4 border-b border-border bg-secondary/5 text-right flex items-center justify-between flex-row-reverse px-6">
-              <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع (متجدد)</h2>
-              <Timer size={14} className="text-primary opacity-40" />
-            </div>
-            <div className="divide-y divide-border">
-              {stats.leaders.length === 0 ? (
-                <div className="p-20 text-center opacity-30 font-black">لا يوجد نشاط مكثف حالياً ☕</div>
-              ) : stats.leaders.map((user: any, index: number) => (
-                <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
-                  <div className="text-right bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10">
-                    <p className="font-black text-primary text-sm">{user.threeDayAvg.toLocaleString()}</p>
-                    <p className="text-[7px] font-black text-muted-foreground uppercase text-center">متوسط 3 أيام</p>
-                  </div>
-                  <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
-                    <div className="w-6 text-center font-black text-sm text-primary shrink-0">
-                      {index < 3 ? <Medal className={index === 0 ? "text-yellow-500" : index === 1 ? "text-slate-400" : "text-amber-600"} /> : <span className="opacity-40 text-[10px]">#{index + 1}</span>}
-                    </div>
-                    <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
-                      <div className="h-10 w-10 border border-border shadow-sm flex items-center justify-center bg-white rounded-full overflow-hidden relative">
-                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? (
-                          <img src={user.avatar} className="object-cover w-full h-full" alt={user.name} />
-                        ) : (
-                          <span className="text-xl">{user.avatar || "🐱"}</span>
-                        )}
-                      </div>
-                    </Link>
-                    <div className="text-right overflow-hidden flex-1 px-1">
-                      <div className="flex items-center justify-end gap-1 mb-1">
-                        <h3 className="font-black text-primary text-[11px] truncate">{user.name}</h3>
-                        {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
-                      </div>
-                      <div className="flex flex-wrap items-center justify-end gap-1">
-                        <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600"><Flame size={8} fill="currentColor" /> {user.streak || 0}ي</span>
-                        <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600"><Swords size={8} /> {user.challengesWon || 0}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            
-            {stats.totalLeaders > displayLimit && (
-              <div className="p-4 border-t border-border bg-secondary/5">
-                <Button 
-                  onClick={() => { setDisplayLimit(prev => prev + 20); playSound('click'); }} 
-                  variant="ghost" 
-                  className="w-full font-black text-primary gap-2"
-                >
-                  <ChevronDown size={18} /> عرض المزيد من الأبطال
-                </Button>
-              </div>
-            )}
+        <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
+          <div className="p-4 border-b border-border bg-secondary/5 flex items-center justify-between flex-row-reverse px-6">
+            <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع (متجدد)</h2>
+            <Timer size={14} className="text-primary opacity-40" />
           </div>
-
-          <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
-            <div className="p-4 bg-red-600 text-white text-right flex items-center justify-between px-6">
-              <div className="flex items-center gap-2"><Skull size={18} /><h2 className="text-sm font-black uppercase">جدار العار 🛑</h2></div>
-              <p className="text-[8px] font-bold opacity-80">سقطوا في فخ الكسل أو الهزيمة</p>
-            </div>
-            <div className="p-4 space-y-3">
-              {stats.losers.length > 0 ? stats.losers.map((user: any) => (
-                <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100">
-                  <div className="flex flex-col items-center gap-1 bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px]">
-                    <span className="text-[8px] font-black text-red-600 flex items-center gap-1">
-                      {user.shameReason === 'هزيمة مبارزة' ? <Swords size={8}/> : <AlertCircle size={8}/>}
-                      {user.shameReason}
-                    </span>
+          <div className="divide-y divide-border">
+            {stats.leaders.length === 0 ? (
+              <div className="p-20 text-center opacity-30 font-black">لا يوجد نشاط مكثف حالياً ☕</div>
+            ) : stats.leaders.map((user: any, index: number) => (
+              <div key={user.id} className="p-3 flex items-center justify-between hover:bg-secondary/5 transition-all">
+                <div className="bg-primary/5 px-2 py-1.5 rounded-xl order-last shrink-0 min-w-[85px] border border-primary/10 text-center">
+                  <p className="font-black text-primary text-sm">{user.threeDayAvg.toLocaleString()}</p>
+                  <p className="text-[7px] font-black text-muted-foreground uppercase">متوسط 3 أيام</p>
+                </div>
+                <div className="flex items-center gap-3 flex-row-reverse flex-1 ml-2 overflow-hidden">
+                  <div className="w-6 text-center font-black text-sm text-primary shrink-0">
+                    {index < 3 ? <Medal className={index === 0 ? "text-yellow-500" : index === 1 ? "text-slate-400" : "text-amber-600"} /> : <span className="opacity-40 text-[10px]">#{index + 1}</span>}
                   </div>
-                  <div className="flex items-center gap-3 flex-row-reverse">
-                    <Link href={`/user/${user.id}`} className="shrink-0">
-                      <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center text-xl grayscale overflow-hidden border border-border">
-                        {user.avatar?.startsWith('data:image') || user.avatar?.startsWith('http') ? (
-                          <img src={user.avatar} className="object-cover w-full h-full opacity-50" alt={user.name} />
-                        ) : (
-                          <span className="opacity-50">{user.avatar || "🐱"}</span>
-                        )}
-                      </div>
-                    </Link>
-                    <div className="text-right"><p className="font-black text-red-900 text-xs">{user.name}</p><p className="text-[8px] font-bold text-red-400">فقد السيطرة اليوم</p></div>
+                  <Link href={`/user/${user.id}`} onClick={() => playSound('click')}>
+                    <UserAvatar user={user} size="md" />
+                  </Link>
+                  <div className="text-right overflow-hidden flex-1 px-1">
+                    <div className="flex items-center justify-end gap-1 mb-1">
+                      <h3 className="font-black text-primary text-[11px] truncate">{user.name}</h3>
+                      {user.isPremium === 1 && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                    </div>
+                    <div className="flex flex-wrap items-center justify-end gap-1">
+                      <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600"><Flame size={8} fill="currentColor" /> {user.streak || 0}ي</span>
+                      <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600"><Swords size={8} /> {user.challengesWon || 0}</span>
+                    </div>
                   </div>
                 </div>
-              )) : <div className="p-10 text-center text-red-500 font-black text-xs italic">لا يوجد أحد في جدار العار حالياً.. الجميع يقاتل! 🔥</div>}
+              </div>
+            ))}
+          </div>
+          
+          {stats.totalLeaders > displayLimit && (
+            <div className="p-4 border-t border-border bg-secondary/5">
+              <Button onClick={() => { setDisplayLimit(prev => prev + 20); playSound('click'); }} variant="ghost" className="w-full font-black text-primary gap-2"> <ChevronDown size={18} /> عرض المزيد </Button>
             </div>
+          )}
+        </div>
+
+        <div className="bg-red-50/50 rounded-[2.5rem] shadow-lg overflow-hidden border border-red-100 mx-2">
+          <div className="p-4 bg-red-600 text-white flex items-center justify-between px-6">
+            <div className="flex items-center gap-2"><Skull size={18} /><h2 className="text-sm font-black uppercase">جدار العار 🛑</h2></div>
+            <p className="text-[8px] font-bold opacity-80">سقطوا في فخ الكسل أو الهزيمة</p>
+          </div>
+          <div className="p-4 space-y-3">
+            {stats.losers.length > 0 ? stats.losers.map((user: any) => (
+              <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
+                <div className="bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px] text-center">
+                  <span className="text-[8px] font-black text-red-600 flex items-center justify-center gap-1">
+                    {user.shameReason === 'هزيمة مبارزة' ? <Swords size={8}/> : <AlertCircle size={8}/>}
+                    {user.shameReason}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 flex-row-reverse">
+                  <Link href={`/user/${user.id}`}><UserAvatar user={user} size="sm" className="grayscale opacity-50" /></Link>
+                  <div className="text-right"><p className="font-black text-red-900 text-xs">{user.name}</p><p className="text-[8px] font-bold text-red-400">فقد السيطرة اليوم</p></div>
+                </div>
+              </div>
+            )) : <div className="p-10 text-center text-red-500 font-black text-xs italic">الجميع يقاتل اليوم! 🔥</div>}
           </div>
         </div>
       </div>

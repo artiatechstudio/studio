@@ -53,11 +53,6 @@ export default function LeaderboardPage() {
       const lastActive = u.lastActiveDate;
       const isStreakExpired = lastActive && lastActive < yestStr;
       
-      // إذا كان المستخدم الحالي آدمن، نقوم بتحديث السيرفر فعلياً
-      if (isStreakExpired && currentUser?.uid === 'ADMIN_UID_CHECK') {
-         // نترك التحديث لصاحب الحساب لتقليل العمليات، لكن نظهر العار هنا
-      }
-
       return { ...u, threeDayAvg: avg, isStreakExpired };
     });
 
@@ -83,7 +78,7 @@ export default function LeaderboardPage() {
       losers,
       totalLeaders: activeLeaders.length 
     };
-  }, [rawData, displayLimit, todayStr, yestStr, dayBStr, currentUser]);
+  }, [rawData, displayLimit, todayStr, yestStr, dayBStr]);
 
   if (isLoading || !todayStr) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">

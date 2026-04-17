@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp, remove } from 'firebase/database';
+import { ref, update, push, serverTimestamp } from 'firebase/database';
 import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords, ArrowLeft, History } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -57,21 +57,21 @@ export default function Home() {
 
       if (userData.hasSeenTour !== true) setShowTour(true);
       
-      // منطق حماية البريميوم: تجريد الامتيازات وحذف الصورة الشخصية فوراً عند الانتهاء
+      // منطق حماية البريميوم: إخفاء الامتيازات فوراً عند الانتهاء
+      // مع الاحتفاظ بالصورة في مسار /avatars لتعود تلقائياً عند تجديد الاشتراك
       const isAdmin = userData.name === 'admin';
       if (!isAdmin && userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
         
-        // إزالة الصورة الشخصية من قاعدة البيانات لضمان الحصرية وتقليل حجم البيانات
+        // تحويل الأفاتار في البروفايل للقطة للعامة، ولكن صورة الـ Base64 ستبقى محفوظة في /avatars
         updates.avatar = "🐱";
-        remove(ref(database, `avatars/${user.uid}`));
 
         push(ref(database, `users/${user.uid}/notifications`), {
           type: 'system',
           title: 'انتهت رحلة البريميوم ⌛',
-          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً للاستمتاع بكافة الميزات وحماية صورتك الشخصية!',
+          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً لاستعادة صورتك الشخصية وكافة ميزاتك!',
           isRead: false,
           timestamp: serverTimestamp()
         });
@@ -80,7 +80,7 @@ export default function Home() {
         toast({ 
           variant: "destructive", 
           title: "انتهى اشتراك بريميوم", 
-          description: "تمت إعادتك للوضع العادي وحذف صورتك الشخصية لضمان الخصوصية." 
+          description: "تمت إعادتك للوضع العادي؛ صورتك الشخصية محفوظة ومخفية حتى تجديد الاشتراك." 
         });
       }
 

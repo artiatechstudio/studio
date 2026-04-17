@@ -15,6 +15,7 @@ interface UserAvatarProps {
 /**
  * مكون الأفاتار المطور في كارينجو.
  * يحل مشكلة الأذونات عبر التعامل مع مسار /avatars وفحص البريميوم.
+ * تم تعديله ليسمح بعودة الصورة السابقة فور تجديد الاشتراك.
  */
 export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const { database } = useFirebase();
@@ -29,10 +30,10 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const now = Date.now();
   const isExpired = user?.premiumUntil && now > user.premiumUntil && !isAdmin;
   
-  // منطق العرض: إذا كان بريميوم، نعرض الصورة من المسار الجديد، وإلا نبحث في القديم، وإلا القطة
+  // منطق العرض: إذا كان بريميوم، نعرض الصورة من المسار المنفصل (حتى لو كانت مخفية في البروفايل)
+  // هذا يضمن عودة الصورة فوراً عند تجديد البريميوم
   const canShowImage = isPremium && !isExpired;
   
-  // Migration logic: التحقق من وجود الصورة في المسار الجديد أو القديم
   let avatarValue = "🐱";
   if (canShowImage) {
     if (avatarData) {
@@ -43,6 +44,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
       avatarValue = user?.avatar || "🐱";
     }
   } else {
+    // للعضو العادي، حتى لو كان يملك صورة مخزنة، لا نعرضها ونكتفي بالأفاتار الرمزي
     avatarValue = (typeof user?.avatar === 'string' && !user.avatar.startsWith('data')) ? user.avatar : "🐱";
   }
   

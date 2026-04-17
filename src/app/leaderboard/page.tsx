@@ -6,7 +6,7 @@ import Image from 'next/image';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle, ChevronDown, Loader2 } from "lucide-react";
 import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
-import { ref, query, orderByChild, limitToLast, update } from 'firebase/database';
+import { ref, query, orderByChild, limitToLast, update, get } from 'firebase/database';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Button } from '@/components/ui/button';
@@ -78,16 +78,15 @@ export default function LeaderboardPage() {
     };
   }, [rawData, displayLimit, todayStr, yestStr, dayBStr]);
 
-  // منطق التحديث الموزع (فقط للآدمن أو المستخدم الحالي لتصفير حماسة الآخرين الغائبين فعلياً)
+  // منطق التحديث الموزع (فقط للآدمن لتصفير حماسة الآخرين الغائبين فعلياً)
   useEffect(() => {
-    if (rawData && todayStr) {
+    if (rawData && todayStr && currentUser) {
       const usersToReset = Object.values(rawData).filter((u: any) => {
         return u.name !== 'admin' && u.lastActiveDate && u.lastActiveDate < yestStr && (u.streak || 0) > 0;
       });
 
       if (usersToReset.length > 0) {
-        // إذا كان المستخدم آدمن، يمكنه تحديث حالة الجميع في الداتابيز لضمان الصحة العامة
-        const myNameRef = ref(database, `users/${currentUser?.uid}/name`);
+        const myNameRef = ref(database, `users/${currentUser.uid}/name`);
         get(myNameRef).then(snap => {
           if (snap.val() === 'admin') {
             usersToReset.forEach((u: any) => {
@@ -148,7 +147,7 @@ export default function LeaderboardPage() {
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-1">
                       <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600"><Flame size={8} fill="currentColor" /> {user.streak || 0}ي</span>
-                      <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600"><Swords size={8} /> {user.challengesWon || 0}</span>
+                      <span className="flex items-center gap-0.5 bg-blue-50 px-1 py-0.5 rounded-full text-[7px] font-black text-blue-600"><Users size={8} /> {Math.max(user.followersCount || 0, user.likesCount || 0)}</span>
                     </div>
                   </div>
                 </div>
@@ -188,15 +187,4 @@ export default function LeaderboardPage() {
       </div>
     </div>
   );
-}
-
-function get(ref: any) {
-  // دالة مساعدة لجلب البيانات مرة واحدة
-  return new Promise<any>((resolve) => {
-    const { onValue, off } = require('firebase/database');
-    const callback = onValue(ref, (snap: any) => {
-      off(ref, 'value', callback);
-      resolve(snap);
-    });
-  });
 }

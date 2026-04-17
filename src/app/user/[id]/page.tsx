@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight, XCircle, UserPlus, UserMinus, Users } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Loader2, Calendar as CalendarIcon, User as UserIcon, XCircle, UserPlus, UserMinus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -39,7 +39,18 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const myRef = useMemoFirebase(() => currentUser ? ref(database, `users/${currentUser.uid}`) : null, [database, currentUser]);
   const { data: myData } = useDatabase(myRef);
 
-  const isFollowing = myData?.following?.[id];
+  // دمج نظام اللايكات القديم مع المتابعة
+  const isFollowing = useMemo(() => {
+    return myData?.following?.[id] || myData?.likedUsers?.[id];
+  }, [myData, id]);
+
+  const followersCount = useMemo(() => {
+    if (!userData) return 0;
+    // نجمع المتابعين الجدد مع اللايكات القديمة لضمان عدم ضياع "أصحابنا"
+    const fCount = userData.followersCount || 0;
+    const lCount = userData.likesCount || 0;
+    return Math.max(fCount, lCount);
+  }, [userData]);
 
   const handleFollowToggle = async () => {
     if (!currentUser || !id || !myData) return;
@@ -150,15 +161,13 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
               <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-primary/10"><CalendarIcon size={12} /> {userData.age || '--'} سنة</div>
               <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10"><UserIcon size={12} /> {userData.gender === 'male' ? 'ذكر' : 'أنثى'}</div>
-              <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10"><Ruler size={12} /> {userData.height || '--'} سم</div>
-              <div className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-orange-100"><Weight size={12} /> {userData.weight || '--'} كجم</div>
             </div>
           </div>
         </header>
 
         <div className="grid grid-cols-2 gap-3 px-2">
            <Card className="p-4 rounded-2xl bg-primary/5 border-none text-center shadow-sm">
-              <p className="text-xl font-black text-primary leading-none">{userData.followersCount || 0}</p>
+              <p className="text-xl font-black text-primary leading-none">{followersCount}</p>
               <p className="text-[8px] font-black text-muted-foreground uppercase mt-1">متابع</p>
            </Card>
            <Card className="p-4 rounded-2xl bg-accent/5 border-none text-center shadow-sm">

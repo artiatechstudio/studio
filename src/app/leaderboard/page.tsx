@@ -42,6 +42,7 @@ export default function LeaderboardPage() {
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin' && (u.points || 0) > 0);
 
+    // حساب متوسط 3 أيام
     const usersWithAvg = allUsers.map(u => {
       const p1 = u.dailyPoints?.[todayStr] || 0;
       const p2 = u.dailyPoints?.[yestStr] || 0;
@@ -54,6 +55,7 @@ export default function LeaderboardPage() {
       .filter((u: any) => u.threeDayAvg > 0)
       .sort((a: any, b: any) => b.threeDayAvg - a.threeDayAvg);
 
+    // جدار العار: كسر حماسة أو هزيمة اليوم
     const losers = allUsers
       .filter((user: any) => {
         const isLoss = user.lastChallengeLossDate === todayStr;

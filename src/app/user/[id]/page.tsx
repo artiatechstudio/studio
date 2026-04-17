@@ -194,7 +194,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
            </div>
            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center flex flex-col items-center shadow-sm">
               <XCircle size={16} className="text-red-600 mb-1" />
-              <p className="text-sm font-black text-red-700">هزائم: {userData.challengesLost || 0}</p>
+              <p className="text-sm font-black text-green-700">هزائم: {userData.challengesLost || 0}</p>
            </div>
         </div>
 

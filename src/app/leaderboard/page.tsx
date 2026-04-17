@@ -11,8 +11,6 @@ import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/user-avatar';
-import { formatDistanceToNow } from 'date-fns';
-import { ar } from 'date-fns/locale';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
@@ -49,7 +47,7 @@ export default function LeaderboardPage() {
       const p3 = u.dailyPoints?.[dayBStr] || 0;
       const avg = Math.round((p1 + p2 + p3) / 3);
       
-      // منطق التحديث الموزع: فحص كسر الحماسة
+      // منطق التحديث الموزع: فحص كسر الحماسة (غائب لأكثر من 24 ساعة عن أمس)
       const lastActive = u.lastActiveDate;
       const isStreakExpired = lastActive && lastActive < yestStr;
       
@@ -79,6 +77,27 @@ export default function LeaderboardPage() {
       totalLeaders: activeLeaders.length 
     };
   }, [rawData, displayLimit, todayStr, yestStr, dayBStr]);
+
+  // منطق التحديث الموزع (فقط للآدمن أو المستخدم الحالي لتصفير حماسة الآخرين الغائبين فعلياً)
+  useEffect(() => {
+    if (rawData && todayStr) {
+      const usersToReset = Object.values(rawData).filter((u: any) => {
+        return u.name !== 'admin' && u.lastActiveDate && u.lastActiveDate < yestStr && (u.streak || 0) > 0;
+      });
+
+      if (usersToReset.length > 0) {
+        // إذا كان المستخدم آدمن، يمكنه تحديث حالة الجميع في الداتابيز لضمان الصحة العامة
+        const myNameRef = ref(database, `users/${currentUser?.uid}/name`);
+        get(myNameRef).then(snap => {
+          if (snap.val() === 'admin') {
+            usersToReset.forEach((u: any) => {
+              update(ref(database, `users/${u.id}`), { streak: 0 });
+            });
+          }
+        });
+      }
+    }
+  }, [rawData, yestStr, database, currentUser, todayStr]);
 
   if (isLoading || !todayStr) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
@@ -169,4 +188,15 @@ export default function LeaderboardPage() {
       </div>
     </div>
   );
+}
+
+function get(ref: any) {
+  // دالة مساعدة لجلب البيانات مرة واحدة
+  return new Promise<any>((resolve) => {
+    const { onValue, off } = require('firebase/database');
+    const callback = onValue(ref, (snap: any) => {
+      off(ref, 'value', callback);
+      resolve(snap);
+    });
+  });
 }

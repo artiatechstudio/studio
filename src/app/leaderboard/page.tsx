@@ -32,7 +32,7 @@ export default function LeaderboardPage() {
     setDayBStr(formatDate(dayB));
   }, []);
   
-  // تحميل بيانات المستخدمين (بدون صور الأفاتار لضمان السرعة القصوى)
+  // تحميل بيانات المستخدمين خفيفة (بدون صور الأفاتار لضمان السرعة القصوى)
   const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 

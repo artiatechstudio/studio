@@ -65,16 +65,14 @@ export default function Home() {
         updates[`premiumRequest/status`] = 'expired';
         
         // إزالة الصورة الشخصية من قاعدة البيانات لضمان الحصرية وتقليل حجم البيانات
-        if (userData.avatar && (userData.avatar.startsWith('data:image') || userData.avatar.startsWith('http'))) {
-          updates.avatar = "🐱";
-          // مسح الصورة من المسار المنفصل أيضاً
-          remove(ref(database, `avatars/${user.uid}`));
-        }
+        // كما يتم استبدال قيمة avatar بـ "🐱" في ملف المستخدم
+        updates.avatar = "🐱";
+        remove(ref(database, `avatars/${user.uid}`));
 
         push(ref(database, `users/${user.uid}/notifications`), {
           type: 'system',
           title: 'انتهت رحلة البريميوم ⌛',
-          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً للاستمتاع بكافة الميزات وحفظ صورتك الشخصية!',
+          message: 'لقد انتهت فترة اشتراكك الملكي. ننتظر عودتك قريباً للاستمتاع بكافة الميزات وحماية صورتك الشخصية!',
           isRead: false,
           timestamp: serverTimestamp()
         });

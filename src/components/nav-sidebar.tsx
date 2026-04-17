@@ -4,7 +4,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, Crown, ShieldCheck, ClipboardList } from 'lucide-react';
+import { Home, Trophy, User, BookMarked, Settings, LogOut, LogIn, Flame, MessageCircle, Bell, Star, ShieldCheck, ClipboardList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser, useAuth, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
@@ -27,8 +27,9 @@ export function NavSidebar() {
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData } = useDatabase(userRef);
 
-  const chatsRef = useMemoFirebase(() => ref(database, 'chats'), [database]);
-  const { data: chatsData } = useDatabase(chatsRef);
+  // نستخدم فهرس المحادثات النشطة لتجنب خطأ الصلاحيات
+  const activeChatsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/activeChats`) : null, [database, user]);
+  const { data: activeChatsData } = useDatabase(activeChatsRef);
 
   const notificationsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/notifications`) : null, [database, user]);
   const { data: notificationsData } = useDatabase(notificationsRef);
@@ -42,23 +43,10 @@ export function NavSidebar() {
   }, [allUsersData, userData]);
 
   const unreadChatCount = useMemo(() => {
-    if (!chatsData || !user) return 0;
-    let totalUnread = 0;
-    Object.keys(chatsData).forEach(chatId => {
-      if (chatId.includes(user.uid)) {
-        const chat = chatsData[chatId];
-        if (chat && chat.messages) {
-          const messages: any[] = Object.values(chat.messages);
-          const lastSeen = chat.lastSeen?.[user.uid] || 0;
-          const unreadInThisChat = messages.filter(m => 
-            m.senderId !== user.uid && m.timestamp > lastSeen
-          ).length;
-          totalUnread += unreadInThisChat;
-        }
-      }
-    });
-    return totalUnread;
-  }, [chatsData, user]);
+    if (!activeChatsData) return 0;
+    // مستقبلاً يمكن إضافة حقل unread في الفهرس
+    return Object.keys(activeChatsData).length > 0 ? 1 : 0; 
+  }, [activeChatsData]);
 
   const unreadNotifCount = useMemo(() => {
     if (!notificationsData) return 0;

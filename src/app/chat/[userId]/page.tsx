@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef, use, useMemo } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, push, serverTimestamp, query, limitToLast, set, remove, runTransaction } from 'firebase/database';
+import { ref, push, serverTimestamp, query, limitToLast, set, remove, runTransaction, update } from 'firebase/database';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Send, ArrowLeft, Heart, Crown, Trash2, Camera, X, Loader2 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { toast } from '@/hooks/use-toast';
+import { UserAvatar } from '@/components/user-avatar';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -103,7 +104,16 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
     };
 
     try {
-      await push(messagesRef, msg);
+      const newMsgRef = push(messagesRef);
+      const updates: any = {};
+      updates[`chats/${chatId}/messages/${newMsgRef.key}`] = msg;
+      // تحديث فهرس المحادثات النشطة لكلا الطرفين لضمان ظهورها في القائمة دون خطأ صلاحيات
+      const chatIdx = { lastMessage: msgText.trim() || 'صورة 📸', timestamp: serverTimestamp() };
+      updates[`users/${user.uid}/activeChats/${chatId}`] = chatIdx;
+      updates[`users/${otherId}/activeChats/${chatId}`] = chatIdx;
+      
+      await update(ref(database), updates);
+      
       setMsgText('');
       setMsgImage(null);
     } catch (e) {
@@ -127,13 +137,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
       <header className="flex items-center justify-between bg-card p-4 rounded-3xl shadow-lg border border-border mx-4 mt-4 sticky top-4 z-30">
         <div className="flex items-center gap-4">
           <Link href={`/user/${otherId}`} className="shrink-0">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-2xl border border-border overflow-hidden">
-              {otherUserData?.avatar?.startsWith('data:image') || otherUserData?.avatar?.startsWith('http') ? (
-                <img src={otherUserData.avatar} className="w-full h-full object-cover" alt="Avatar" />
-              ) : (
-                <span>{otherUserData?.avatar || "🐱"}</span>
-              )}
-            </div>
+            <UserAvatar user={otherUserData} size="md" />
           </Link>
           <div className="text-right">
             <div className="flex items-center gap-1 justify-end">
@@ -159,7 +163,12 @@ export default function ChatRoomPage({ params }: { params: Promise<{ userId: str
             <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive/40"><Trash2 size={20}/></Button></AlertDialogTrigger>
             <AlertDialogContent className="rounded-[2.5rem]" dir="rtl">
               <AlertDialogHeader><AlertDialogTitle className="text-right">حذف المحادثة؟</AlertDialogTitle><AlertDialogDescription className="text-right">سيتم مسح المحادثة من الطرفين نهائياً.</AlertDialogDescription></AlertDialogHeader>
-              <AlertDialogFooter className="gap-2"><AlertDialogAction onClick={() => remove(chatRootRef!)} className="bg-destructive">نعم، احذف</AlertDialogAction><AlertDialogCancel>إلغاء</AlertDialogCancel></AlertDialogFooter>
+              <AlertDialogFooter className="gap-2"><AlertDialogAction onClick={() => {
+                remove(chatRootRef!);
+                remove(ref(database, `users/${user?.uid}/activeChats/${chatId}`));
+                remove(ref(database, `users/${otherId}/activeChats/${chatId}`));
+                toast({ title: "تم حذف المحادثة نهائياً" });
+              }} className="bg-destructive">نعم، احذف</AlertDialogAction><AlertDialogCancel>إلغاء</AlertDialogCancel></AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
           <Link href="/chat"><Button variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button></Link>

@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
 import { ref } from 'firebase/database';
@@ -14,14 +14,14 @@ interface UserAvatarProps {
 
 /**
  * مكون الأفاتار المطور والأكثر كفاءة في كارينجو.
- * يقوم بجلب الصورة بشكل مستقل عند الحاجة فقط لتقليل حمل البيانات في القوائم.
+ * يقوم بجلب الصورة بشكل مستقل ويطبق قوانين البريميوم بصرامة.
  */
 export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const { database } = useFirebase();
   const isAdmin = user?.name === 'admin';
   const userId = user?.id || user?.uid;
   
-  // جلب الصورة من المسار المنفصل لضمان السرعة
+  // جلب الصورة من المسار المنفصل
   const avatarRef = useMemoFirebase(() => userId ? ref(database, `avatars/${userId}`) : null, [database, userId]);
   const { data: avatarData } = useDatabase(avatarRef);
 
@@ -31,11 +31,13 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const now = Date.now();
   const isExpired = user?.premiumUntil && now > user.premiumUntil && !isAdmin;
   
-  // نستخدم الأفاتار الموجود في بيانات المستخدم (إذا كان إيموجي) أو الصورة المحملة من المسار المنفصل
-  const avatarValue = avatarData || user?.avatar || "🐱";
-  const isImageAvatar = avatarValue?.startsWith('data:image') || avatarValue?.startsWith('http');
-  const showImage = isPremium && !isExpired && isImageAvatar;
+  // نستخدم الأفاتار الموجود في بيانات المستخدم (إيموجي) أو الصورة المحملة
+  // المنطق: إذا لم يكن بريميوم أو انتهى اشتراكه، لا نعرض الصورة أبداً
+  const canShowImage = isPremium && !isExpired;
+  const avatarValue = (canShowImage && avatarData) || (typeof user?.avatar === 'string' && !user.avatar.startsWith('data') ? user.avatar : "🐱");
   
+  const isImageAvatar = avatarValue?.startsWith('data:image') || avatarValue?.startsWith('http');
+
   const sizeClasses = {
     sm: "w-8 h-8 text-xs",
     md: "w-10 h-10 text-xl",
@@ -49,7 +51,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
       sizeClasses[size],
       className
     )}>
-      {showImage ? (
+      {isImageAvatar ? (
         <img 
           src={avatarValue} 
           alt={user?.name} 
@@ -58,7 +60,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
         />
       ) : (
         <span className="select-none">
-          {isImageAvatar ? "🐱" : avatarValue}
+          {avatarValue}
         </span>
       )}
       {isPremium && !isExpired && size !== 'sm' && (

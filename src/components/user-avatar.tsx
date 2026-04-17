@@ -13,27 +13,38 @@ interface UserAvatarProps {
 }
 
 /**
- * مكون الأفاتار المطور والأكثر كفاءة في كارينجو.
- * يقوم بجلب الصورة بشكل مستقل ويطبق قوانين البريميوم بصرامة.
+ * مكون الأفاتار المطور في كارينجو.
+ * يحل مشكلة الأذونات عبر التعامل مع مسار /avatars وفحص البريميوم.
  */
 export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const { database } = useFirebase();
   const isAdmin = user?.name === 'admin';
   const userId = user?.id || user?.uid;
   
-  // جلب الصورة من المسار المنفصل لتسريع القوائم
+  // جلب الصورة من المسار المنفصل
   const avatarRef = useMemoFirebase(() => userId ? ref(database, `avatars/${userId}`) : null, [database, userId]);
   const { data: avatarData } = useDatabase(avatarRef);
 
   const isPremium = user?.isPremium === 1 || isAdmin;
-  
-  // التحقق من انتهاء البريميوم
   const now = Date.now();
   const isExpired = user?.premiumUntil && now > user.premiumUntil && !isAdmin;
   
-  // المنطق الصارم: إذا لم يكن بريميوم أو انتهى اشتراكه، لا نعرض الصورة أبداً
+  // منطق العرض: إذا كان بريميوم، نعرض الصورة من المسار الجديد، وإلا نبحث في القديم، وإلا القطة
   const canShowImage = isPremium && !isExpired;
-  const avatarValue = (canShowImage && avatarData) || (typeof user?.avatar === 'string' && !user.avatar.startsWith('data') ? user.avatar : "🐱");
+  
+  // Migration logic: التحقق من وجود الصورة في المسار الجديد أو القديم
+  let avatarValue = "🐱";
+  if (canShowImage) {
+    if (avatarData) {
+      avatarValue = avatarData;
+    } else if (typeof user?.avatar === 'string' && user.avatar.startsWith('data')) {
+      avatarValue = user.avatar;
+    } else {
+      avatarValue = user?.avatar || "🐱";
+    }
+  } else {
+    avatarValue = (typeof user?.avatar === 'string' && !user.avatar.startsWith('data')) ? user.avatar : "🐱";
+  }
   
   const isImageAvatar = avatarValue?.startsWith('data:image') || avatarValue?.startsWith('http');
 
@@ -58,7 +69,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
           loading="lazy"
         />
       ) : (
-        <span className="select-none">
+        <span className="select-none font-black">
           {avatarValue}
         </span>
       )}

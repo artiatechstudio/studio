@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight, XCircle } from 'lucide-react';
+import { Trophy, Flame, Heart, ArrowLeft, Star, Crown, Medal, Lock, Swords, Loader2, Calendar as CalendarIcon, User as UserIcon, Ruler, Weight, XCircle, UserPlus, UserMinus, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { playSound } from '@/lib/sounds';
 import { cn } from '@/lib/utils';
@@ -39,9 +39,48 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
   const myRef = useMemoFirebase(() => currentUser ? ref(database, `users/${currentUser.uid}`) : null, [database, currentUser]);
   const { data: myData } = useDatabase(myRef);
 
+  const isFollowing = myData?.following?.[id];
+
+  const handleFollowToggle = async () => {
+    if (!currentUser || !id || !myData) return;
+    playSound('click');
+    
+    const myFollowingRef = ref(database, `users/${currentUser.uid}/following/${id}`);
+    const theirFollowersRef = ref(database, `users/${id}/followers/${currentUser.uid}`);
+    const theirFollowersCountRef = ref(database, `users/${id}/followersCount`);
+    const myFollowingCountRef = ref(database, `users/${currentUser.uid}/followingCount`);
+
+    try {
+      if (isFollowing) {
+        await set(myFollowingRef, null);
+        await set(theirFollowersRef, null);
+        runTransaction(theirFollowersCountRef, c => (c || 1) - 1);
+        runTransaction(myFollowingCountRef, c => (c || 1) - 1);
+        toast({ title: "تم إلغاء المتابعة" });
+      } else {
+        await set(myFollowingRef, true);
+        await set(theirFollowersRef, true);
+        runTransaction(theirFollowersCountRef, c => (c || 0) + 1);
+        runTransaction(myFollowingCountRef, c => (c || 0) + 1);
+        
+        push(ref(database, `users/${id}/notifications`), {
+          type: 'system',
+          title: 'متابع جديد! 👤',
+          message: `${myData.name} بدأ بمتابعتك الآن.`,
+          isRead: false,
+          timestamp: serverTimestamp()
+        });
+        
+        toast({ title: "أنت تتابع هذا البطل الآن! 🚀" });
+        playSound('success');
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: "فشل الإجراء" });
+    }
+  };
+
   const handleSendChallenge = async () => {
     if (!currentUser || !id || !myData) return;
-    
     const isPremium = myData.isPremium === 1 || myData.name === 'admin';
     const now = new Date();
     const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay())).toLocaleDateString('en-CA');
@@ -49,17 +88,14 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
 
     if (!isPremium && weeklySent >= 2) {
       toast({ 
-        variant: "destructive", 
-        title: "وصلت للحد الأسبوعي 🛑", 
+        variant: "destructive", title: "وصلت للحد الأسبوعي 🛑", 
         description: "اشترك في بريميوم لإرسال تحديات غير محدودة!",
         action: <ToastAction altText="اشترك الآن" onClick={() => router.push('/settings')}>اشترك الآن</ToastAction>
       });
       return;
     }
 
-    const points = parseInt(challengePoints);
-    if (!challengeTitle.trim() || points > 100 || points < 10) return;
-
+    if (!challengeTitle.trim()) return;
     setIsSendingChallenge(true);
     playSound('click');
 
@@ -73,14 +109,13 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
         receiverName: userData.name,
         title: challengeTitle.trim(),
         duration: parseInt(challengeTime),
-        pointsStake: points,
+        pointsStake: parseInt(challengePoints),
         status: 'pending_acceptance',
         createdAt: serverTimestamp()
       });
 
       await update(ref(database, `users/${currentUser.uid}/weeklyChallengesSent`), { [startOfWeek]: weeklySent + 1 });
       push(ref(database, `users/${id}/notifications`), { type: 'challenge', title: 'مبارزة ثنائية! ⚔️', message: `يتحداك ${myData.name} في: ${challengeTitle.trim()}`, challengeId: challengeRef.key, timestamp: serverTimestamp() });
-
       toast({ title: "تم إرسال طلب التحدي! ⚔️" });
       setIsChallengeOpen(false);
       playSound('success');
@@ -88,21 +123,8 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
     finally { setIsSendingChallenge(false); }
   };
 
-  const handleToggleLike = () => {
-    if (!currentUser || !id) return;
-    playSound('click');
-    const refLiked = ref(database, `users/${id}/likedBy/${currentUser.uid}`);
-    const refCount = ref(database, `users/${id}/likesCount`);
-    runTransaction(refLiked, (curr) => {
-      if (curr) { runTransaction(refCount, (c) => (c || 1) - 1); return null; }
-      else { runTransaction(refCount, (c) => (c || 0) + 1); return true; }
-    });
-  };
-
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
   if (!userData) return null;
-
-  const isUserPremium = userData.isPremium === 1 || userData.name === 'admin';
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72 pt-4 md:pt-0" dir="rtl">
@@ -110,7 +132,6 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
       <div className="app-container py-6 space-y-6">
         <header className="flex flex-col md:flex-row items-center gap-6 bg-card p-6 rounded-[2.5rem] shadow-xl border border-border relative mx-2">
           <div className="absolute top-3 left-3 flex gap-1">
-            {currentUser?.uid !== id && <Button onClick={handleToggleLike} variant="ghost" size="icon" className={cn("rounded-full", userData.likedBy?.[currentUser?.uid || ''] ? "text-red-500" : "text-muted-foreground")}><Heart fill={userData.likedBy?.[currentUser?.uid || ''] ? "currentColor" : "none"} /></Button>}
             <Button onClick={() => router.back()} variant="ghost" size="icon" className="rounded-full"><ArrowLeft className="rotate-180" /></Button>
           </div>
           
@@ -119,7 +140,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
           <div className="flex-1 text-center md:text-right space-y-2">
             <div className="flex items-center justify-center md:justify-start gap-2">
               <h1 className="text-xl md:text-3xl font-black text-primary">{userData.name}</h1>
-              {isUserPremium && <Crown size={16} className="text-yellow-500" fill="currentColor" />}
+              {(userData.isPremium === 1 || userData.name === 'admin') && <Crown size={16} className="text-yellow-500" fill="currentColor" />}
             </div>
             <p className="text-[10px] font-black text-primary/60 bg-primary/5 px-3 py-0.5 rounded-full inline-block">
               {userData.name === 'admin' ? "العضو المؤسس رقم 0" : `العضو رقم ${userData.registrationRank || 0}`}
@@ -127,21 +148,37 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
             <p className="text-xs font-bold text-muted-foreground italic mt-1">{userData.bio || "عضو طموح في مجتمع كارينجو 🌱"}</p>
             
             <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-3">
-              <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-primary/10">
-                <CalendarIcon size={12} /> {userData.age || '--'} سنة
-              </div>
-              <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10">
-                <UserIcon size={12} /> {userData.gender === 'male' ? 'ذكر' : 'أنثى'}
-              </div>
-              <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10">
-                <Ruler size={12} /> {userData.height || '--'} سم
-              </div>
-              <div className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-orange-100">
-                <Weight size={12} /> {userData.weight || '--'} كجم
-              </div>
+              <div className="bg-primary/5 text-primary px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-primary/10"><CalendarIcon size={12} /> {userData.age || '--'} سنة</div>
+              <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10"><UserIcon size={12} /> {userData.gender === 'male' ? 'ذكر' : 'أنثى'}</div>
+              <div className="bg-accent/5 text-accent px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-accent/10"><Ruler size={12} /> {userData.height || '--'} سم</div>
+              <div className="bg-orange-50 text-orange-600 px-3 py-1.5 rounded-xl font-black text-[10px] flex items-center gap-1.5 border border-orange-100"><Weight size={12} /> {userData.weight || '--'} كجم</div>
             </div>
           </div>
         </header>
+
+        <div className="grid grid-cols-2 gap-3 px-2">
+           <Card className="p-4 rounded-2xl bg-primary/5 border-none text-center shadow-sm">
+              <p className="text-xl font-black text-primary leading-none">{userData.followersCount || 0}</p>
+              <p className="text-[8px] font-black text-muted-foreground uppercase mt-1">متابع</p>
+           </Card>
+           <Card className="p-4 rounded-2xl bg-accent/5 border-none text-center shadow-sm">
+              <p className="text-xl font-black text-accent leading-none">{userData.followingCount || 0}</p>
+              <p className="text-[8px] font-black text-muted-foreground uppercase mt-1">يتابع</p>
+           </Card>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2">
+          {currentUser?.uid !== id && (
+            <Button onClick={handleFollowToggle} className={cn("h-14 rounded-2xl font-black gap-2 transition-all", isFollowing ? "bg-secondary text-primary" : "bg-accent text-white shadow-lg shadow-accent/20")}>
+              {isFollowing ? <><UserMinus size={18} /> إلغاء المتابعة</> : <><UserPlus size={18} /> متابعة البطل</>}
+            </Button>
+          )}
+          <Link href={`/chat/${id}`} className="w-full">
+            <Button variant="outline" className="w-full h-14 rounded-2xl border-2 border-primary text-primary font-black gap-2">
+              <UserIcon size={18} /> دردشة خاصة
+            </Button>
+          </Link>
+        </div>
 
         <div className="grid grid-cols-3 gap-3 px-2">
            <Card className="p-4 rounded-2xl bg-orange-50 border-none text-center shadow-sm">
@@ -152,25 +189,15 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
            <Card className="p-4 rounded-2xl bg-yellow-50 border-none text-center shadow-sm">
               <Star size={16} className="text-yellow-600 mx-auto mb-1" fill="currentColor" />
               <p className="text-lg font-black text-yellow-600 leading-none">{(userData.points || 0).toLocaleString()}</p>
-              <p className="text-[7px] font-black text-yellow-400 uppercase mt-1">إجمالي النقاط</p>
+              <p className="text-[7px] font-black text-yellow-400 uppercase mt-1">النقاط</p>
            </Card>
-           <Card className="p-4 rounded-2xl bg-red-50 border-none text-center shadow-sm">
-              <Heart size={16} className="text-red-600 mx-auto mb-1" fill="currentColor" />
-              <p className="text-lg font-black text-red-600 leading-none">{userData.likesCount || 0}</p>
-              <p className="text-[7px] font-black text-red-400 uppercase mt-1">إعجابات</p>
-           </Card>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-2">
-          <Link href={`/chat/${id}`} className="w-full">
-            <Button className="w-full h-14 rounded-2xl bg-secondary text-primary font-black gap-2">
-              <UserIcon size={18} /> دردشة خاصة
-            </Button>
-          </Link>
-          {currentUser?.uid !== id && (
-            <Dialog open={isChallengeOpen} onOpenChange={setIsChallengeOpen}>
+           <Dialog open={isChallengeOpen} onOpenChange={setIsChallengeOpen}>
               <DialogTrigger asChild>
-                <Button onClick={() => playSound('click')} className="w-full h-14 rounded-2xl bg-primary font-black shadow-lg">تحدي هذا البطل ⚔️</Button>
+                <Card className="p-4 rounded-2xl bg-red-600 border-none text-center shadow-md cursor-pointer hover:bg-red-700 transition-colors">
+                  <Swords size={16} className="text-white mx-auto mb-1" />
+                  <p className="text-xs font-black text-white leading-none">مبارزة</p>
+                  <p className="text-[7px] font-black text-white/70 uppercase mt-1">تحدَّه الآن</p>
+                </Card>
               </DialogTrigger>
               <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
                 <DialogHeader><DialogTitle className="text-2xl font-black text-primary text-right">مبارزة ثنائية ⚔️</DialogTitle></DialogHeader>
@@ -183,8 +210,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                 </div>
                 <DialogFooter><Button onClick={handleSendChallenge} disabled={isSendingChallenge} className="w-full h-14 rounded-2xl font-black text-xl bg-primary">{isSendingChallenge ? "جاري الإرسال..." : "إرسال التحدي ⚔️"}</Button></DialogFooter>
               </DialogContent>
-            </Dialog>
-          )}
+           </Dialog>
         </div>
 
         <div className="grid grid-cols-2 gap-3 px-2">
@@ -194,7 +220,7 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
            </div>
            <div className="bg-red-50 p-4 rounded-2xl border border-red-100 text-center flex flex-col items-center shadow-sm">
               <XCircle size={16} className="text-red-600 mb-1" />
-              <p className="text-sm font-black text-green-700">هزائم: {userData.challengesLost || 0}</p>
+              <p className="text-sm font-black text-red-700">هزائم: {userData.challengesLost || 0}</p>
            </div>
         </div>
 
@@ -214,9 +240,9 @@ export default function UserPublicProfilePage({ params }: { params: Promise<{ id
                         <p className="text-[6px] font-black text-center mt-1 truncate w-full">{badge.name}</p>
                       </button>
                     </PopoverTrigger>
-                    <PopoverContent className="text-right p-4 rounded-2xl" dir="rtl">
-                      <p className="font-black text-sm">{badge.name}</p>
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">{badge.description}</p>
+                    <PopoverContent className="text-right p-4 rounded-2xl border-2 border-primary/10 shadow-2xl" dir="rtl">
+                      <p className="font-black text-sm text-primary">{badge.name}</p>
+                      <p className="text-[10px] text-muted-foreground leading-relaxed mt-1">{badge.description}</p>
                     </PopoverContent>
                   </Popover>
                 );

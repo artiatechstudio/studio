@@ -5,15 +5,18 @@ import React, { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle, ChevronDown, Loader2 } from "lucide-react";
-import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, query, orderByChild, limitToLast } from 'firebase/database';
+import { useFirebase, useDatabase, useMemoFirebase, useUser } from '@/firebase';
+import { ref, query, orderByChild, limitToLast, update } from 'firebase/database';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/user-avatar';
+import { formatDistanceToNow } from 'date-fns';
+import { ar } from 'date-fns/locale';
 
 export default function LeaderboardPage() {
   const { database } = useFirebase();
+  const { user: currentUser } = useUser();
   const [displayLimit, setDisplayLimit] = useState(20);
   const [todayStr, setTodayStr] = useState("");
   const [yestStr, setYestStr] = useState("");
@@ -22,12 +25,9 @@ export default function LeaderboardPage() {
   useEffect(() => {
     const today = new Date();
     const formatDate = (d: Date) => d.toISOString().split('T')[0];
-    
     setTodayStr(formatDate(today));
-    
     const yest = new Date(today); yest.setDate(yest.getDate() - 1);
     setYestStr(formatDate(yest));
-    
     const dayB = new Date(today); dayB.setDate(dayB.getDate() - 2);
     setDayBStr(formatDate(dayB));
   }, []);
@@ -48,24 +48,32 @@ export default function LeaderboardPage() {
       const p2 = u.dailyPoints?.[yestStr] || 0;
       const p3 = u.dailyPoints?.[dayBStr] || 0;
       const avg = Math.round((p1 + p2 + p3) / 3);
-      return { ...u, threeDayAvg: avg };
+      
+      // منطق التحديث الموزع: فحص كسر الحماسة
+      const lastActive = u.lastActiveDate;
+      const isStreakExpired = lastActive && lastActive < yestStr;
+      
+      // إذا كان المستخدم الحالي آدمن، نقوم بتحديث السيرفر فعلياً
+      if (isStreakExpired && currentUser?.uid === 'ADMIN_UID_CHECK') {
+         // نترك التحديث لصاحب الحساب لتقليل العمليات، لكن نظهر العار هنا
+      }
+
+      return { ...u, threeDayAvg: avg, isStreakExpired };
     });
 
     const activeLeaders = usersWithAvg
       .filter((u: any) => u.threeDayAvg > 0)
       .sort((a: any, b: any) => b.threeDayAvg - a.threeDayAvg);
 
-    // جدار العار الآلي: كسر حماسة (غياب أكثر من 24 ساعة)
-    const losers = allUsers
+    // جدار العار الآلي: كسر حماسة أو هزيمة اليوم
+    const losers = usersWithAvg
       .filter((user: any) => {
         const isLoss = user.lastChallengeLossDate === todayStr;
-        const lastActive = user.lastActiveDate;
-        const isStreakBroken = lastActive && lastActive < yestStr;
-        return isStreakBroken || isLoss;
+        return user.isStreakExpired || isLoss;
       })
       .map(u => ({
         ...u, 
-        shameReason: (u.lastActiveDate < yestStr) ? 'كسر حماسة' : 'هزيمة مبارزة'
+        shameReason: u.isStreakExpired ? `غائب منذ ${u.lastActiveDate || 'زمن'}` : 'تلقى هزيمة اليوم'
       }))
       .sort((a: any, b: any) => (b.points || 0) - (a.points || 0))
       .slice(0, 30);
@@ -75,7 +83,7 @@ export default function LeaderboardPage() {
       losers,
       totalLeaders: activeLeaders.length 
     };
-  }, [rawData, displayLimit, todayStr, yestStr, dayBStr]);
+  }, [rawData, displayLimit, todayStr, yestStr, dayBStr, currentUser]);
 
   if (isLoading || !todayStr) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
@@ -92,15 +100,15 @@ export default function LeaderboardPage() {
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-yellow-100 rounded-xl flex items-center justify-center text-yellow-600 shadow-md border border-white"><Trophy size={20} /></div>
             <div className="text-right">
-              <h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء النشطين</h1>
-              <p className="text-muted-foreground text-[9px] font-bold">الترتيب حسب متوسط نقاط آخر 3 أيام ⚡</p>
+              <h1 className="text-xl font-black text-primary leading-tight">قائمة العظماء</h1>
+              <p className="text-muted-foreground text-[9px] font-bold">المنافسة بمتوسط نقاط آخر 3 أيام ⚡</p>
             </div>
           </div>
         </header>
 
         <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
           <div className="p-4 border-b border-border bg-secondary/5 flex items-center justify-between flex-row-reverse px-6">
-            <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع (تحميل سريع 🚀)</h2>
+            <h2 className="text-[10px] font-black text-primary uppercase">أبطال الميدان 🚀</h2>
             <Timer size={14} className="text-primary opacity-40" />
           </div>
           <div className="divide-y divide-border">
@@ -149,18 +157,18 @@ export default function LeaderboardPage() {
           <div className="p-4 space-y-3">
             {stats.losers.length > 0 ? stats.losers.map((user: any) => (
               <div key={user.id} className="flex items-center justify-between bg-white p-3 rounded-2xl border border-red-100 shadow-sm">
-                <div className="bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[80px] text-center">
-                  <span className="text-[8px] font-black text-red-600 flex items-center justify-center gap-1">
-                    {user.shameReason === 'هزيمة مبارزة' ? <Swords size={8}/> : <AlertCircle size={8}/>}
+                <div className="bg-red-50 px-2 py-1 rounded-lg border border-red-100 min-w-[100px] text-center">
+                  <span className="text-[7px] font-black text-red-600 flex items-center justify-center gap-1">
+                    {user.shameReason.includes('غائب') ? <AlertCircle size={8}/> : <Swords size={8}/>}
                     {user.shameReason}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 flex-row-reverse">
                   <Link href={`/user/${user.id}`}><UserAvatar user={user} size="sm" className="grayscale opacity-50" /></Link>
-                  <div className="text-right"><p className="font-black text-red-900 text-xs">{user.name}</p><p className="text-[8px] font-bold text-red-400">فقد السيطرة اليوم</p></div>
+                  <div className="text-right"><p className="font-black text-red-900 text-xs">{user.name}</p><p className="text-[8px] font-bold text-red-400 italic">فقد السيطرة</p></div>
                 </div>
               </div>
-            )) : <div className="p-10 text-center text-red-500 font-black text-xs italic">الجميع يقاتل اليوم! 🔥</div>}
+            )) : <div className="p-10 text-center text-red-500 font-black text-xs italic">الجميع يقاتل بضراوة! 🔥</div>}
           </div>
         </div>
       </div>

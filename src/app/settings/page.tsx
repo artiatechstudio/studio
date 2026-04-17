@@ -4,7 +4,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, remove } from 'firebase/database';
+import { ref, update, remove, set } from 'firebase/database';
 import { deleteUser, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,10 @@ export default function SettingsPage() {
   
   const userRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}`) : null, [user, database]);
   const { data: userData, isLoading } = useDatabase(userRef);
+
+  // جلب الصورة من المسار المنفصل
+  const avatarImageRef = useMemoFirebase(() => user ? ref(database, `avatars/${user.uid}`) : null, [database, user]);
+  const { data: avatarImageData } = useDatabase(avatarImageRef);
 
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -63,7 +67,6 @@ export default function SettingsPage() {
       setBio(userData.bio || '');
     }
     
-    // تأخير تحميل الإعدادات لتجنب خطأ الـ Hydration
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
     setTheme(savedTheme);
     const savedMute = localStorage.getItem('careingo_muted') === 'true';
@@ -101,6 +104,11 @@ export default function SettingsPage() {
     setSaving(true);
     playSound('click');
     try {
+      // إذا اختار إيموجي، نمسح الصورة الشخصية المحملة (إذا وجدت)
+      if (!avatar.startsWith('data:image') && !avatar.startsWith('http')) {
+        await remove(ref(database, `avatars/${user.uid}`));
+      }
+
       await update(ref(database, `users/${user.uid}`), {
         name: isAdmin ? 'admin' : name,
         age: a,
@@ -153,6 +161,9 @@ export default function SettingsPage() {
     playSound('click');
     try {
       const base64Image = await compressAndConvertToBase64(file);
+      // حفظ الصورة في مسار منفصل تماماً لتسريع التطبيق
+      await set(ref(database, `avatars/${user.uid}`), base64Image);
+      // تحديث إشارة الأفاتار في ملف المستخدم ليكون مجرد نص "custom"
       await update(ref(database, `users/${user.uid}`), { avatar: base64Image });
       setAvatar(base64Image);
       toast({ title: "تم تغيير المظهر بنجاح! 📸" });
@@ -198,7 +209,8 @@ export default function SettingsPage() {
 
   if (isLoading || theme === null) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
 
-  const isImageAvatar = avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'));
+  const currentAvatar = avatarImageData || avatar;
+  const isImageAvatarDisplay = currentAvatar && (currentAvatar.startsWith('http') || currentAvatar.startsWith('data:image'));
 
   return (
     <div className="min-h-screen bg-background text-foreground pb-40 md:pr-72" dir="rtl">
@@ -298,7 +310,7 @@ export default function SettingsPage() {
             <div className="flex flex-col items-center gap-6">
                <div className="relative">
                  <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800">
-                   { isImageAvatar ? <img src={avatar} alt="Avatar" className="object-cover w-full h-full" /> : <span className="text-7xl md:text-8xl">{avatar}</span> }
+                   { isImageAvatarDisplay ? <img src={currentAvatar} alt="Avatar" className="object-cover w-full h-full" /> : <span className="text-7xl md:text-8xl">{currentAvatar}</span> }
                    {isUploading && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20"><Loader2 className="text-white animate-spin" size={32} /></div>}
                  </div>
                  <button onClick={() => isPremium ? fileInputRef.current?.click() : toast({title:"ميزة بريميوم 👑"})} className={cn("absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 transition-all z-30", isPremium ? "bg-primary text-white" : "bg-slate-400 text-slate-200")}><Camera size={20} /></button>

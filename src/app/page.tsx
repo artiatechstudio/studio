@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { TrackCard } from '@/components/dashboard/track-card';
 import { Mascot } from '@/components/mascot';
 import { useUser, useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
-import { ref, update, push, serverTimestamp } from 'firebase/database';
+import { ref, update, push, serverTimestamp, remove } from 'firebase/database';
 import { HeartPulse, Crown, ShieldCheck, Sparkles, Flame, Trophy, Share2, Loader2, XCircle, Swords, ArrowLeft, History } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
@@ -57,16 +57,18 @@ export default function Home() {
 
       if (userData.hasSeenTour !== true) setShowTour(true);
       
-      // منطق حماية البريميوم: تجريد الامتيازات وحذف الصورة الشخصية عند الانتهاء
+      // منطق حماية البريميوم: تجريد الامتيازات وحذف الصورة الشخصية فوراً عند الانتهاء
       const isAdmin = userData.name === 'admin';
       if (!isAdmin && userData.isPremium === 1 && userData.premiumUntil && now > userData.premiumUntil) {
         updates.isPremium = 0;
         updates.premiumUntil = null;
         updates[`premiumRequest/status`] = 'expired';
         
-        // إزالة الصورة الشخصية (ميزة بريميوم) وإعادتها للأفاتار الافتراضي
+        // إزالة الصورة الشخصية من قاعدة البيانات لضمان الحصرية وتقليل حجم البيانات
         if (userData.avatar && (userData.avatar.startsWith('data:image') || userData.avatar.startsWith('http'))) {
           updates.avatar = "🐱";
+          // مسح الصورة من المسار المنفصل أيضاً
+          remove(ref(database, `avatars/${user.uid}`));
         }
 
         push(ref(database, `users/${user.uid}/notifications`), {
@@ -81,7 +83,7 @@ export default function Home() {
         toast({ 
           variant: "destructive", 
           title: "انتهى اشتراك بريميوم", 
-          description: "تمت إعادتك للوضع العادي وحذف صورتك الشخصية." 
+          description: "تمت إعادتك للوضع العادي وحذف صورتك الشخصية لضمان الخصوصية." 
         });
       }
 

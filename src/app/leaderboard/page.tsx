@@ -32,6 +32,7 @@ export default function LeaderboardPage() {
     setDayBStr(formatDate(dayB));
   }, []);
   
+  // تحميل بيانات المستخدمين (بدون صور الأفاتار لضمان السرعة القصوى)
   const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
@@ -42,7 +43,7 @@ export default function LeaderboardPage() {
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin' && (u.points || 0) > 0);
 
-    // حساب متوسط 3 أيام
+    // حساب متوسط 3 أيام لضمان عدالة المنافسة
     const usersWithAvg = allUsers.map(u => {
       const p1 = u.dailyPoints?.[todayStr] || 0;
       const p2 = u.dailyPoints?.[yestStr] || 0;
@@ -55,7 +56,7 @@ export default function LeaderboardPage() {
       .filter((u: any) => u.threeDayAvg > 0)
       .sort((a: any, b: any) => b.threeDayAvg - a.threeDayAvg);
 
-    // جدار العار: كسر حماسة أو هزيمة اليوم
+    // جدار العار الآلي: كسر حماسة أو هزيمة اليوم
     const losers = allUsers
       .filter((user: any) => {
         const isLoss = user.lastChallengeLossDate === todayStr;
@@ -100,7 +101,7 @@ export default function LeaderboardPage() {
 
         <div className="bg-card rounded-[2.5rem] shadow-xl overflow-hidden border border-border mx-2">
           <div className="p-4 border-b border-border bg-secondary/5 flex items-center justify-between flex-row-reverse px-6">
-            <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع (متجدد)</h2>
+            <h2 className="text-[10px] font-black text-primary uppercase">أبطال المجتمع (تحميل سريع 🚀)</h2>
             <Timer size={14} className="text-primary opacity-40" />
           </div>
           <div className="divide-y divide-border">

@@ -1,8 +1,10 @@
 
 "use client"
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useFirebase, useDatabase, useMemoFirebase } from '@/firebase';
+import { ref } from 'firebase/database';
 
 interface UserAvatarProps {
   user: any;
@@ -11,20 +13,28 @@ interface UserAvatarProps {
 }
 
 /**
- * مكون الأفاتار الموحد في كارينجو.
- * يتحقق برمجياً من حالة البريميوم؛ إذا انتهى الاشتراك يمنع عرض الصورة الشخصية ويظهر الأفاتار الافتراضي.
+ * مكون الأفاتار المطور والأكثر كفاءة في كارينجو.
+ * يقوم بجلب الصورة بشكل مستقل عند الحاجة فقط لتقليل حمل البيانات في القوائم.
  */
 export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
+  const { database } = useFirebase();
   const isAdmin = user?.name === 'admin';
-  const isPremium = user?.isPremium === 1 || isAdmin;
-  const avatar = user?.avatar;
+  const userId = user?.id || user?.uid;
   
-  // التحقق من تاريخ انتهاء الاشتراك برمجياً أيضاً لزيادة الأمان في الواجهة
+  // جلب الصورة من المسار المنفصل لضمان السرعة
+  const avatarRef = useMemoFirebase(() => userId ? ref(database, `avatars/${userId}`) : null, [database, userId]);
+  const { data: avatarData } = useDatabase(avatarRef);
+
+  const isPremium = user?.isPremium === 1 || isAdmin;
+  
+  // التحقق من انتهاء البريميوم
   const now = Date.now();
   const isExpired = user?.premiumUntil && now > user.premiumUntil && !isAdmin;
   
-  // لا تظهر الصورة الشخصية إلا إذا كان المستخدم بريميوم حالياً وغير منتهي
-  const showImage = isPremium && !isExpired && (avatar?.startsWith('data:image') || avatar?.startsWith('http'));
+  // نستخدم الأفاتار الموجود في بيانات المستخدم (إذا كان إيموجي) أو الصورة المحملة من المسار المنفصل
+  const avatarValue = avatarData || user?.avatar || "🐱";
+  const isImageAvatar = avatarValue?.startsWith('data:image') || avatarValue?.startsWith('http');
+  const showImage = isPremium && !isExpired && isImageAvatar;
   
   const sizeClasses = {
     sm: "w-8 h-8 text-xs",
@@ -35,19 +45,24 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
 
   return (
     <div className={cn(
-      "bg-white rounded-full flex items-center justify-center border border-border shadow-sm overflow-hidden shrink-0 relative",
+      "bg-white rounded-full flex items-center justify-center border border-border shadow-sm overflow-hidden shrink-0 relative transition-all duration-300",
       sizeClasses[size],
       className
     )}>
       {showImage ? (
-        <img src={avatar} alt={user?.name} className="w-full h-full object-cover" />
+        <img 
+          src={avatarValue} 
+          alt={user?.name} 
+          className="w-full h-full object-cover animate-in fade-in duration-500" 
+          loading="lazy"
+        />
       ) : (
         <span className="select-none">
-          {(avatar?.startsWith('data:image') || avatar?.startsWith('http')) ? "🐱" : (avatar || "🐱")}
+          {isImageAvatar ? "🐱" : avatarValue}
         </span>
       )}
       {isPremium && !isExpired && size !== 'sm' && (
-        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white" />
+        <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white shadow-sm" />
       )}
     </div>
   );

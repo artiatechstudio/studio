@@ -1,4 +1,3 @@
-
 "use client"
 
 import React, { useEffect, useState } from 'react';
@@ -9,10 +8,10 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
   useEffect(() => {
     setMounted(true);
-    // انتقال تلقائي بعد ثانيتين لإنهاء الإزعاج
+    // تقليل الوقت لـ 1 ثانية فقط لسرعة الدخول وإنهاء الإزعاج
     const timer = setTimeout(() => {
       onComplete();
-    }, 2000);
+    }, 1000);
     return () => clearTimeout(timer);
   }, [onComplete]);
 
@@ -20,7 +19,7 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[9999] bg-white flex flex-col items-center justify-center overflow-hidden" dir="rtl">
-      <div className="flex flex-col items-center gap-0 w-full relative animate-in fade-in zoom-in duration-700">
+      <div className="flex flex-col items-center gap-0 w-full relative animate-in fade-in zoom-in duration-500">
         <div className="relative w-48 h-48 animate-float">
           <Image src="/logo.png" alt="Careingo Logo" fill className="object-contain" priority />
         </div>

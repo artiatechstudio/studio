@@ -49,12 +49,10 @@ export default function SettingsPage() {
   const [requestPhone, setRequestPhone] = useState('');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
 
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [isMuted, setIsMuted] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark' | null>(null);
+  const [isMuted, setIsMuted] = useState<boolean | null>(null);
 
   useEffect(() => {
-    setMounted(true);
     if (userData) {
       setName(userData.name || '');
       setAge(userData.age?.toString() || '');
@@ -64,30 +62,28 @@ export default function SettingsPage() {
       setAvatar(userData.avatar || '🐱');
       setBio(userData.bio || '');
     }
-    const savedTheme = typeof window !== 'undefined' ? (localStorage.getItem('theme') as 'light' | 'dark' || 'light') : 'light';
+    
+    // تأخير تحميل الإعدادات لتجنب خطأ الـ Hydration
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
     setTheme(savedTheme);
-    const savedMute = typeof window !== 'undefined' ? (localStorage.getItem('careingo_muted') === 'true') : false;
+    const savedMute = localStorage.getItem('careingo_muted') === 'true';
     setIsMuted(savedMute);
   }, [userData]);
 
   const toggleTheme = () => {
+    if (theme === null) return;
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
     localStorage.setItem('theme', newTheme);
-    if (newTheme === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    if (newTheme === 'dark') document.documentElement.classList.add('dark');
+    else document.documentElement.classList.remove('dark');
     playSound('click');
-    toast({ title: newTheme === 'dark' ? "تم تفعيل الوضع الليلي 🌙" : "تم تفعيل الوضع المضيء ☀️" });
   };
 
   const toggleMute = (checked: boolean) => {
     setIsMuted(checked);
     localStorage.setItem('careingo_muted', checked.toString());
     if (!checked) playSound('click');
-    toast({ title: checked ? "تم كتم الأصوات 🔇" : "تم تفعيل الأصوات 🔊" });
   };
 
   const isAdmin = userData?.name === 'admin';
@@ -114,9 +110,9 @@ export default function SettingsPage() {
         avatar,
         bio: bio.slice(0, 30)
       });
-      toast({ title: "تم التحديث!" });
+      toast({ title: "تم التحديث بنجاح! ✅" });
     } catch (e) {
-      toast({ variant: "destructive", title: "خطأ" });
+      toast({ variant: "destructive", title: "خطأ في التحديث" });
     } finally {
       setSaving(false);
     }
@@ -131,26 +127,14 @@ export default function SettingsPage() {
         img.src = event.target?.result as string;
         img.onload = () => {
           const canvas = document.createElement('canvas');
-          const MAX_SIZE = 200; 
-          let width = img.width;
-          let height = img.height;
-
-          if (width > height) {
-            if (width > MAX_SIZE) {
-              height *= MAX_SIZE / width;
-              width = MAX_SIZE;
-            }
-          } else {
-            if (height > MAX_SIZE) {
-              width *= MAX_SIZE / height;
-              height = MAX_SIZE;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
+          const MAX_SIZE = 300; 
+          let width = img.width, height = img.height;
+          if (width > height) { if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } }
+          else { if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; } }
+          canvas.width = width; canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+          resolve(canvas.toDataURL('image/jpeg', 0.6)); 
         };
         img.onerror = reject;
       };
@@ -161,28 +145,21 @@ export default function SettingsPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-
     if (!isPremium) {
-      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "تحميل صورة بروفايل شخصية متاح فقط لمشتركي العضوية الملكية." });
+      toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "تحميل صورة بروفايل حقيقية متاح فقط للعضوية الملكية." });
       return;
     }
-
     setIsUploading(true);
     playSound('click');
-    
     try {
       const base64Image = await compressAndConvertToBase64(file);
-      await update(ref(database, `users/${user.uid}`), {
-        avatar: base64Image
-      });
+      await update(ref(database, `users/${user.uid}`), { avatar: base64Image });
       setAvatar(base64Image);
-      toast({ title: "تم التحديث بنجاح! 📸", description: "تم تغيير مظهرك الملكي بنجاح." });
+      toast({ title: "تم تغيير المظهر بنجاح! 📸" });
       playSound('success');
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "فشل المعالجة" });
-    } finally {
-      setIsUploading(false);
-    }
+    } catch (error) {
+      toast({ variant: "destructive", title: "فشل معالجة الصورة" });
+    } finally { setIsUploading(false); }
   };
 
   const handleUpdatePassword = async () => {
@@ -193,72 +170,34 @@ export default function SettingsPage() {
       const credential = EmailAuthProvider.credential(user.email!, currentPassword);
       await reauthenticateWithCredential(user, credential);
       await updatePassword(user, newPassword);
-      toast({ title: "تم تغيير كلمة المرور! 🔐" });
-      setCurrentPassword('');
-      setNewPassword('');
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "خطأ في التحديث" });
-    } finally {
-      setChangingPass(false);
-    }
+      toast({ title: "تم تأمين حسابك بكلمة مرور جديدة! 🔐" });
+      setCurrentPassword(''); setNewPassword('');
+    } catch (error) { toast({ variant: "destructive", title: "خطأ في التحقق من كلمة المرور" }); }
+    finally { setChangingPass(false); }
   };
 
   const handleSendPremiumRequest = async () => {
     if (!user) return;
     if (!requestPhone.trim() || requestPhone.length < 10) {
-      toast({ variant: "destructive", title: "رقم الهاتف غير صالح", description: "يرجى إدخال رقم الهاتف الذي ستحول منه بشكل صحيح." });
+      toast({ variant: "destructive", title: "رقم الهاتف ناقص" });
       return;
     }
-    
     setIsSubmittingRequest(true);
     playSound('click');
-
-    let ussdCode = "";
-    if (selectedPlan === '7days') ussdCode = "*122*0922813618*1000*1#";
-    else if (selectedPlan === '1month') ussdCode = "*122*0922813618*3000*1#";
-    else if (selectedPlan === '6months') ussdCode = "*122*0922813618*15000*1#";
-
+    let ussd = selectedPlan === '7days' ? "*122*0922813618*1*1#" : selectedPlan === '1month' ? "*122*0922813618*3*1#" : "*122*0922813618*15*1#";
     try {
-      window.location.href = `tel:${ussdCode.replace('#', '%23')}`;
+      window.location.href = `tel:${ussd.replace('#', '%23')}`;
       await update(ref(database, `users/${user.uid}/premiumRequest`), {
-        status: 'pending',
-        duration: selectedPlan,
-        phoneNumber: requestPhone.trim(),
-        requestedAt: Date.now()
+        status: 'pending', duration: selectedPlan, phoneNumber: requestPhone.trim(), requestedAt: Date.now()
       });
-      toast({ title: "جاري المعالجة... ⏳", description: "سيقوم الآدمن بمطابقة التحويل من رقمك وتفعيل الاشتراك قريباً." });
+      toast({ title: "تم إرسال الطلب! ⏳", description: "سيتم التفعيل فور مطابقة التحويل." });
       setIsRequestOpen(false);
-    } catch (e) {
-      toast({ variant: "destructive", title: "فشل إرسال الطلب" });
-    } finally {
-      setIsSubmittingRequest(false);
-    }
+    } catch (e) { toast({ variant: "destructive", title: "فشل الطلب" }); }
+    finally { setIsSubmittingRequest(false); }
   };
 
-  const handleLogout = async () => {
-    playSound('click');
-    await signOut(auth);
-    router.replace('/login');
-  };
+  if (isLoading || theme === null) return <div className="min-h-screen flex items-center justify-center bg-background"><Loader2 className="animate-spin text-primary" /></div>;
 
-  const handleDeleteAccount = async () => {
-    playSound('click');
-    if (isAdmin) return;
-    const confirmed = window.confirm("تحذير نهائي! هل أنت متأكد؟ 🐱⚠️");
-    if (!user || !confirmed) return;
-    try {
-      await remove(ref(database, `users/${user.uid}`));
-      await signOut(auth);
-      await deleteUser(user);
-      router.replace('/login');
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "خطأ في الحذف" });
-    }
-  };
-
-  if (!mounted || isLoading) return <div className="min-h-screen flex items-center justify-center bg-background"><div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" /></div>;
-
-  const requestStatus = userData?.premiumRequest?.status;
   const isImageAvatar = avatar && (avatar.startsWith('http') || avatar.startsWith('data:image'));
 
   return (
@@ -267,7 +206,7 @@ export default function SettingsPage() {
       <div className="max-w-4xl mx-auto p-4 md:p-12 space-y-10">
         <header className="flex items-center gap-4 text-right mx-2">
           <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center text-white shadow-xl shrink-0"><Settings size={32} /></div>
-          <div><h1 className="text-2xl font-black text-primary">الإعدادات</h1><p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي</p></div>
+          <div><h1 className="text-2xl font-black text-primary">الإعدادات</h1><p className="text-xs text-muted-foreground font-bold">إدارة ملفك الشخصي وعضويتك</p></div>
         </header>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
@@ -287,7 +226,7 @@ export default function SettingsPage() {
                 <p className="font-black text-primary text-sm flex items-center gap-2 justify-end">المؤثرات الصوتية {isMuted ? <VolumeX size={16} className="text-destructive" /> : <Volume2 size={16} className="text-green-600" />}</p>
                 <p className="text-[10px] text-muted-foreground font-bold">كتم أو تفعيل أصوات التطبيق</p>
               </div>
-              <Switch checked={isMuted} onCheckedChange={toggleMute} className="scale-125 data-[state=checked]:bg-destructive" />
+              <Switch checked={isMuted || false} onCheckedChange={toggleMute} className="scale-125 data-[state=checked]:bg-destructive" />
             </div>
           </CardContent>
         </Card>
@@ -304,7 +243,7 @@ export default function SettingsPage() {
             <div className="text-sm font-bold opacity-90 leading-relaxed max-w-lg self-end text-right">
               {userData?.isPremium === 1 
                 ? (isAdmin ? <p>أنت مدير النظام! اشتراكك دائم ولا يخضع لانتهاء الصلاحية. 🛡️</p> : <p>أنت مستخدم بريميوم! اشتراكك فعال وينتهي في: {userData.premiumUntil ? new Date(userData.premiumUntil).toLocaleDateString() : 'غير محدد'}</p>) 
-                : <p>اشترك الآن وافتح كافة القيود وتخلص من الإعلانات تماماً واستمتع بمميزات حصرية.</p>}
+                : <p>اشترك الآن وافتح كافة القيود وتخلص من الإعلانات تماماً واستمتع بمميزات حصرية مثل صور البروفايل.</p>}
             </div>
           </div>
 
@@ -319,18 +258,13 @@ export default function SettingsPage() {
 
           {userData?.isPremium !== 1 && (
             <div className="relative z-10 pt-2 w-full">
-              {requestStatus === 'pending' ? (
-                <div className="w-full h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center gap-3 shadow-inner px-4">
-                  <Clock size={20} className="text-yellow-300 shrink-0" />
-                  <span className="text-xs md:text-sm font-black text-white text-right">طلبك تحت الإجراء حالياً... ⏳</span>
+              {userData?.premiumRequest?.status === 'pending' ? (
+                <div className="w-full h-14 rounded-2xl bg-white/10 border-2 border-white/20 flex items-center justify-center gap-3">
+                  <Clock size={20} className="text-yellow-300" />
+                  <span className="text-xs font-black">طلبك تحت الإجراء حالياً... ⏳</span>
                 </div>
               ) : (
-                <Button 
-                  onClick={() => { playSound('click'); setIsRequestOpen(true); }} 
-                  className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-lg font-black shadow-xl"
-                >
-                  اطلب اشتراك بريميوم 👑
-                </Button>
+                <Button onClick={() => { playSound('click'); setIsRequestOpen(true); }} className="w-full h-14 rounded-2xl bg-white text-slate-900 hover:bg-slate-100 text-lg font-black">اطلب اشتراك بريميوم 👑</Button>
               )}
             </div>
           )}
@@ -338,145 +272,73 @@ export default function SettingsPage() {
 
         <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
           <DialogContent className="rounded-[2.5rem] p-8" dir="rtl">
-            <DialogHeader>
-              <DialogTitle className="text-2xl font-black text-primary text-right">طلب اشتراك بريميوم</DialogTitle>
-              <DialogDescription className="text-right font-bold text-xs">سيتم تحويل الرصيد لضمان تفعيل العضوية الملكية.</DialogDescription>
-            </DialogHeader>
+            <DialogHeader><DialogTitle className="text-2xl font-black text-primary text-right">طلب اشتراك بريميوم</DialogTitle></DialogHeader>
             <div className="space-y-6 py-4">
               <div className="space-y-3">
                 <Label className="text-xs font-black text-primary">1. اختر باقة النمو</Label>
-                {[
-                  { id: '7days', label: 'أسبوع واحد (تجريبي)', price: '1 د.ل' },
-                  { id: '1month', label: 'شهر كامل (اقتصادي)', price: '3 د.ل' },
-                  { id: '6months', label: '6 أشهر (احترافي)', price: '15 د.ل' }
-                ].map((plan) => (
-                  <div key={plan.id} onClick={() => { playSound('click'); setSelectedType(plan.id); }} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === plan.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20")}>
-                    <div className="flex items-center gap-3">{selectedPlan === plan.id ? <CheckCircle2 className="text-primary" /> : <div className="w-6 h-6 rounded-full border-2 border-border" />}<span className="font-black text-sm">{plan.label}</span></div>
-                    <span className="bg-secondary px-3 py-1 rounded-full text-xs font-black text-primary">{plan.price}</span>
+                {[{id:'7days',l:'أسبوع (تجريبي)',p:'1 د.ل'},{id:'1month',l:'شهر (اقتصادي)',p:'3 د.ل'},{id:'6months',l:'6 أشهر (احترافي)',p:'15 د.ل'}].map(p=>(
+                  <div key={p.id} onClick={()=>setSelectedType(p.id)} className={cn("p-4 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between", selectedPlan === p.id ? "border-primary bg-primary/5" : "border-border")}>
+                    <div className="flex items-center gap-3">{selectedPlan === p.id ? <CheckCircle2 className="text-primary"/> : <div className="w-6 h-6 rounded-full border-2 border-border"/>}<span className="font-black text-sm">{p.l}</span></div>
+                    <span className="bg-secondary px-3 py-1 rounded-full text-xs font-black text-primary">{p.p}</span>
                   </div>
                 ))}
               </div>
-
               <div className="space-y-3">
-                <Label className="text-xs font-black text-primary">2. رقم الهاتف (الذي ستحول منه)</Label>
-                <Input 
-                  placeholder="09XXXXXXXX" 
-                  type="tel" 
-                  className="h-14 rounded-2xl bg-secondary/50 border-none font-black text-center text-lg tracking-widest" 
-                  value={requestPhone}
-                  onChange={(e) => setRequestPhone(e.target.value)}
-                />
-                <p className="text-[10px] text-muted-foreground font-bold leading-relaxed">أدخل رقمك الذي سترسل منه الرصيد ليتمكن الآدمن من مطابقة الدفعة فوراً.</p>
+                <Label className="text-xs font-black text-primary">2. رقم الهاتف (للتحقق)</Label>
+                <Input placeholder="09XXXXXXXX" type="tel" className="h-14 rounded-2xl bg-secondary/50 border-none font-black text-center text-lg" value={requestPhone} onChange={e=>setRequestPhone(e.target.value)}/>
               </div>
             </div>
-            
-            <DialogFooter>
-              <Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-14 rounded-2xl font-black text-xl bg-primary shadow-lg">
-                {isSubmittingRequest ? "جاري الإرسال..." : "تأكيد الطلب والتحويل 🐱"}
-              </Button>
-            </DialogFooter>
+            <DialogFooter><Button onClick={handleSendPremiumRequest} disabled={isSubmittingRequest} className="w-full h-14 rounded-2xl font-black text-xl bg-primary shadow-lg">{isSubmittingRequest ? "جاري الإرسال..." : "تأكيد الطلب 🐱"}</Button></DialogFooter>
           </DialogContent>
         </Dialog>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تعديل المعلومات الشخصية <UserIcon size={20} /></CardTitle></CardHeader>
+          <CardHeader className="bg-primary/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-primary flex items-center justify-end gap-3">تعديل الملف الشخصي <UserIcon size={20} /></CardTitle></CardHeader>
           <CardContent className="p-6 space-y-8">
             <div className="flex flex-col items-center gap-6">
                <div className="relative">
-                 <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800 relative">
-                   { isImageAvatar ? (
-                     <img src={avatar} alt="Avatar" className="object-cover w-full h-full" />
-                   ) : (
-                     <span className="text-7xl md:text-8xl">{avatar}</span>
-                   )}
-                   {isUploading && (
-                     <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center backdrop-blur-sm z-20">
-                       <Loader2 className="text-white animate-spin mb-2" size={32} />
-                       <span className="text-white font-black text-[10px]">جاري التحميل...</span>
-                     </div>
-                   )}
+                 <div className="w-32 h-32 md:w-40 md:h-40 bg-secondary/50 rounded-[2.5rem] shadow-inner flex items-center justify-center overflow-hidden border-4 border-white dark:border-slate-800">
+                   { isImageAvatar ? <img src={avatar} alt="Avatar" className="object-cover w-full h-full" /> : <span className="text-7xl md:text-8xl">{avatar}</span> }
+                   {isUploading && <div className="absolute inset-0 bg-black/60 flex items-center justify-center backdrop-blur-sm z-20"><Loader2 className="text-white animate-spin" size={32} /></div>}
                  </div>
-                 
-                 <button 
-                   onClick={() => {
-                     if (!isPremium) {
-                       toast({ variant: "destructive", title: "ميزة بريميوم 👑", description: "تحميل صورة بروفايل شخصية متاح فقط لمشتركي العضوية الملكية." });
-                       return;
-                     }
-                     fileInputRef.current?.click();
-                   }}
-                   disabled={isUploading}
-                   className={cn(
-                     "absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 transition-all z-30",
-                     isPremium ? "bg-primary text-white hover:scale-110 active:scale-95" : "bg-slate-400 text-slate-200 cursor-not-allowed opacity-80"
-                   )}
-                 >
-                   {isPremium ? <Camera size={20} /> : <Lock size={20} />}
-                 </button>
-                 
-                 <input 
-                   type="file" 
-                   ref={fileInputRef} 
-                   className="hidden" 
-                   accept="image/*" 
-                   onChange={handleImageUpload}
-                 />
+                 <button onClick={() => isPremium ? fileInputRef.current?.click() : toast({title:"ميزة بريميوم 👑"})} className={cn("absolute -bottom-2 -right-2 w-12 h-12 rounded-2xl flex items-center justify-center shadow-xl border-4 border-white dark:border-slate-800 transition-all z-30", isPremium ? "bg-primary text-white" : "bg-slate-400 text-slate-200")}><Camera size={20} /></button>
+                 <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageUpload} />
                </div>
-               
-               {!isPremium && (
-                 <div className="bg-orange-50 text-orange-700 px-4 py-2 rounded-xl text-[10px] font-black border border-orange-100 flex items-center gap-2">
-                   <AlertCircle size={14} /> ميزة تحميل صورة بروفايل شخصية حصرية للبريميوم 👑
-                 </div>
-               )}
-
                <div className="w-full space-y-2">
-                 <Label className="text-right block w-full">أو اختر إيموجي</Label>
+                 <Label className="text-right block w-full text-[10px] font-black uppercase text-muted-foreground">أو اختر رمزاً تعبيرياً</Label>
                  <div className="flex flex-wrap justify-center gap-2 p-2 bg-secondary/20 rounded-2xl">
                    {AVATAR_EMOJIS.slice(0, 15).map(emoji => (
-                     <button 
-                       key={emoji} 
-                       onClick={() => setAvatar(emoji)}
-                       className={cn(
-                         "text-2xl w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white transition-colors",
-                         avatar === emoji && "bg-white shadow-md scale-110 border-2 border-primary/20"
-                       )}
-                     >
-                       {emoji}
-                     </button>
+                     <button key={emoji} onClick={() => setAvatar(emoji)} className={cn("text-2xl w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white transition-colors", avatar === emoji && "bg-white shadow-md border-2 border-primary/20")}>{emoji}</button>
                    ))}
                  </div>
                </div>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2 col-span-1 md:col-span-2"><Label className="flex items-center gap-2 justify-end"><PenLine size={16} /> نبذة قصيرة</Label><Input value={bio} maxLength={30} onChange={e => setBio(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
-              <div className="space-y-2 col-span-1 md:col-span-2"><Label className="text-right block w-full">الاسم الكامل {isAdmin && "(لا يمكن تغييره للمدير)"}</Label><Input value={name} onChange={e => setName(e.target.value)} disabled={isAdmin} className={cn("rounded-xl bg-secondary/30 border-none h-12 font-bold text-right", isAdmin && "opacity-50")} /></div>
+              <div className="space-y-2 col-span-1 md:col-span-2"><Label className="text-right block w-full">الاسم الكامل</Label><Input value={name} onChange={e => setName(e.target.value)} disabled={isAdmin} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
               <div className="space-y-2"><Label className="text-right block w-full">العمر</Label><Input type="number" value={age} onChange={e => setAge(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
               <div className="space-y-2"><Label className="text-right block w-full">الجنس</Label><Select onValueChange={setGender} value={gender}><SelectTrigger className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="male">ذكر</SelectItem><SelectItem value="female">أنثى</SelectItem></SelectContent></Select></div>
-              <div className="space-y-2"><Label className="text-right block w-full">الطول</Label><Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
-              <div className="space-y-2"><Label className="text-right block w-full">الوزن</Label><Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <div className="space-y-2"><Label className="text-right block w-full">الطول (سم)</Label><Input type="number" value={height} onChange={e => setHeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <div className="space-y-2"><Label className="text-right block w-full">الوزن (كجم)</Label><Input type="number" value={weight} onChange={e => setWeight(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
               <Button onClick={handleUpdateProfile} disabled={saving} className="col-span-1 md:col-span-2 h-14 rounded-2xl bg-primary text-lg font-black">{saving ? "جاري الحفظ..." : "حفظ التغييرات"}</Button>
             </div>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-xl rounded-[2.5rem] bg-card overflow-hidden border border-border mx-2">
-          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">التواصل والدعم الفني <MessageSquare size={20} /></CardTitle></CardHeader>
-          <CardContent className="p-6 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <a href="https://wa.me/218929196425" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-green-100 bg-green-50/30 text-green-700 font-black gap-2"><Phone size={18} /> واتساب</Button></a>
-              <a href="https://artiatechstudio.com.ly" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-700 font-black gap-2"><Globe size={18} /> الموقع الرسمي</Button></a>
-              <a href="https://x.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-slate-100 bg-slate-50/30 text-slate-700 font-black gap-2"><Twitter size={18} /> منصة X</Button></a>
-              <a href="https://www.facebook.com/share/1ASsnGfZ4A/" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-blue-100 bg-blue-50/30 text-blue-800 font-black gap-2"><Facebook size={18} /> فيسبوك</Button></a>
-              <a href="https://instagram.com/artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-pink-100 bg-pink-50/30 text-pink-700 font-black gap-2"><Instagram size={18} /> إنستقرام</Button></a>
-              <a href="https://youtube.com/@artiatechstudio" target="_blank" rel="noopener noreferrer"><Button variant="outline" className="w-full h-14 rounded-2xl border-red-100 bg-red-50/30 text-red-700 font-black gap-2"><Youtube size={18} /> يوتيوب</Button></a>
+          <CardHeader className="bg-accent/5 p-6 border-b border-border text-right"><CardTitle className="text-lg font-black text-accent flex items-center justify-end gap-3">تأمين الحساب <Lock size={20} /></CardTitle></CardHeader>
+          <CardContent className="p-6 space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2"><Label className="text-right block w-full">كلمة المرور الحالية</Label><Input type="password" value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <div className="space-y-2"><Label className="text-right block w-full">كلمة المرور الجديدة</Label><Input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} className="rounded-xl bg-secondary/30 border-none h-12 font-bold text-right" /></div>
+              <Button onClick={handleUpdatePassword} disabled={changingPass} variant="outline" className="w-full h-12 rounded-xl border-2 border-accent text-accent font-black">{changingPass ? "جاري التحديث..." : "تغيير كلمة المرور"}</Button>
             </div>
           </CardContent>
         </Card>
 
         <div className="pt-6 flex flex-col gap-3 mx-2">
           <Button onClick={handleLogout} variant="outline" className="h-14 rounded-2xl border-2 border-primary text-primary font-black"><LogOut className="ml-2" /> تسجيل الخروج</Button>
-          {!isAdmin && <Button onClick={handleDeleteAccount} variant="ghost" className="h-14 rounded-2xl text-destructive font-black"><Trash2 className="ml-2" /> حذف الحساب نهائياً</Button>}
+          {!isAdmin && <Button onClick={() => { if(window.confirm("تحذير نهائي! هل أنت متأكد؟ 🐱⚠️")) remove(ref(database, `users/${user?.uid}`)).then(()=>signOut(auth)) }} variant="ghost" className="h-14 rounded-2xl text-destructive font-black"><Trash2 className="ml-2" /> حذف الحساب نهائياً</Button>}
         </div>
       </div>
     </div>

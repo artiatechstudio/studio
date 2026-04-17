@@ -19,8 +19,12 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const isPremium = user?.isPremium === 1 || isAdmin;
   const avatar = user?.avatar;
   
-  // لا تظهر الصورة الشخصية إلا إذا كان المستخدم بريميوم حالياً
-  const showImage = isPremium && (avatar?.startsWith('data:image') || avatar?.startsWith('http'));
+  // التحقق من تاريخ انتهاء الاشتراك برمجياً أيضاً لزيادة الأمان في الواجهة
+  const now = Date.now();
+  const isExpired = user?.premiumUntil && now > user.premiumUntil && !isAdmin;
+  
+  // لا تظهر الصورة الشخصية إلا إذا كان المستخدم بريميوم حالياً وغير منتهي
+  const showImage = isPremium && !isExpired && (avatar?.startsWith('data:image') || avatar?.startsWith('http'));
   
   const sizeClasses = {
     sm: "w-8 h-8 text-xs",
@@ -42,7 +46,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
           {(avatar?.startsWith('data:image') || avatar?.startsWith('http')) ? "🐱" : (avatar || "🐱")}
         </span>
       )}
-      {isPremium && size !== 'sm' && (
+      {isPremium && !isExpired && size !== 'sm' && (
         <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white" />
       )}
     </div>

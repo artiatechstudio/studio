@@ -1,7 +1,7 @@
 
 "use client"
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { NavSidebar } from '@/components/nav-sidebar';
 import { Trophy, Medal, Flame, Crown, Timer, Swords, Skull, AlertCircle, ChevronDown, Loader2 } from "lucide-react";
@@ -15,26 +15,33 @@ import { UserAvatar } from '@/components/user-avatar';
 export default function LeaderboardPage() {
   const { database } = useFirebase();
   const [displayLimit, setDisplayLimit] = useState(20);
+  const [todayStr, setTodayStr] = useState("");
+  const [yestStr, setYestStr] = useState("");
+  const [dayBStr, setDayBStr] = useState("");
+
+  useEffect(() => {
+    const today = new Date();
+    const formatDate = (d: Date) => d.toISOString().split('T')[0];
+    
+    setTodayStr(formatDate(today));
+    
+    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+    setYestStr(formatDate(yest));
+    
+    const dayB = new Date(today); dayB.setDate(dayB.getDate() - 2);
+    setDayBStr(formatDate(dayB));
+  }, []);
   
-  // جلب آخر 200 مستخدم كأساس للمنافسة لتقليل التكلفة
   const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
   const stats = useMemo(() => {
-    if (!rawData) return { leaders: [], losers: [], totalLeaders: 0 };
-    
-    const today = new Date();
-    const todayStr = today.toLocaleDateString('en-CA');
-    const yest = new Date(today); yest.setDate(yest.getDate() - 1);
-    const yestStr = yest.toLocaleDateString('en-CA');
-    const dayB = new Date(today); dayB.setDate(dayB.getDate() - 2);
-    const dayBStr = dayB.toLocaleDateString('en-CA');
+    if (!rawData || !todayStr) return { leaders: [], losers: [], totalLeaders: 0 };
     
     const allUsers = Object.entries(rawData)
       .map(([id, val]: [string, any]) => ({ ...val, id }))
       .filter((u: any) => u.name !== 'admin' && (u.points || 0) > 0);
 
-    // حساب متوسط آخر 3 أيام لكل مستخدم لضمان العدالة
     const usersWithAvg = allUsers.map(u => {
       const p1 = u.dailyPoints?.[todayStr] || 0;
       const p2 = u.dailyPoints?.[yestStr] || 0;
@@ -47,7 +54,6 @@ export default function LeaderboardPage() {
       .filter((u: any) => u.threeDayAvg > 0)
       .sort((a: any, b: any) => b.threeDayAvg - a.threeDayAvg);
 
-    // جدار العار: الوقوع بسبب كسر الحماسة تلقائياً
     const losers = allUsers
       .filter((user: any) => {
         const isLoss = user.lastChallengeLossDate === todayStr;
@@ -67,11 +73,11 @@ export default function LeaderboardPage() {
       losers,
       totalLeaders: activeLeaders.length 
     };
-  }, [rawData, displayLimit]);
+  }, [rawData, displayLimit, todayStr, yestStr, dayBStr]);
 
-  if (isLoading) return (
+  if (isLoading || !todayStr) return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-6">
-      <div className="relative w-24 h-24 animate-bounce"><Image src="/logo.png" alt="Careingo" fill className="object-contain" priority /></div>
+      <div className="relative w-24 h-24 animate-bounce"><Image src="/logo.png" alt="Careingo" width={96} height={96} className="object-contain" priority /></div>
       <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );

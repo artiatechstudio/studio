@@ -6,7 +6,7 @@ import { NavSidebar } from '@/components/nav-sidebar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, ListChecks, Plus, Swords, Timer, Camera, Loader2 } from 'lucide-react';
+import { ArrowLeft, ListChecks, Plus, Swords, Timer, Camera, Loader2, ShieldCheck, CheckCircle2, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { playSound } from '@/lib/sounds';
 import { getMasterPool, TrackKey, Challenge } from '@/lib/challenges';
@@ -18,7 +18,7 @@ import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 async function concludeChallenge(database: any, challenge: any, winnerId: string | 'tie' | 'none') {
-  const todayStr = new Date().toLocaleDateString('en-CA');
+  const todayStr = new Date().toISOString().split('T')[0];
   const stake = challenge.pointsStake || 50;
   const p1Id = challenge.senderId;
   const p2Id = challenge.receiverId;
@@ -34,7 +34,7 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
       updates.points = (data.points || 0) + stake;
       updates.challengesWon = (data.challengesWon || 0) + 1;
       updates[`dailyPoints/${todayStr}`] = (data.dailyPoints?.[todayStr] || 0) + stake;
-    } else if (winnerId !== 'tie') {
+    } else if (winnerId !== 'tie' && winnerId !== 'none') {
       updates.points = Math.max(0, (data.points || 0) - stake);
       updates.challengesLost = (data.challengesLost || 0) + 1;
       updates[`dailyPoints/${todayStr}`] = Math.max(0, (data.dailyPoints?.[todayStr] || 0) - stake);
@@ -55,7 +55,6 @@ async function concludeChallenge(database: any, challenge: any, winnerId: string
 export default function MasterTrackPage() {
   const { user } = useUser();
   const { database } = useFirebase();
-  const router = useRouter();
   const [step, setStep] = useState<'setup' | 'active' | 'done'>('setup');
   const [selectedType, setSelectedType] = useState<TrackKey>('Fitness');
   const [selectedDifficulty, setSelectedDifficulty] = useState<'سهل' | 'متوسط' | 'صعب'>('سهل');
@@ -77,7 +76,7 @@ export default function MasterTrackPage() {
   }, [allChallengesData, user]);
 
   const isPremium = userData?.isPremium === 1 || userData?.name === 'admin';
-  const todayStr = new Date().toLocaleDateString('en-CA');
+  const todayStr = new Date().toISOString().split('T')[0];
   const todoCountToday = userData?.dailyTodosCount?.[todayStr] || 0;
 
   const handleAddTodo = (e: React.FormEvent) => {
@@ -85,10 +84,9 @@ export default function MasterTrackPage() {
     if (!todoInput.trim() || !user) return;
     if (!isPremium && todoCountToday >= 5) {
       toast({ 
-        variant: "destructive", 
-        title: "وصلت للحد اليومي 🛑", 
-        description: "اشترك في بريميوم لفتح مهام غير محدودة وزيادة نقاطك بسرعة!",
-        action: <ToastAction altText="اشترك الآن" onClick={() => router.push('/settings')}>اشترك الآن</ToastAction>
+        variant: "destructive", title: "وصلت للحد اليومي 🛑", 
+        description: "اشترك في بريميوم لمهام غير محدودة وزيادة نقاطك!",
+        action: <ToastAction altText="اشترك الآن" onClick={() => (window.location.href='/settings')}>اشترك الآن</ToastAction>
       });
       return;
     }
@@ -210,23 +208,15 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
           challenge.winnerId === currentUser?.uid ? (
             <div className="bg-blue-50 p-4 rounded-2xl text-center space-y-3">
               <p className="text-[10px] font-black text-blue-800">بانتظار اعتراف الخصم بالهزيمة ⌛</p>
-              {challenge.proof && (
-                <div className="rounded-xl overflow-hidden border border-blue-200">
-                  <img src={challenge.proof} className="w-full h-auto max-h-40 object-contain" alt="Proof" />
-                </div>
-              )}
+              {challenge.proof && <img src={challenge.proof} className="w-full h-auto max-h-40 object-contain rounded-xl" alt="Proof" />}
             </div>
           ) : (
             <div className="bg-orange-50 p-4 rounded-3xl space-y-4">
               <p className="text-[10px] font-black text-orange-900 text-right">الخصم يزعم الانتصار! راجع الدليل:</p>
-              {challenge.proof && (
-                <div className="relative w-full rounded-2xl overflow-hidden border-2 border-orange-200 bg-white shadow-inner">
-                  <img src={challenge.proof} className="w-full h-auto max-h-60 object-contain mx-auto" alt="Proof to verify" />
-                </div>
-              )}
+              {challenge.proof && <img src={challenge.proof} className="w-full h-auto max-h-60 object-contain rounded-2xl border-2 border-orange-200" alt="Proof to verify" />}
               <div className="flex gap-2">
-                <Button onClick={() => concludeChallenge(database, challenge, challenge.winnerId)} className="flex-1 bg-green-600 font-black text-[10px]">نعم، أقبل الهزيمة</Button>
-                <Button onClick={() => update(ref(database, `challenges/${challenge.id}`), { status: 'awaiting_recognition' })} variant="outline" className="flex-1 text-red-600 border-red-200 font-black text-[10px]">لا، الدليل غير كافٍ!</Button>
+                <Button onClick={() => concludeChallenge(database, challenge, challenge.winnerId)} className="flex-1 bg-green-600 font-black text-[10px]">أقبل الهزيمة ✅</Button>
+                <Button onClick={() => update(ref(database, `challenges/${challenge.id}`), { status: 'awaiting_recognition' })} variant="outline" className="flex-1 text-red-600 font-black text-[10px]">الدليل غير كافٍ ❌</Button>
               </div>
             </div>
           )
@@ -234,9 +224,7 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
           <Button onClick={() => fileInputRef.current?.click()} disabled={isProcessing} className="w-full h-14 rounded-2xl bg-primary font-black text-xs gap-3">
             {isProcessing ? <Loader2 className="animate-spin" /> : <Camera size={20} />} رفع الإثبات 📸
           </Button>
-        ) : (
-          <div className="bg-secondary/30 p-4 rounded-2xl text-center font-bold text-[10px] text-muted-foreground italic">في انتظار تأكيد البداية...</div>
-        )}
+        ) : <div className="bg-secondary/30 p-4 rounded-2xl text-center text-[10px] font-bold italic">في انتظار تأكيد البداية...</div>}
         <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleUpload} />
       </div>
     </Card>

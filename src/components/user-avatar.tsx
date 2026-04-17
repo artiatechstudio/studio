@@ -21,7 +21,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const isAdmin = user?.name === 'admin';
   const userId = user?.id || user?.uid;
   
-  // جلب الصورة من المسار المنفصل
+  // جلب الصورة من المسار المنفصل لتسريع القوائم
   const avatarRef = useMemoFirebase(() => userId ? ref(database, `avatars/${userId}`) : null, [database, userId]);
   const { data: avatarData } = useDatabase(avatarRef);
 
@@ -31,8 +31,7 @@ export function UserAvatar({ user, className, size = "md" }: UserAvatarProps) {
   const now = Date.now();
   const isExpired = user?.premiumUntil && now > user.premiumUntil && !isAdmin;
   
-  // نستخدم الأفاتار الموجود في بيانات المستخدم (إيموجي) أو الصورة المحملة
-  // المنطق: إذا لم يكن بريميوم أو انتهى اشتراكه، لا نعرض الصورة أبداً
+  // المنطق الصارم: إذا لم يكن بريميوم أو انتهى اشتراكه، لا نعرض الصورة أبداً
   const canShowImage = isPremium && !isExpired;
   const avatarValue = (canShowImage && avatarData) || (typeof user?.avatar === 'string' && !user.avatar.startsWith('data') ? user.avatar : "🐱");
   

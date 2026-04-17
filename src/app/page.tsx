@@ -65,7 +65,6 @@ export default function Home() {
         updates[`premiumRequest/status`] = 'expired';
         
         // إزالة الصورة الشخصية من قاعدة البيانات لضمان الحصرية وتقليل حجم البيانات
-        // كما يتم استبدال قيمة avatar بـ "🐱" في ملف المستخدم
         updates.avatar = "🐱";
         remove(ref(database, `avatars/${user.uid}`));
 

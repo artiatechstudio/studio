@@ -18,7 +18,8 @@ export default function ChatListPage() {
   const { database } = useFirebase();
   const [searchTerm, setSearchTerm] = useState('');
 
-  // نعتمد الآن على فهرس المحادثات النشطة الخاص بالمستخدم لتجنب خطأ الصلاحيات
+  // الحل الجذري لخطأ الصلاحيات: القراءة من فهرس المستخدم الخاص (activeChats)
+  // القواعد تسمح للمستخدم بقراءة مساره الخاص فقط
   const activeChatsRef = useMemoFirebase(() => user ? ref(database, `users/${user.uid}/activeChats`) : null, [database, user]);
   const { data: activeChatsData } = useDatabase(activeChatsRef);
 
@@ -154,8 +155,6 @@ export default function ChatListPage() {
 }
 
 function UserChatListItem({ user, lastMessage }: { user: any, lastMessage?: string }) {
-  const isPremium = user.isPremium === 1 || user.name === 'admin';
-
   return (
     <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/20 hover:bg-primary/5 transition-colors border border-transparent hover:border-primary/20">
       <Link href={`/user/${user.id}`} onClick={() => playSound('click')} className="shrink-0">
@@ -165,7 +164,7 @@ function UserChatListItem({ user, lastMessage }: { user: any, lastMessage?: stri
         <div className="text-right flex-1 min-w-0">
           <div className="flex items-center gap-1 justify-end">
             <p className="font-black text-primary text-sm truncate">{user.name}</p>
-            {isPremium && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+            {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
           </div>
           <p className="text-[9px] text-muted-foreground font-bold truncate">
             {lastMessage || "عضو في كارينجو 🌱"}

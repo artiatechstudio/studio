@@ -121,12 +121,27 @@ export default function MasterTrackPage() {
         {step === 'setup' && (
           <Card className="rounded-[2.5rem] p-6 shadow-xl border-none bg-card space-y-6 mx-2">
             <h3 className="font-black text-primary text-sm">تحدي الماستر العشوائي 🚀</h3>
+            <div className="grid grid-cols-2 gap-3">
+              {['Fitness', 'Nutrition', 'Behavior', 'Study'].map(t => (
+                <Button key={t} onClick={() => setSelectedType(t as any)} variant={selectedType === t ? 'default' : 'outline'} className="rounded-xl h-12 font-black">{t === 'Fitness' ? 'لياقة' : t === 'Nutrition' ? 'تغذية' : t === 'Behavior' ? 'سلوك' : 'دراسة'}</Button>
+              ))}
+            </div>
             <Button onClick={() => { 
               const pool = getMasterPool(selectedType, selectedDifficulty);
               const random = pool[Math.floor(Math.random() * pool.length)];
               setCurrentChallenge(random); setStep('active'); playSound('click');
             }} className="w-full h-14 rounded-2xl bg-primary text-lg font-black shadow-xl">ابدأ تحدي الماستر 🔥</Button>
           </Card>
+        )}
+
+        {step === 'active' && currentChallenge && (
+           <Card className="rounded-[2.5rem] p-8 shadow-2xl border-none bg-card space-y-6 mx-2 animate-in zoom-in duration-300">
+              <div className="flex justify-between items-center"><div className="px-3 py-1 bg-primary/10 text-primary rounded-full text-[10px] font-black uppercase tracking-wider">{currentChallenge.type}</div><Button onClick={() => setStep('setup')} variant="ghost" size="sm" className="rounded-full"><XCircle size={18}/></Button></div>
+              <h2 className="text-2xl font-black text-primary text-right">{currentChallenge.title}</h2>
+              <p className="text-sm font-bold text-muted-foreground leading-relaxed text-right">{currentChallenge.description}</p>
+              <div className="bg-secondary/30 p-4 rounded-2xl flex justify-between items-center"><span className="text-[10px] font-black uppercase text-muted-foreground">الوقت المقدر</span><span className="font-black text-primary">{currentChallenge.time} دقيقة</span></div>
+              <Button onClick={() => { setStep('setup'); toast({ title: "تم الإنجاز! 🎉" }); playSound('success'); }} className="w-full h-16 rounded-2xl bg-accent text-xl font-black shadow-xl">أنهيت المهمة 🔥</Button>
+           </Card>
         )}
 
         <section className="space-y-4 pt-6 border-t border-border/50">
@@ -216,7 +231,7 @@ function BattleCard({ challenge, currentUser, database }: { challenge: any, curr
               {challenge.proof && <img src={challenge.proof} className="w-full h-auto max-h-60 object-contain rounded-2xl border-2 border-orange-200" alt="Proof to verify" />}
               <div className="flex gap-2">
                 <Button onClick={() => concludeChallenge(database, challenge, challenge.winnerId)} className="flex-1 bg-green-600 font-black text-[10px]">أقبل الهزيمة ✅</Button>
-                <Button onClick={() => update(ref(database, `challenges/${challenge.id}`), { status: 'awaiting_recognition' })} variant="outline" className="flex-1 text-red-600 font-black text-[10px]">الدليل غير كافٍ ❌</Button>
+                <Button onClick={() => update(ref(database, `challenges/${challenge.id}`), { status: 'awaiting_recognition', winnerName: currentUser?.name || 'خصم' })} variant="outline" className="flex-1 text-red-600 font-black text-[10px]">الدليل غير كافٍ ❌</Button>
               </div>
             </div>
           )

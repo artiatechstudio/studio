@@ -32,7 +32,6 @@ export default function LeaderboardPage() {
     setDayBStr(formatDate(dayB));
   }, []);
   
-  // تحميل بيانات المستخدمين خفيفة (بدون صور الأفاتار لضمان السرعة القصوى)
   const leadersQuery = useMemoFirebase(() => query(ref(database, 'users'), orderByChild('points'), limitToLast(200)), [database]);
   const { data: rawData, isLoading } = useDatabase(leadersQuery);
 
@@ -56,7 +55,7 @@ export default function LeaderboardPage() {
       .filter((u: any) => u.threeDayAvg > 0)
       .sort((a: any, b: any) => b.threeDayAvg - a.threeDayAvg);
 
-    // جدار العار الآلي: كسر حماسة أو هزيمة اليوم
+    // جدار العار الآلي: كسر حماسة (غياب أكثر من 24 ساعة)
     const losers = allUsers
       .filter((user: any) => {
         const isLoss = user.lastChallengeLossDate === todayStr;
@@ -123,7 +122,7 @@ export default function LeaderboardPage() {
                   <div className="text-right overflow-hidden flex-1 px-1">
                     <div className="flex items-center justify-end gap-1 mb-1">
                       <h3 className="font-black text-primary text-[11px] truncate">{user.name}</h3>
-                      {user.isPremium === 1 && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
+                      {(user.isPremium === 1 || user.name === 'admin') && <Crown size={10} className="text-yellow-500" fill="currentColor" />}
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-1">
                       <span className="flex items-center gap-0.5 bg-orange-50 px-1 py-0.5 rounded-full text-[7px] font-black text-orange-600"><Flame size={8} fill="currentColor" /> {user.streak || 0}ي</span>
